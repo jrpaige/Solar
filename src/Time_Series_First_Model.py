@@ -11,10 +11,13 @@ import statsmodels.formula.api as smf
 # from statsmodels.tsa.statespace.sarimax import SARIMAX
 # from statsmodels.stats.diagnostic import acorr_ljungbox
 
-def resample_create_lag(df):
-    yw = pd.DataFrame(df['cost_per_watt'].resample('W').median())
-    yw['date'] = yw.index.date
-    lagg_cost = (pd.concat([yw.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+def resample_df(df):
+    y = pd.DataFrame(df.cost_per_watt)
+    yw = pd.DataFrame(y['cost_per_watt'].resample('W').median())
+    return yw
+
+def create_lag(df):
+    lagg_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
     return lagg_cost
 
 def ols_table(lagg_cost):
