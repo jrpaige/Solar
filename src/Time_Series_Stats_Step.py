@@ -23,7 +23,7 @@ def rolling_plot(df):
     rollingmean = ywn.rolling(window=3).mean()
     rollingstd = ywn.rolling(window=3).std() 
     
-    #orig = plt.plot(df, color='blue',label='Original')
+    orig = plt.plot(df, color='blue',label='Original')
     mean = plt.plot(rollingmean, color='green', label='Rolling Mean')
     med = plt.plot(rollingmedian, color='red', label='Rolling Median')
     std = plt.plot(rollingstd, color='black', label = 'Rolling Std')
@@ -48,3 +48,7 @@ def log_ma(df):
     ywn_log = np.log(ywn)
     ywn_log_minus_MA = ywn_log - rollingmedian
     return ywn_log_minus_MA
+
+
+
+#def plot_moving_average(df, window, plot_intervals=False, scale = 

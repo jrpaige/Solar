@@ -74,13 +74,19 @@ def prep():
     
     print('Prep complete \n ------------------------------------------------------------')
     
-    print('MAX PRICE \n total            $',  df['adj_installed_price'].max(), '\n cost per watt    $',  df['cost_per_watt'].max())
-    print('MEAN PRICE \n total            $', round( df['adj_installed_price'].mean(),2), '\n cost per watt    $', round( df['cost_per_watt'].mean(),2))
-    print('MEDIAN PRICE \n total            $',  df['adj_installed_price'].median(), '\n cost per watt    $',  df['cost_per_watt'].median())
-    print('MODE PRICE \n total            $',  df['adj_installed_price'].mode()[0], '\n cost per watt    $',  df['cost_per_watt'].mode()[0])
-    print('MIN PRICE \n total            $',  df['adj_installed_price'].min(), '\n cost per watt    $',  df['cost_per_watt'].min())
+#     print('MAX PRICE \n total            $',  df['adj_installed_price'].max(), '\n cost per watt    $',  df['cost_per_watt'].max())
+#     print('MEAN PRICE \n total            $', round( df['adj_installed_price'].mean(),2), '\n cost per watt    $', round( df['cost_per_watt'].mean(),2))
+#     print('MEDIAN PRICE \n total            $',  df['adj_installed_price'].median(), '\n cost per watt    $',  df['cost_per_watt'].median())
+#     print('MODE PRICE \n total            $',  df['adj_installed_price'].mode()[0], '\n cost per watt    $',  df['cost_per_watt'].mode()[0])
+#     print('MIN PRICE \n total            $',  df['adj_installed_price'].min(), '\n cost per watt    $',  df['cost_per_watt'].min())
     
-    df.cost_per_watt.plot(title=('Cost per Watt'))
-    plt.show()
-    df.adj_installed_price.plot(title=('Total Installed Price (Adjusted for Inflation)'))
+#     df.cost_per_watt.plot(title=('Cost per Watt'))
+#     plt.show()
+#     df.adj_installed_price.plot(title=('Total Installed Price (Adjusted for Inflation)'))
     return df
+
+
+def mean_average_percentage_error(y_true, y_pred):
+    return np.mean(np.abs((y_true-y_pred)/ y_true)) * 100
+
+
