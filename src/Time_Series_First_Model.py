@@ -12,6 +12,9 @@ import datetime
 # from statsmodels.tsa.statespace.sarimax import SARIMAX
 # from statsmodels.stats.diagnostic import acorr_ljungbox
 
+
+
+
 def resamp_lag_ols(df):
     y = pd.DataFrame(df.cost_per_watt)
     yw = pd.DataFrame(y['cost_per_watt'].resample('W').median())

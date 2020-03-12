@@ -7,20 +7,21 @@ import numpy as np
 #                             .reset_index().drop(columns='index')
 
 
-# def time_series_me(df1,df2,df3,df_for_y):
+def time_series_me(df1,df2,df3,df_for_y):
   
-#     time_series_df = df1.copy()
+    time_series_df = df1.copy()
     
-#     time_series_df = df1.set_index('installation_date')\
-#                         .join(df2.set_index('installation_date'),lsuffix='_1', rsuffix='_2',how='outer')\
-#                         .join(df3.set_index('installation_date'),lsuffix='_2', rsuffix='_3',how='outer')\
-#                         .join(df_for_y.set_index('installation_date'),lsuffix='_3', rsuffix='_4',how='outer')\
-#                         .reset_index()
+    time_series_df = df1.set_index('installation_date')\
+                        .join(df2.set_index('installation_date'),lsuffix='_1', rsuffix='_2',how='outer')\
+                        .join(df3.set_index('installation_date'),lsuffix='_2', rsuffix='_3',how='outer')\
+                        .join(df_for_y.set_index('installation_date'),lsuffix='_3', rsuffix='_4',how='outer')\
+                        .reset_index()
  
-#     X = time_series_df.drop(columns='price_per_system_w', inplace=True)
-#     y = time_series_df['price_per_system_w']
+ 
+    X = time_series_df.drop(columns='price_per_system_w', inplace=True)
+    y = time_series_df['price_per_system_w']
     
-#     return time_series_df,X,y
+    return time_series_df,X,y
 
 
 def residual_plot(ax, x, y, y_hat, n_bins=50):
