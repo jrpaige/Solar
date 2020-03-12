@@ -8,7 +8,8 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 from statsmodels.tools.tools import add_constant
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.arima_model import ARIMA, ARIMAResults
+#from statsmodels.tsa.arima_model import ARIMA, ARIMAResults
+from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.stats.diagnostic import acorr_ljungbox

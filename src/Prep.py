@@ -30,23 +30,24 @@ def prep():
     # Create initial copy 
     df = dfMod.copy()
 
-    print('4 of 11 |    Cleaning up column names')
-    # Lowercase and replace all spaces with underscores
-    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
-    
-    print('5 of 11 |    Sorting values by installation_date')
-    #sort by date
-    df.sort_values('installation_date', inplace=True)
-    
-    print('6 of 11 |    Assigning installation_date as index')
-    #Assign the date as the index
-    df.set_index('installation_date', drop=True, inplace=True)
-    
-    print('7 of 11 |    Refining to only RES customer_segment')
+    print('4 of 11 |    Refining to only RES customer_segment')
     # Residential is 95% of the data. 
     # Focus on those to eliminate any irregularity  
     df = df.loc[df['customer_segment']=='RES']
     
+    print('5 of 11 |    Cleaning up column names')
+    # Lowercase and replace all spaces with underscores
+    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
+    
+    print('6 of 11 |    Sorting values by installation_date')
+    #sort by date
+    df.sort_values('installation_date', inplace=True)
+    
+    print('7 of 11 |    Assigning installation_date as index')
+    #Assign the date as the index
+    df.set_index('installation_date', drop=True, inplace=True)
+    
+
     print('8 of 11 |    Replacing all null values with median values from same year')
     # The Number of null price cells / total number of price cells
     # 356171/1543831 = more than 20% 
@@ -58,6 +59,7 @@ def prep():
     
     print('9 of 11 |    Adusting prices for inflation')
     #adjust all prices to reflect inflation of the current year(2019)
+    #The adjustment is made using data provided by The Bureau of Labor Statistics at the U.S. Department of Labor.
     df['date'] = df.index.date
     df['adj_installed_price'] = round(df.apply(lambda x: cpi.inflate(x.total_installed_price, x.date), axis=1),2)
     
