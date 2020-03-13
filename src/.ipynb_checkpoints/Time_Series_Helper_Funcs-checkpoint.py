@@ -172,6 +172,8 @@ def plot_many_residuals(df, var_names, y_hat, n_bins=50):
     return fig, axs
 
 
+
+
 # LINEAR  ______________________________________________
 def linear_model_trend(df):
     X = add_constant(np.arange(1, len(df) + 1))
@@ -210,6 +212,7 @@ def lm_preds(df):
     
 # ARIMA ______________________________________________
 
+#may add disp=-1 into .fit()
 def arima_model(df):
     y_hat_avg = df.copy()
     fit1 = sm.tsa.statespace.ARIMA(df['cost_per_watt'], order=(2, 0, 4)).fit()
@@ -326,6 +329,13 @@ def see_preds_plot(res, start_date_str, end_date_str):
     plt.legend(loc='best')
     plt.show()
 
+#target = weekly_differences['cost_per_watt']
+def see_fitted(df, target):
+    plt.plot(df)
+    plt.plot(yt_res.fittedvalues, color='red')
+    plt.title('RSS: %.4f'% sum((yt_res.fittedvalues - target)**2))
+
+    
 
 # OTHER MODELS  ______________________________________________
 def random_forest_model():
