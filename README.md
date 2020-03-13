@@ -1,4 +1,4 @@
-# TITLE
+# Time Series Forecasting of Residential Solar Panel Costs 
 
 ## ABSTRACT
 
