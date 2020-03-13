@@ -69,12 +69,22 @@ def plot_many_residuals(df, var_names, y_hat, n_bins=50):
     return fig, axs
 
 
-def plot_acf_and_pacf(df, axs, lags=24*2):
+# X = add_constant(np.arange(1, len(ywn) + 1))
+# y = ywn
+
+# linear_trend = sm.OLS(y, X).fit().predict(X)
+
+
+
+
+
+
+def plot_acf_and_pacf(df, axs):
     """Plot the autocorrelation and partial autocorrelation plots of a series
     on a pair of axies.
     """
-    _ = plot_acf(df, ax=axs[0], lags=lags)
-    _ = plot_pacf(df, ax=axs[1], lags=lags)
+    _ = plot_acf(df, ax=axs[0]) #lags=lags)
+    _ = plot_pacf(df, ax=axs[1]) #lags=lags)
 
 #def plot_moving_average(df, window, plot_intervals=False, scale = 
 
@@ -112,7 +122,7 @@ def holt_linear_model(df):
     
 def arima_model(df):
     y_hat_avg = df.copy()
-    fit1 = sm.tsa.statespace.ARIMA(df['cost_per_watt'], order=(2, 1, 4)).fit()
+    fit1 = sm.tsa.statespace.ARIMA(df['cost_per_watt'], order=(2, 0, 4)).fit()
     y_hat_avg['ARIMA'] = fit1.predict(start="2019-1-6", end="2020-1-6", dynamic=True)
     plt.figure(figsize=(16,8))
     plt.plot(df['cost_per_watt'], label='Cost Per Watt')
