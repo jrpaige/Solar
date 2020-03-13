@@ -30,10 +30,10 @@ def prep():
     # Create initial copy 
     df = dfMod.copy()
 
-    print('4 of 11 |    Refining to only RES customer_segment')
+    print('4 of 11 |    Refining to only RES Customer Segment')
     # Residential is 95% of the data. 
     # Focus on those to eliminate any irregularity  
-    df = df.loc[df['customer_segment']=='RES']
+    df = df.loc[df['Customer Segment']=='RES']
     
     print('5 of 11 |    Cleaning up column names')
     # Lowercase and replace all spaces with underscores

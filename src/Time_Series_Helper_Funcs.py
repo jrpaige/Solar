@@ -3,10 +3,19 @@ import pandas as pd
 import sys
 import datetime
 
-# MATH & TIME
+# MATH
 from math import sqrt
+from scipy import signal
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import TimeSeriesSplit 
+from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.metrics import r2_score, mean_squared_error, make_scorer
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
+from sklearn.base import BaseEstimator, TransformerMixin
+
+#TIME
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.formula.api import ols
@@ -20,7 +29,7 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tsa.stattools import adfuller, acf
 import pyramid
 from pmdarima.arima import auto_arima
-from scipy import signal
+
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -84,13 +93,7 @@ def shortened_timeline(df):
     syw = resamp_lag_ols(sdf)
     s_lagg_cost = create_lag(syw)
     solar_model_short = ols_table(s_lagg_cost)
-    return syw
-    return s_lagg_cost 
-
-#     rolling_plot(syw)
-#     plt.show()
-#     test_stationarity(syw)
-
+    return syw, s_lagg_cost 
 
 def series_and_lagged(series, lag=1):
     truncated = np.copy(series)[lag:]
@@ -98,10 +101,12 @@ def series_and_lagged(series, lag=1):
     return truncated, lagged
 
 
-    
-
 def format_list_of_floats(L):
     return ["{0:2.2f}".format(f) for f in L]
+
+
+
+
         
 # CORRELATION ______________________________________________
 
@@ -118,6 +123,7 @@ def get_differences(df):
         print('Achieved stationarity! Reject ADF H0.')
     else:
         print('Time Series is not stationary. Fail to reject ADF H0')
+    return weekly_differences
 
 def compute_autocorrelation(series, lag=1):
     series, lagged = series_and_lagged(series, lag=lag)
@@ -152,6 +158,8 @@ def plot_acf_and_pacf(df, axs):
     _ = plot_pacf(df, ax=axs[1]) #lags=lags)   
 
     
+    
+    
 # RESIDUALS  ______________________________________________
     
 def residual_plot(ax, x, y, y_hat, n_bins=50):
@@ -182,7 +190,7 @@ def linear_model_trend(df):
     ax.plot(df.index, df)
     ax.plot(df.index, linear_trend)
     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline")
-    return linear_trend
+    return linear_model ,linear_trend
     
 def lm_resids(df, linear_trend):    
     lm_residuals = pd.Series(df.cost_per_watt - linear_trend, index=df.index)
@@ -268,31 +276,6 @@ def arima_scores(res):
     print('plot diagnositcs :', res.plot_diagnostics())
 
     
-# actual = w_diff.cost_per_watt
-# forecast = pd.DataFrame(all_year_preds[1:])
-# forecast = forecast[0]
-# forecastt =  forecast.loc[forecast.index < '2019-01-07']
-
-def forecast_accuracy(forecast, actual):
-    mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
-    me = np.mean(forecast - actual)             # ME
-    mae = np.mean(np.abs(forecast - actual))    # MAE
-    mpe = np.mean((forecast - actual)/actual)   # MPE
-    rmse = np.mean((forecast - actual)**2)**.5  # RMSE
-    corr = np.corrcoef(forecast, actual)[0,1]   # corr
-    #mins = np.amin(np.hstack([forecast[:,None], 
-                              #actual[:,None]]), axis=1)
-    #maxs = np.amax(np.hstack([forecast[:,None], 
-                              #actual[:,None]]), axis=1)
-    #minmax = 1 - np.mean(mins/maxs)             # minmax
-    #acf1 = acf(fc-test)[1]                      # ACF1
-    #return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
-            #'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
-            #'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
-    print('Mean Absolute Percentage Error:  ', mape, '\nMean Error:                      ',me, '\nMean Absolute Error :            ', mae, 
-            '\nMean Percentage Error:           ', mpe, '\nRoot Mean Squared Error :        ',rmse, #'Lag 1 Autocorrelation of Error':acf1, 
-            '\nCorrelation between the \nActual and the Forecast:         ',corr) #'Min-Max Error ':minmax})    
-    
 def auto_regressive_process(size, coefs, init=None):
     """Generate an autoregressive process with Gaussian white noise.  The
     implementation is taken from here:
@@ -334,11 +317,13 @@ def see_fitted(df, target):
     plt.title('RSS: %.4f'% sum((yt_res.fittedvalues - target)**2))
 
     
+    
 
 # OTHER MODELS  ______________________________________________
-def random_forest_model():
-    X = add_constant(np.arange(1, len(syw) + 1))
-    y = syw
+#df = syw
+def random_forest_model(df):
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
     rf = RandomForestRegressor(oob_score=True,n_jobs=-1)
     rf.fit(X,y)
 
@@ -348,14 +333,31 @@ def random_forest_model():
     rf_predict = rf.predict(X)
     mse = mean_squared_error(y,rf_predict)
     print('MSE: {}'.format(mse))
+    
+    thePipe = Pipeline([('RFR', RandomForestRegressor())])
+    thePipe.get_params()
+    # Specify the hyperparameter space.
+    num_estimators_space = np.array(range(5, 25, 5))
+    max_depth_space = np.array(range(5, 25, 5))
+    # Create the hyperparameter grid.
+    param_grid = {'RFR__n_estimators': num_estimators_space,
+              'RFR__max_depth': max_depth_space}
 
-def rms_score(df, model_type):
-    '''
-    calculate RMSE to check to accuracy of model on data set
-    model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
-    '''
-    rms = sqrt(mean_squared_error(df.Count, y_hat.model_type))
-    return rms
+    # Create train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Create the GridSearchCV object: gm_cv
+    gs_cv = GridSearchCV(thePipe, param_grid, cv=3, return_train_score=True, verbose=2)
+
+    # Fit to the training set
+    gs_cv.fit(X_train, y_train)
+    
+    # Compute and print the metrics
+    theR2 = gs_cv.score(X_test, y_test)
+    print("Best parameters: {}".format(gs_cv.best_params_))
+    print("test R squared: {}".format(theR2))    
+    return gs_cv.cv_results_
+
 
 def moving_avg_model(df):
     y_hat_avg = df.copy()
@@ -451,3 +453,44 @@ def plotCoefficients(model):
     plt.grid(True, axis='y')
     plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
     
+   
+
+# SCORE  ______________________________________________                        
+                        
+def RMSE(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))                        
+                        
+                        
+def rms_score(df, model_type):
+    '''
+    calculate RMSE to check to accuracy of model on data set
+    model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
+    '''
+    rms = sqrt(mean_squared_error(df.Count, y_hat.model_type))
+    return rms
+                        
+                        
+# actual = w_diff.cost_per_watt
+# forecast = pd.DataFrame(all_year_preds[1:])
+# forecast = forecast[0]
+# forecastt =  forecast.loc[forecast.index < '2019-01-07']
+
+def forecast_accuracy(forecast, actual):
+    mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
+    me = np.mean(forecast - actual)             # ME
+    mae = np.mean(np.abs(forecast - actual))    # MAE
+    mpe = np.mean((forecast - actual)/actual)   # MPE
+    rmse = np.mean((forecast - actual)**2)**.5  # RMSE
+    corr = np.corrcoef(forecast, actual)[0,1]   # corr
+    #mins = np.amin(np.hstack([forecast[:,None], 
+                              #actual[:,None]]), axis=1)
+    #maxs = np.amax(np.hstack([forecast[:,None], 
+                              #actual[:,None]]), axis=1)
+    #minmax = 1 - np.mean(mins/maxs)             # minmax
+    #acf1 = acf(fc-test)[1]                      # ACF1
+    #return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
+            #'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
+            #'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
+    print('Mean Absolute Percentage Error:  ', mape, '\nMean Error:                      ',me, '\nMean Absolute Error :            ', mae, 
+            '\nMean Percentage Error:           ', mpe, '\nRoot Mean Squared Error :        ',rmse, #'Lag 1 Autocorrelation of Error':acf1, 
+            '\nCorrelation between the \nActual and the Forecast:         ',corr) #'Min-Max Error ':minmax})    
