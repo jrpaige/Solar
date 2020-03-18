@@ -3,6 +3,11 @@ import pandas as pd
 import cpi
 import sys
 import matplotlib.pyplot as plt
+from pytictoc import TicToc
+t = TicToc()
+
+t.tic()
+t.toc()
 
 file_path_1 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p1.csv'
 file_path_2 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p2.csv'
@@ -10,19 +15,22 @@ file_path_2 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p2.csv'
 def prep():
     
     print("1 of 11 |    Reading in first dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
+    t.tic()
     dfMod1 = pd.read_csv(file_path_1,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
                     usecols=['Installation Date', 'System Size','Total Installed Price' , 'Customer Segment'], 
                     na_values=(-9999, '-9999'))
+    t.toc()
 
     print("2 of 11 |    Reading in second dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
+    t.tic()
     dfMod2 = pd.read_csv(file_path_2,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
                     usecols=['Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment'], 
                     na_values=(-9999, '-9999'))
-    
+    t.toc()
     print('3 of 11 |    Concatenating datasets together')
     # concat together  
     dfMod = pd.concat([dfMod1,dfMod2], ignore_index=True)
@@ -58,11 +66,12 @@ def prep():
                                         inplace=True) for i in range(1998,2019)] 
     
     print('9 of 11 |    Adusting prices for inflation')
+    t.tic()
     #adjust all prices to reflect inflation of the current year(2019)
     #The adjustment is made using data provided by The Bureau of Labor Statistics at the U.S. Department of Labor.
     df['date'] = df.index.date
     df['adj_installed_price'] = round(df.apply(lambda x: cpi.inflate(x.total_installed_price, x.date), axis=1),2)
-    
+    t.toc()
 
     print('10 of 11|    Creating target variable: cost_per_watt')
     # create target variable, cost_per_watt 

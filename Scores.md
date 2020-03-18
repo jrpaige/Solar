@@ -45,69 +45,65 @@ Actual and the Forecast:          0.6710069749690127
     
     
     
-    
+https://machinelearningmastery.com/time-series-forecasting-performance-measures-with-python/
  _____________________________       
     
 <b>Forecast Error (or Residual Forecast Error) </b>
     forecast_error = expected_value - predicted_value
-    
-    IN
+
     expected = [0.0, 0.5, 0.0, 0.5, 0.0]
     predictions = [0.2, 0.4, 0.1, 0.6, 0.2]
     forecast_errors = [expected[i]-predictions[i] for i in range(len(expected))]
     print('Forecast Errors: %s' % forecast_errors)
     
-    OUT
-    Forecast Errors: [-0.2, 0.09999999999999998, -0.1, -0.09999999999999998, -0.2]   
-    <i>The # of units of the forecast error are the same as the # of units of the prediction. 
-    A forecast error of zero indicates no error, or perfect skill for that forecast.</i>
-    
 _____________________________    
     
 <b>Mean Forecast Error (or Forecast Bias)</b>
     mean_forecast_error = mean(forecast_error)
-    
-    IN
+
     expected = [0.0, 0.5, 0.0, 0.5, 0.0]
     predictions = [0.2, 0.4, 0.1, 0.6, 0.2]
     forecast_errors = [expected[i]-predictions[i] for i in range(len(expected))]
     bias = sum(forecast_errors) * 1.0/len(expected)
     print('Bias: %f' % bias)
     
-    OUT
-    bias #
-    <i>If the result is negative, it means that we have over forecast.</i>
-    
 _____________________________        
     
 <b>Mean Absolute Error</b>    
     mean_absolute_error = mean( abs(forecast_error) )
     
-    IN
     from sklearn.metrics import mean_absolute_error
     expected = [0.0, 0.5, 0.0, 0.5, 0.0]
     predictions = [0.2, 0.4, 0.1, 0.6, 0.2]
     mae = mean_absolute_error(expected, predictions)
     print('MAE: %f' % mae)
     
-    OUT 
-    MAE 
-    <i> A mean absolute error of zero indicates no error.</i>
 _____________________________        
     
     
-    
 <b> Mean Squared Error</b>
-    
-mean_squared_error = mean(forecast_error^2)
-    IN    
+    mean_squared_error = mean(forecast_error^2)
+       
     from sklearn.metrics import mean_squared_error
     expected = [0.0, 0.5, 0.0, 0.5, 0.0]
     predictions = [0.2, 0.4, 0.1, 0.6, 0.2]
     mse = mean_squared_error(expected, predictions)
     print('MSE: %f' % mse)
-
-    OUT
-    MSE 
-    <i>  A mean squared error of zero indicates perfect skill, or no error.</i>
+    
+_____________________________        
+    
+    
+    
+<b>Root Mean Squared Error</b>
+    rmse = sqrt(mean_squared_error)
+    
+    from sklearn.metrics import mean_squared_error
+    from math import sqrt
+    expected = [0.0, 0.5, 0.0, 0.5, 0.0]
+    predictions = [0.2, 0.4, 0.1, 0.6, 0.2]
+    mse = mean_squared_error(expected, predictions)
+    rmse = sqrt(mse)
+    print('RMSE: %f' % rmse)
+    
+_____________________________        
     

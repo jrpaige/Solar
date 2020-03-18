@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import r2_score, mean_squared_error, make_scorer
+from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -30,22 +30,34 @@ from statsmodels.tsa.stattools import adfuller, acf
 import pyramid
 from pmdarima.arima import auto_arima
 
-
 #VISUALIZATION 
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
 
-# TS PREP ______________________________________________
 
+
+
+# === TS PREP =========================================
+def time_frame(df):
+    '''
+    removes the volatile data points in the beginning. 
+    df is now only data beginning 1/1/2002
+    returns: 
+        y : shortened timeline to remove volatility in the beginning 
+            of the data and resamples the data weekly by median
+    '''
+    sdf = df.loc[df.index.date > datetime.date(2001,12,31)]
+    y = pd.DataFrame(sdf.cost_per_watt)
+    y = pd.DataFrame(y['cost_per_watt'].resample('W').median())
+    return y
 
 def rolling_plot(df):
     ywn = pd.DataFrame(df.cost_per_watt).dropna()
     rollingmedian = ywn.rolling(window=3).median()
     rollingmean = ywn.rolling(window=3).mean()
     rollingstd = ywn.rolling(window=3).std() 
-    
     orig = plt.plot(df, color='blue',label='Original')
     mean = plt.plot(rollingmean, color='green', label='Rolling Mean')
     med = plt.plot(rollingmedian, color='red', label='Rolling Median')
@@ -55,7 +67,7 @@ def rolling_plot(df):
     plt.ylabel('Cost Per Watt $')
     plt.show()
         
-def test_stationarity(df):
+def dfuller_test(df):
     #Perform Dickey-Fuller test:
     print('Results of Dickey-Fuller Test:')
     dftest = adfuller(df, autolag='AIC')
@@ -64,52 +76,6 @@ def test_stationarity(df):
         dfoutput['Critical Value (%s)'%key] = value
     print(dfoutput)
     
-def log_ma(df):
-    ywn = pd.DataFrame(df.cost_per_watt).dropna()
-    rollingmedian = ywn.rolling(window=3).median()
-    rollingmean = ywn.rolling(window=3).mean()
-    ywn_log = np.log(ywn)
-    ywn_log_minus_MA = ywn_log - rollingmedian
-    return ywn_log_minus_MA
-
-
-def resamp_lag_ols(df):
-    y = pd.DataFrame(df.cost_per_watt)
-    yw = pd.DataFrame(y['cost_per_watt'].resample('W').median())
-    return yw
-
-def create_lag(df):
-    lagg_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
-    return lagg_cost
-
-def ols_table(lagg_cost):
-    solar_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lagg_cost).fit()
-    print(solar_model.summary())
-    return solar_model
-
-def shortened_timeline(df):
-    #remove the volitle data points in the beginning. showing only data beginning 1/1/2002
-    sdf = df.loc[df.index.date > datetime.date(2001,12,31)]
-    syw = resamp_lag_ols(sdf)
-    s_lagg_cost = create_lag(syw)
-    solar_model_short = ols_table(s_lagg_cost)
-    return syw, s_lagg_cost 
-
-def series_and_lagged(series, lag=1):
-    truncated = np.copy(series)[lag:]
-    lagged = np.copy(series)[:(len(truncated))]
-    return truncated, lagged
-
-
-def format_list_of_floats(L):
-    return ["{0:2.2f}".format(f) for f in L]
-
-
-
-
-        
-# CORRELATION ______________________________________________
-
 def get_differences(df):
     weekly_differences = df.diff(periods=1)
     fig, axs = plt.subplots(3, figsize=(16, 8))
@@ -117,50 +83,79 @@ def get_differences(df):
     # The first entry in the differenced series is NaN.
     plot_acf_and_pacf(weekly_differences[1:], axs[1:])
     plt.tight_layout()
-    test = sm.tsa.stattools.adfuller(weekly_differences[1:])
+    return weekly_differences
+
+def test_for_stationarity(df):  
+    '''
+    should pass in weekly_differences
+    '''
+    test = sm.tsa.stattools.adfuller(df[1:])
     print("ADF p-value: {0:2.2f}".format(test[1]))
     if test[1] < 0.51:
         print('Achieved stationarity! Reject ADF H0.')
     else:
         print('Time Series is not stationary. Fail to reject ADF H0')
-    return weekly_differences
 
-def compute_autocorrelation(series, lag=1):
-    series, lagged = series_and_lagged(series, lag=lag)
-    return np.corrcoef(series, lagged)[0, 1]
+#def format_list_of_floats():
+    #return ["{0:2.2f}".format(f) for f in L]
 
-#df = w_diff
-def plot_ac_scat(df):
-    fig, axs = plt.subplots(3, 3, figsize=(8, 8))
-
-    lags = [1,2,3,4,5,6,7,8,52]
-
-    for i, ax in zip(lags,axs.flatten()):
-        series, lagged = series_and_lagged(df, lag=i)
-        autocorr = compute_autocorrelation(df, lag=i)
-        ax.scatter(series, lagged, alpha=0.5)
-        ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
-
-    plt.tight_layout()
-
-    
-def box_jenkins_plot(df):
-    fig, axs = plt.subplots(2, figsize=(16, 6))
-    plot_acf_and_pacf(df, axs)
-    plt.tight_layout()
-    plt.show()
-
+        
+# === CORRELATION =========================================
+   
 def plot_acf_and_pacf(df, axs):
-    """Plot the autocorrelation and partial autocorrelation plots of a series
+    """
+    *** For use in get_differences function***
+    Plot the autocorrelation and partial autocorrelation plots of a series
     on a pair of axies.
     """
     _ = plot_acf(df, ax=axs[0]) #lags=lags)
-    _ = plot_pacf(df, ax=axs[1]) #lags=lags)   
+    _ = plot_pacf(df, ax=axs[1]) #lags=lags)       
+        
+def series_lag(series, lag=1):
+    '''
+    ***For use within plot_ac_scat function***
+    '''
+    truncated = np.copy(series)[lag:]
+    lagged = np.copy(series)[:(len(truncated))]
+    return truncated, lagged
+
+def compute_autocorrelation(series, lag=1):
+    '''
+    ***for use within plot_ac_scat function***
+    '''
+    series, lagged = series_lag(series, lag=lag)
+    autocorr = np.corrcoef(series, lagged)[0, 1]
+    return autocorr 
+
+def plot_ac_scat(df):
+    '''
+    use weekly differences array
+    '''
+    fig, axs = plt.subplots(3, 3, figsize=(8, 8))
+
+    lags = [1,2,3,4,5,6,7,26,52]
+
+    for i, ax in zip(lags,axs.flatten()):
+        series, lagged = series_lag(df, lag=i)
+        autocorr = compute_autocorrelation(df, lag=i)
+        ax.scatter(series, lagged, alpha=0.5)
+        ax.set_title("Lag {0}".format(i))
+        #ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
+
+    plt.tight_layout()
+    
+def cov_table(df):
+    '''
+    Estimate a covariance matrix
+    Can Enter in lag_cost from ols
+    '''
+    plt.figure(figsize=(20,12))
+    plt.plot(np.cov(df))
+    plt.show()
+    return np.cov(df)
 
     
-    
-    
-# RESIDUALS  ______________________________________________
+# === RESIDUALS =========================================
     
 def residual_plot(ax, x, y, y_hat, n_bins=50):
     residuals = y_hat - y
@@ -178,46 +173,30 @@ def plot_many_residuals(df, var_names, y_hat, n_bins=50):
     return fig, axs
 
 
-
-
-# LINEAR  ______________________________________________
-def linear_model_trend(df):
-    X = add_constant(np.arange(1, len(df) + 1))
-    y = df
-    linear_model = sm.OLS(y, X).fit()
-    linear_trend = linear_model.predict(X)
-    fig, ax = plt.subplots(1, figsize=(16, 3))
-    ax.plot(df.index, df)
-    ax.plot(df.index, linear_trend)
-    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline")
-    return linear_model ,linear_trend
     
-def lm_resids(df, linear_trend):    
-    lm_residuals = pd.Series(df.cost_per_watt - linear_trend, index=df.index)
-    fig, axs = plt.subplots(3, figsize=(16, 8))
-    # The model predicts zero for the first few datapoints, so the residuals
-    # are the actual values.
-    axs[0].plot(lm_residuals.index, lm_residuals)
-    plot_acf_and_pacf(lm_residuals, axs[1:])
-    plt.tight_layout()
+# === COEFFICIENTS =========================================
+def plotCoefficients(model):
+    """
+        Plots sorted coefficient values of the model
+    """
+    
+    coefs = pd.DataFrame(model.coef_, X_train.columns)
+    coefs.columns = ["coef"]
+    coefs["abs"] = coefs.coef.apply(np.abs)
+    coefs = coefs.sort_values(by="abs", ascending=False).drop(["abs"], axis=1)
+    
+    plt.figure(figsize=(15, 7))
+    coefs.coef.plot(kind='bar')
+    plt.grid(True, axis='y')
+    plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
+    
 
-def lm_residual_model(lm_residuals):
-    lm_residual_model = ARIMA(
-    lm_residuals, order=( )).fit()
-    
-def lm_preds(df): 
-    X = np.column_stack([df,
-                     add_constant(np.arange(1, len(df) + 1))])
-    lm_preds = pd.Series(
-    linear_model.predict(X),
-    index=df.index) 
-    #lm_preds= lm_preds[arima_preds.index.min():]
-    
+def model_coefs_params(model_list):
+    [print('Params for {} \n {}'.format(i, i.params)) for i in model_list]
 
     
     
-# ARIMA ______________________________________________
-
+# === ARIMA =========================================
 #may add disp=-1 into .fit()
 def arima_model(df):
     y_hat_avg = df.copy()
@@ -318,22 +297,120 @@ def see_fitted(df, target):
 
     
     
+# === REGRESSION MODELS =========================================
+def lag_ols(df):    
+    '''
+    creates lag table
+    Takes lag table through OLS 
+    returns:
+        ols_model: ols table of 3 lagged colummns
+        prints solar_model summary table
+        ols_y: df of fitted values
+    Try using ols_model.summary afterward
+    '''
+    lag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost).fit()    
+    ols_y = pd.DataFrame(ols_model.fittedvalues)
+    ols_y.rename(columns={0:'cost_per_watt'}, inplace=True)
+    return ols_model, ols_y
 
-# OTHER MODELS  ______________________________________________
-#df = syw
+def linear_model_trend(df):
+    '''
+    creates X & y
+    plots linear regression line
+    returns: linear_model ,linear_trend
+    '''
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
+    linear_model = sm.OLS(y, X).fit()
+    linear_trend = linear_model.predict(X)
+#     fig, ax = plt.subplots(1, figsize=(16, 3))
+#     ax.plot(df.index, df)
+#     ax.plot(df.index, linear_trend)
+#     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline")
+    return linear_model ,linear_trend
+
 def random_forest_model(df):
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
     rf = RandomForestRegressor(oob_score=True,n_jobs=-1)
     rf.fit(X,y)
+#     print('OOB Score: {}'.format(rf.oob_score_))
+#     print('r2 score on test: {}'.format(rf.score(X,y)))
+    rf_trend = rf.predict(X)
+    rfmse = mean_squared_error(y,rf_predict)
+    return rf,rf_trend
 
-    print('OOB Score: {}'.format(rf.oob_score_))
-    print('r2 score on test: {}'.format(rf.score(X,y)))
+def score_table(df, ols_model, linear_model, rf):
+    rf_trend = rf.predict(add_constant(np.arange(1,len(df)+ 1)))
+    models = ['OLS', 'LINEAR', 'RF']
+    scores = pd.DataFrame(models)
+    scores.rename(columns={0:'Models'}, inplace=True)
+    scores.set_index('Models', drop=True, inplace= True)
+    scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
+    scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
+    scores['RMSE'] = [np.sqrt(scores.MSE[0]), np.sqrt(scores.MSE[1]), np.sqrt(scores.MSE[2])]
+    return scores
+        
+def statationary_test_on_models():
+    ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
+    model_list = [ols_df, lin_df, rf_df]
+    print('p-value of original data (ols, linear,rf)')
+    [print((adfuller(i, autolag='AIC')[1]))for i in model_list]
+    print('-------')
+    print('p-value of differenced data(ols, linear,rf)')
+    [print(adfuller(i.diff(periods=1).dropna(), autolag='AIC')[1]) for i in model_list]
 
-    rf_predict = rf.predict(X)
-    mse = mean_squared_error(y,rf_predict)
-    print('MSE: {}'.format(mse))
     
+    
+    
+# LINEAR  ___
+def lm_resids(df, linear_trend):    
+    '''
+    takes in df and linear trend
+    
+    '''
+    lm_residuals = pd.Series(df.cost_per_watt - linear_trend, index=df.index)
+    fig, axs = plt.subplots(3, figsize=(16, 8))
+    # The model predicts zero for the first few datapoints, so the residuals
+    # are the actual values.
+    axs[0].plot(lm_residuals.index, lm_residuals)
+    plot_acf_and_pacf(lm_residuals, axs[1:])
+    plt.tight_layout()
+
+def lm_residual_model(lm_residuals):
+    lm_residual_model = ARIMA(
+    lm_residuals, order=( )).fit()
+
+def lm_preds(df): 
+    X = np.column_stack([df,
+                     add_constant(np.arange(1, len(df) + 1))])
+    lm_preds = pd.Series(
+    linear_model.predict(X),
+    index=df.index) 
+    #lm_preds= lm_preds[arima_preds.index.min():]
+    
+def holt_linear_model(df):
+    y_hat_avg = df.copy()
+    fit1 = Holt(np.asarray(df['cost_per_watt'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
+    y_hat_avg['Holt_linear'] = fit1.forecast(len(test))
+    plt.figure(figsize=(16,8))
+    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
+    plt.plot(y_hat_avg['Holt_linear'], label='Holt_linear')
+    plt.legend(loc='best')
+    plt.show()
+    model_type = 'Holt_linear'
+    print('RMS Score:',  rms_score(df, model_type))
+    rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
+    return rms
+    
+    
+# RF ___
+def rf_gs():    
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
+    rf = RandomForestRegressor(oob_score=True,n_jobs=-1)
+    rf.fit(X,y)
     thePipe = Pipeline([('RFR', RandomForestRegressor())])
     thePipe.get_params()
     # Specify the hyperparameter space.
@@ -358,7 +435,7 @@ def random_forest_model(df):
     print("test R squared: {}".format(theR2))    
     return gs_cv.cv_results_
 
-
+# MOVING AVG __ 
 def moving_avg_model(df):
     y_hat_avg = df.copy()
     y_hat_avg['moving_avg_forecast'] = df['cost_per_watt'].rolling(3).median().iloc[-1]
@@ -368,20 +445,11 @@ def moving_avg_model(df):
     plt.legend(loc='best')
     plt.show()
     model_type = 'moving_avg_forecast'
-    print('RMS Score:', rms_score(df, model_type))
+    print('RMS Score:', np.sqrt(mean_squared_error(df, model_type)))
     
-def holt_linear_model(df):
-    y_hat_avg = df.copy()
-    fit1 = Holt(np.asarray(df['cost_per_watt'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
-    y_hat_avg['Holt_linear'] = fit1.forecast(len(test))
-    plt.figure(figsize=(16,8))
-    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
-    plt.plot(y_hat_avg['Holt_linear'], label='Holt_linear')
-    plt.legend(loc='best')
-    plt.show()
-    model_type = 'Holt_linear'
-    print('RMS Score:',  rms_score(df, model_type))
-
+    
+    
+    
 num = 3    
 tscv = TimeSeriesSplit(n_splits=num)
 
@@ -438,38 +506,21 @@ def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalie
     plt.tight_layout()
     plt.grid(True);
     
-def plotCoefficients(model):
-    """
-        Plots sorted coefficient values of the model
-    """
-    
-    coefs = pd.DataFrame(model.coef_, X_train.columns)
-    coefs.columns = ["coef"]
-    coefs["abs"] = coefs.coef.apply(np.abs)
-    coefs = coefs.sort_values(by="abs", ascending=False).drop(["abs"], axis=1)
-    
-    plt.figure(figsize=(15, 7))
-    coefs.coef.plot(kind='bar')
-    plt.grid(True, axis='y')
-    plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
-    
+
    
 
 # SCORE  ______________________________________________                        
                         
 def RMSE(y_true, y_pred):
-    return np.sqrt(mean_squared_error(y_true, y_pred))                        
+    return np.sqrt(mean_squared_error(y_true, y_pred))                                   
                         
-                        
-def rms_score(df, model_type):
-    '''
-    calculate RMSE to check to accuracy of model on data set
-    model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
-    '''
-    rms = sqrt(mean_squared_error(df.Count, y_hat.model_type))
-    return rms
-                        
-                        
+# def rms_score(df, model_type):
+#     '''
+#     calculate RMSE to check to accuracy of model on data set
+#     model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
+#     '''
+#     #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
+#     #return rms                     
 # actual = w_diff.cost_per_watt
 # forecast = pd.DataFrame(all_year_preds[1:])
 # forecast = forecast[0]
