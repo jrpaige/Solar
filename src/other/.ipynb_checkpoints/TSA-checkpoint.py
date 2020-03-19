@@ -68,7 +68,6 @@ from sklearn.metrics import make_scorer, r2_score, mean_absolute_error, mean_squ
 
 
 def precision(data,predict,origin):
-    Rsquared = r2_score(data[origin],data[predict]).round(2)
     MAE = mean_absolute_error(data[origin],data[predict]).round(2)
     MSE = mean_squared_error(data[origin],data[predict]).round(2)
     RMSE = np.sqrt(mean_squared_error(data[origin],data[predict])).round(2)
@@ -205,4 +204,153 @@ def plot_ac_scat(df):
 #        ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
 
     plt.tight_layout()
+    
+    
+    
+    
+    
+    
+    
+# ============= UNUSED TAKEN FROM TIME SERIES HELPER FUNCS 
+
+
+    
+#df = weekly_differences
+def arima_coefs(df):
+    mod = ARIMA(weekly_differences[1:], order=auto_arima(df[1:]).order)
+    res = mod.fit()
+    print("ARIMA(2, 0, 4) coefficients from model:\n  Intercept {0:2.2f}\n  AR {1}".format(
+    res.params[0], 
+        format_list_of_floats(list(res.params[1:]))))
+    
+#start_date_str = '2019-01-06'   
+def arima_preds(df, start_date_str):
+    arima_preds = lm_residual_model.predict(df.index.max(), pd.to_datetime(start_date_str).tz_localize('UTC'), dynamic=True)
+    return arima_preds    
+
+def arima_res_ind(res):
+    print('Variance/Covariance Matrix', ARIMAResults.cov_params(res))
+
+#52 steps
+#start = '2018-12-09', end= '2020'
+def arima_forecast_predict_plot(res, steps, start_date_str, end_date_str):
+    print('ARIMA forecast') 
+    ARIMAResults.forecast(res, steps =steps,).plot()
+    plt.title('ARIMA forecast for {} steps'.format(steps))
+    plt.show()
+    
+    print('ARIMA forecast')
+    ARIMAResults.predict(res,start = start_date_str, end= end_date_str, dynamic=True).plot()
+    plt.show()
+    
+    
+    
+def auto_regressive_process(size, coefs, init=None):
+    """Generate an autoregressive process with Gaussian white noise.  The
+    implementation is taken from here:
+    
+      http://numpy-discussion.10968.n7.nabble.com/simulate-AR-td8236.html
+      
+    Exaclty how lfilter works here takes some pen and paper effort.
+    """
+    coefs = np.asarray(coefs)
+    if init == None:
+        init = np.array([0]*len(coef))
+    else:
+        init = np.asarray(init)
+    init = np.append(init, np.random.normal(size=(size - len(init))))
+    assert(len(init) == size)
+    a = np.append(np.array([1]), -coefs)
+    b = np.array([1])
+    return pd.Series(signal.lfilter(b, a, init))
+
+#start = '2018-12-09', end= '2020'
+# start = '2016-01-03'
+def see_preds_plot(res, start_date_str, end_date_str):
+    pred = res.predict(start = start_date_str, end= end_date_str)
+    all_year_preds = res.predict(end = end_date_str)
+    last_four_preds = res.predict(start= start_date_str, end= end_date_str)
+    plt.figure(figsize=(16,8))
+    plt.plot(res.predict(), label='Full Forecast')
+    plt.plot(w_diff, label='Weekly_Differences')
+    plt.plot(pred, label = 'Future Forecast')
+    plt.plot(preds, label= 'Forecast for 2016 -2020')
+    #plt.plot(syw, label = 'Full Data')
+    plt.legend(loc='best')
+    plt.show()
+
+#target = weekly_differences['cost_per_watt']
+def see_fitted(df, target):
+    plt.plot(df)
+    plt.plot(yt_res.fittedvalues, color='red')
+    plt.title('RSS: %.4f'% sum((yt_res.fittedvalues - target)**2))
+    
+# MOVING AVG __ 
+def moving_avg_model(df):
+    y_hat_avg = df.copy()
+    y_hat_avg['moving_avg_forecast'] = df['cost_per_watt'].rolling(3).median().iloc[-1]
+    plt.figure(figsize=(16,8))
+    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
+    plt.plot(y_hat_avg['moving_avg_forecast'], label='Moving Average Forecast')
+    plt.legend(loc='best')
+    plt.show()
+    model_type = 'moving_avg_forecast'
+    print('RMS Score:', np.sqrt(mean_squared_error(df, model_type)))
+    
+    
+    
+    num = 3    
+tscv = TimeSeriesSplit(n_splits=num)
+
+def timeseries_train_test_split(X, y, test_size):
+    """
+        Perform train-test split with respect to time series structure
+    """
+    
+    # get the index after which test set starts
+    test_index = int(len(X)*(1-test_size))
+    
+    X_train = X.iloc[:test_index]
+    y_train = y.iloc[:test_index]
+    X_test = X.iloc[test_index:]
+    y_test = y.iloc[test_index:]
+    
+    return X_train, X_test, y_train, y_test
+
+
+def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalies=False, scale=1.96):
+    """
+    Plots modeled vs fact values, forecast intervals and anomalies
+    
+    """
+    
+    forcst = model.predict(X_test)
+    plt.figure(figsize=(15, 7))
+    plt.plot(forcst, "g", label="forecast", linewidth=2.0)
+    plt.plot(y_test.values, label="actual", linewidth=2.0)
+    
+    if plot_intervals:
+        cv = cross_val_score(model, X_train, y_train, 
+                                    cv=tscv, 
+                                    scoring="neg_mean_squared_error")
+        #mae = cv.mean() * (-1)
+        deviation = np.sqrt(cv.std())
+        
+        lower = forcst - (scale * deviation)
+        upper = forcst + (scale * deviation)
+        
+        plt.plot(lower, "r--", label="upper bond / lower bond", alpha=0.5)
+        plt.plot(upper, "r--", alpha=0.5)
+        
+        if plot_anomalies:
+            anomalies = np.array([np.NaN]*len(y_test))
+            anomalies[y_test<lower] = y_test[y_test<lower]
+            anomalies[y_test>upper] = y_test[y_test>upper]
+            plt.plot(anomalies, "o", markersize=10, label = "Anomalies")
+    
+    error = mean_absolute_percentage_error(forecast, y_test)
+    print("Mean absolute percentage error", error)
+    plt.legend(loc="best")
+    plt.tight_layout()
+    plt.grid(True);
     

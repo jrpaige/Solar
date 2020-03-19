@@ -139,27 +139,7 @@ def plot_ac_scat(df):
         ax.scatter(series, lagged, alpha=0.5)
         ax.set_title("Lag {0}".format(i))
         #ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
-
-    plt.tight_layout()
-
-    
-# === RESIDUALS =========================================
-    
-def residual_plot(ax, x, y, y_hat, n_bins=50):
-    residuals = y_hat - y
-    ax.axhline(0, color="black", linestyle="--")
-    ax.scatter(x, residuals, color="grey", alpha=0.5)
-    ax.set_ylabel("Residuals ($\hat y - y$)")
-
-def plot_many_residuals(df, var_names, y_hat, n_bins=50):
-    fig, axs = plt.subplots(len(var_names), figsize=(12, 3*len(var_names)))
-    for ax, name in zip(axs, var_names):
-        x = df[name]
-        residual_plot(ax, x, df['cost_per_watt'], y_hat)
-        ax.set_xlabel(name)
-        ax.set_title("Model Residuals by {}".format(name))
-    return fig, axs
-
+        plt.tight_layout()
 
     
 # === COEFFICIENTS =========================================
@@ -197,14 +177,28 @@ def precision(data,forecast,origin):
     RMSE = np.sqrt(mean_squared_error(data[origin],data[forecast])).round(2)
     print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
     
+    
+def ARMA_model(df, begin_year):
+    '''
+    forecasts beginning from fcst_start through end of df
+    fcst_start - date time string index from df entered in date time string format "YYYY-MM-DD"
+    '''
+    trunc_df = df[1:]
+    trunc_df = df.loc[df.index.year <begin_year]   
+    mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
+    res1 = mod1.fit()
+    res.plot_predict(end=)
+    return res1
+        
+    
 def ARMA_plots(df):
     '''
     Plot + Confidence Interval + Model Summary
     Plot1 = ARMA forecasted data through 2030 based on data through end of 2016 using .plotpredict
     Plot2 = ARMA forecasted data through 2030 based on full data using .plotpredict
-    Plot3 = ARMA forecasted data through 2020 on full data
     df should be stationary, likely the differenced values.
     Prints confidence intervals and model summary of each ARMA model
+    returns models from each 
     '''
     ts_diff = df[1:] #remove the NaN
     first_14 = ts_diff.loc[ts_diff.index.year <2017]
@@ -218,6 +212,7 @@ def ARMA_plots(df):
     plt.show()
     print('Confidence Intervals for ARMA Forecast through 2030 on Data from 2002-2016', res1.conf_int())
     print(res1.summary())
+    return res1
   
     #Plot2
     mod2 = ARMA(ts_diff, order=(1,0), freq='W', )
@@ -227,25 +222,63 @@ def ARMA_plots(df):
     plt.show()
     print('Confidence Intervals for ARMA Forecast through 2030 on Full Data', res2.conf_int())
     print(res2.summary())
-    
-    #Plot3
-    mod3 = ARMA(ts_diff, order=(1,0), freq='W', )
-    res3 = mod3.fit()
-    plt.plot(res3.predict(end='2020'), alpha=0.5, color='blue', label='forecast')
-    plt.plot(ts_diff, color='red', alpha=0.5, label='cost_per_watt')
-    plt.title('ARMA Forecast through 2020 on Full Data')
-    plt.legend()
-    plt.show()
-    print('Confidence Intervals for ARMA Forecast through 2020 on Full Data', res3.conf_int())
-    print(res3.summary())
+    return res2
     
 # === ARIMA TIME SERIES MODEL=========================================
 
-
+# === ARIMA PARAMS
 def auto_arima_pdq(df):
     df = np.array(df)
     print('P, D, Q parameters to use in ARIMA model =', auto_arima(df[1:]).order)
     
+def evaluate_arima_model(X, arima_order):
+    '''
+    Splits data into training/test
+    Pushes through ARIMA models
+    Obtains and returns MSE 
+    '''
+    # prepare training dataset
+    train_size = int(len(X) * 0.7)
+    train, test = X[0:train_size], X[train_size:]
+    history = [x for x in train]
+    # make predictions
+    predictions = list()
+    for t in range(len(test)):
+        model = ARIMA(history, order=arima_order)
+        model_fit = model.fit(disp=0)
+        yhat = model_fit.forecast()[0]
+        predictions.append(yhat)
+        history.append(test[t])
+    # calculate out of sample error
+    error = mean_squared_error(test, predictions)
+    return error
+    
+def evaluate_models(dataset, p_values, d_values, q_values):
+    '''
+    Uses various p,d,qs within below range
+    Tests out each combination 
+    Returns params with the best cfg + best MSE
+    use [evaluate_models(df.values.dropna(), p_values, d_values, q_values)]  
+    '''
+    p_values = [0, 1, 2, 4, 6, 8, 10]
+    d_values = range(0, 3)
+    q_values = range(0, 3)
+    best_score, best_cfg = float("inf"), None
+    for p in p_values:
+        for d in d_values:
+            for q in q_values:
+                order = (p,d,q)
+                try:
+                    mse = evaluate_arima_model(dataset, order)
+                    if mse < best_score:
+                        best_score, best_cfg = mse, order
+                    print('ARIMA%s MSE=%.3f' % (order,mse))
+                except:
+                    continue
+    print('Best ARIMA %s MSE=%.3f' % (best_cfg, best_score))
+
+
+# === ARIMA MODELS   
 def basic_arima_model(df):    
     mod = ARIMA(df[1:], order=auto_arima(df[1:]).order)
     res = mod.fit()
@@ -271,35 +304,6 @@ def arima_model_forecast(df):
     plt.show()
     print(' Mean Absolute Error =       {}\n Mean Squared Error =        {}\n Root Mean Squared Error =   {}'.format(round(mean_absolute_error(fit_preds,df[731:]),6), round(mean_squared_error(fit_preds,df[731:]),6), round(np.sqrt(mean_squared_error(fit_preds,df[731:]))),6))
     return fit1
-
-    
-#df = weekly_differences
-def arima_coefs(df):
-    mod = ARIMA(weekly_differences[1:], order=auto_arima(df[1:]).order)
-    res = mod.fit()
-    print("ARIMA(2, 0, 4) coefficients from model:\n  Intercept {0:2.2f}\n  AR {1}".format(
-    res.params[0], 
-        format_list_of_floats(list(res.params[1:]))))
-    
-#start_date_str = '2019-01-06'   
-def arima_preds(df, start_date_str):
-    arima_preds = lm_residual_model.predict(df.index.max(), pd.to_datetime(start_date_str).tz_localize('UTC'), dynamic=True)
-    return arima_preds    
-
-def arima_res_ind(res):
-    print('Variance/Covariance Matrix', ARIMAResults.cov_params(res))
-
-#52 steps
-#start = '2018-12-09', end= '2020'
-def arima_forecast_predict_plot(res, steps, start_date_str, end_date_str):
-    print('ARIMA forecast') 
-    ARIMAResults.forecast(res, steps =steps,).plot()
-    plt.title('ARIMA forecast for {} steps'.format(steps))
-    plt.show()
-    
-    print('ARIMA forecast')
-    ARIMAResults.predict(res,start = start_date_str, end= end_date_str, dynamic=True).plot()
-    plt.show()
     
 def arima_scores(res):
     print('standard errors :',res.bse)
@@ -310,115 +314,6 @@ def arima_scores(res):
     print('----------')
     print('plot diagnositcs :', res.plot_diagnostics())
 
-    
-def auto_regressive_process(size, coefs, init=None):
-    """Generate an autoregressive process with Gaussian white noise.  The
-    implementation is taken from here:
-    
-      http://numpy-discussion.10968.n7.nabble.com/simulate-AR-td8236.html
-      
-    Exaclty how lfilter works here takes some pen and paper effort.
-    """
-    coefs = np.asarray(coefs)
-    if init == None:
-        init = np.array([0]*len(coef))
-    else:
-        init = np.asarray(init)
-    init = np.append(init, np.random.normal(size=(size - len(init))))
-    assert(len(init) == size)
-    a = np.append(np.array([1]), -coefs)
-    b = np.array([1])
-    return pd.Series(signal.lfilter(b, a, init))
-
-#start = '2018-12-09', end= '2020'
-# start = '2016-01-03'
-def see_preds_plot(res, start_date_str, end_date_str):
-    pred = res.predict(start = start_date_str, end= end_date_str)
-    all_year_preds = res.predict(end = end_date_str)
-    last_four_preds = res.predict(start= start_date_str, end= end_date_str)
-    plt.figure(figsize=(16,8))
-    plt.plot(res.predict(), label='Full Forecast')
-    plt.plot(w_diff, label='Weekly_Differences')
-    plt.plot(pred, label = 'Future Forecast')
-    plt.plot(preds, label= 'Forecast for 2016 -2020')
-    #plt.plot(syw, label = 'Full Data')
-    plt.legend(loc='best')
-    plt.show()
-
-#target = weekly_differences['cost_per_watt']
-def see_fitted(df, target):
-    plt.plot(df)
-    plt.plot(yt_res.fittedvalues, color='red')
-    plt.title('RSS: %.4f'% sum((yt_res.fittedvalues - target)**2))
-    
-# MOVING AVG __ 
-def moving_avg_model(df):
-    y_hat_avg = df.copy()
-    y_hat_avg['moving_avg_forecast'] = df['cost_per_watt'].rolling(3).median().iloc[-1]
-    plt.figure(figsize=(16,8))
-    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
-    plt.plot(y_hat_avg['moving_avg_forecast'], label='Moving Average Forecast')
-    plt.legend(loc='best')
-    plt.show()
-    model_type = 'moving_avg_forecast'
-    print('RMS Score:', np.sqrt(mean_squared_error(df, model_type)))
-    
-
-num = 3    
-tscv = TimeSeriesSplit(n_splits=num)
-
-def timeseries_train_test_split(X, y, test_size):
-    """
-        Perform train-test split with respect to time series structure
-    """
-    
-    # get the index after which test set starts
-    test_index = int(len(X)*(1-test_size))
-    
-    X_train = X.iloc[:test_index]
-    y_train = y.iloc[:test_index]
-    X_test = X.iloc[test_index:]
-    y_test = y.iloc[test_index:]
-    
-    return X_train, X_test, y_train, y_test
-
-
-def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalies=False, scale=1.96):
-    """
-    Plots modeled vs fact values, forecast intervals and anomalies
-    
-    """
-    
-    forcst = model.predict(X_test)
-    plt.figure(figsize=(15, 7))
-    plt.plot(forcst, "g", label="forecast", linewidth=2.0)
-    plt.plot(y_test.values, label="actual", linewidth=2.0)
-    
-    if plot_intervals:
-        cv = cross_val_score(model, X_train, y_train, 
-                                    cv=tscv, 
-                                    scoring="neg_mean_squared_error")
-        #mae = cv.mean() * (-1)
-        deviation = np.sqrt(cv.std())
-        
-        lower = forcst - (scale * deviation)
-        upper = forcst + (scale * deviation)
-        
-        plt.plot(lower, "r--", label="upper bond / lower bond", alpha=0.5)
-        plt.plot(upper, "r--", alpha=0.5)
-        
-        if plot_anomalies:
-            anomalies = np.array([np.NaN]*len(y_test))
-            anomalies[y_test<lower] = y_test[y_test<lower]
-            anomalies[y_test>upper] = y_test[y_test>upper]
-            plt.plot(anomalies, "o", markersize=10, label = "Anomalies")
-    
-    error = mean_absolute_percentage_error(forecast, y_test)
-    print("Mean absolute percentage error", error)
-    plt.legend(loc="best")
-    plt.tight_layout()
-    plt.grid(True);
-    
     
 # === VALIDATE/SCORE ===============================================  
  
@@ -519,6 +414,3 @@ def rms_score(df, model_type):
     return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
             'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
             'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
-
-def format_list_of_floats():
-    return ["{0:2.2f}".format(f) for f in L]
