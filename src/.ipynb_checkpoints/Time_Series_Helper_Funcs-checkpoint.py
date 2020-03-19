@@ -24,6 +24,7 @@ from statsmodels.tsa import stattools
 from statsmodels.tools.tools import add_constant
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
+from statsmodels.tsa.arima_model import ARMA
 from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.stats.diagnostic import acorr_ljungbox
@@ -38,9 +39,6 @@ import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
-
-
-
 
 # === TS PREP =========================================
 def time_frame(df):
@@ -107,9 +105,6 @@ def test_for_stationarity(df):
     else:
         print('Time Series is not stationary. Fail to reject ADF H0')
 
-#def format_list_of_floats():
-    #return ["{0:2.2f}".format(f) for f in L]
-
         
 # === CORRELATION =========================================
  
@@ -131,7 +126,9 @@ def compute_autocorrelation(series, lag=1):
 
 def plot_ac_scat(df):
     '''
+    plots autocorrelation scatter plot
     use weekly differences array
+    
     '''
     fig, axs = plt.subplots(3, 3, figsize=(8, 8))
 
@@ -145,16 +142,6 @@ def plot_ac_scat(df):
         #ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
 
     plt.tight_layout()
-    
-def cov_table(df):
-    '''
-    Estimate a covariance matrix
-    Can Enter in lag_cost from ols
-    '''
-    plt.figure(figsize=(20,12))
-    plt.plot(np.cov(df))
-    plt.show()
-    return np.cov(df)
 
     
 # === RESIDUALS =========================================
@@ -181,7 +168,6 @@ def plotCoefficients(model):
     """
         Plots sorted coefficient values of the model
     """
-    
     coefs = pd.DataFrame(model.coef_, X_train.columns)
     coefs.columns = ["coef"]
     coefs["abs"] = coefs.coef.apply(np.abs)
@@ -191,14 +177,70 @@ def plotCoefficients(model):
     coefs.coef.plot(kind='bar')
     plt.grid(True, axis='y')
     plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
-    
-
-def model_coefs_params(model_list):
-    [print('Params for {} \n {}'.format(i, i.params)) for i in model_list]
 
     
+# === SIMPLE TIME SERIES MODELS =========================================
+def simple_move(df): 
+    '''
+    Returns simple forecast based on shifted data of 1 week and 3 week lags
+    '''
+    forcst = pd.DataFrame(df.loc[df.index.year>2017])
+    forcst['cost_1weekago'] = df['cost_per_watt'].shift(1)
+    forcst['cost_3weeksago'] = df['cost_per_watt'].shift(3)
+    print(precision(forcst,'cost_1weekago','cost_per_watt'), precision(forcst,'cost_3weeksago','cost_per_watt'))
+
+def precision(data,forecast,origin):
+    '''
+    Returns MAE, MSE, and RMSE scoring for simple move model
+    '''
+    MAE = mean_absolute_error(data[origin],data[forecast]).round(2)
+    MSE = mean_squared_error(data[origin],data[forecast]).round(2)
+    RMSE = np.sqrt(mean_squared_error(data[origin],data[forecast])).round(2)
+    print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
     
-# === ARIMA =========================================
+def ARMA_plots(df):
+    '''
+    Plot + Confidence Interval + Model Summary
+    Plot1 = ARMA forecasted data through 2030 based on data through end of 2016 using .plotpredict
+    Plot2 = ARMA forecasted data through 2030 based on full data using .plotpredict
+    Plot3 = ARMA forecasted data through 2020 on full data
+    df should be stationary, likely the differenced values.
+    Prints confidence intervals and model summary of each ARMA model
+    '''
+    ts_diff = df[1:] #remove the NaN
+    first_14 = ts_diff.loc[ts_diff.index.year <2017]
+    last_few = ts_diff.loc[ts_diff.index.year >2016]
+    
+    #Plot1
+    mod1 = ARMA(first_14, order=(1,0), freq='W', )
+    res1 = mod1.fit()
+    res1.plot_predict(end='2030', alpha=0.5)
+    plt.title('ARMA Forecast through 2030 on Data from 2002-2016')
+    plt.show()
+    print('Confidence Intervals for ARMA Forecast through 2030 on Data from 2002-2016', res1.conf_int())
+    print(res1.summary())
+  
+    #Plot2
+    mod2 = ARMA(ts_diff, order=(1,0), freq='W', )
+    res2 = mod2.fit()
+    res2.plot_predict(end='2030', alpha=0.5)
+    plt.title('ARMA Forecast through 2030 on Full Data ')
+    plt.show()
+    print('Confidence Intervals for ARMA Forecast through 2030 on Full Data', res2.conf_int())
+    print(res2.summary())
+    
+    #Plot3
+    mod3 = ARMA(ts_diff, order=(1,0), freq='W', )
+    res3 = mod3.fit()
+    plt.plot(res3.predict(end='2020'), alpha=0.5, color='blue', label='forecast')
+    plt.plot(ts_diff, color='red', alpha=0.5, label='cost_per_watt')
+    plt.title('ARMA Forecast through 2020 on Full Data')
+    plt.legend()
+    plt.show()
+    print('Confidence Intervals for ARMA Forecast through 2020 on Full Data', res3.conf_int())
+    print(res3.summary())
+    
+# === ARIMA TIME SERIES MODEL=========================================
 #may add disp=-1 into .fit()
 def arima_model(df):
     y_hat_avg = df.copy()
@@ -243,7 +285,7 @@ def arima_forecast_predict_plot(res, steps, start_date_str, end_date_str):
     plt.title('ARIMA forecast for {} steps'.format(steps))
     plt.show()
     
-    print('ARIMA predict')
+    print('ARIMA forecast')
     ARIMAResults.predict(res,start = start_date_str, end= end_date_str, dynamic=True).plot()
     plt.show()
     
@@ -283,10 +325,10 @@ def see_preds_plot(res, start_date_str, end_date_str):
     all_year_preds = res.predict(end = end_date_str)
     last_four_preds = res.predict(start= start_date_str, end= end_date_str)
     plt.figure(figsize=(16,8))
-    plt.plot(res.predict(), label='Full Predictions')
+    plt.plot(res.predict(), label='Full Forecast')
     plt.plot(w_diff, label='Weekly_Differences')
-    plt.plot(pred, label = 'Future Predictions')
-    plt.plot(preds, label= 'Predictions from 2016 -2020')
+    plt.plot(pred, label = 'Future Forecast')
+    plt.plot(preds, label= 'Forecast for 2016 -2020')
     #plt.plot(syw, label = 'Full Data')
     plt.legend(loc='best')
     plt.show()
@@ -296,193 +338,7 @@ def see_fitted(df, target):
     plt.plot(df)
     plt.plot(yt_res.fittedvalues, color='red')
     plt.title('RSS: %.4f'% sum((yt_res.fittedvalues - target)**2))
-
     
-# === SIMPLE TIME MODEL =========================================
-def simple_move(df): 
-    predict = pd.DataFrame(df.loc[df.index.year>2017])
-    predict['cost_1weekago'] = df['cost_per_watt'].shift(1)
-    predict['cost_3weeksago'] = df['cost_per_watt'].shift(3)
-    print(precision(predict,'cost_1weekago','cost_per_watt'), precision(predict,'cost_3weeksago','cost_per_watt'))
-
-    from sklearn.metrics import make_scorer, mean_absolute_error, mean_squared_error
-def precision(data,predict,origin):
-    MAE = mean_absolute_error(data[origin],data[predict]).round(2)
-    MSE = mean_squared_error(data[origin],data[predict]).round(2)
-    RMSE = np.sqrt(mean_squared_error(data[origin],data[predict])).round(2)
-    print(predict,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')    
-    
-    
-# === REGRESSION MODELS =========================================
-def lag_ols(df):    
-    '''
-    creates lag table
-    Takes lag table through OLS 
-    returns:
-        ols_model: ols table of 3 lagged colummns
-        prints solar_model summary table
-        ols_y: df of fitted values
-    Try using ols_model.summary afterward
-    '''
-    lag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
-    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost).fit() 
-    ols_trend = ols_model.fittedvalues
-#     fig, ax = plt.subplots(1, figsize=(16, 3))
-#     ax.plot(df.index, df)
-#     ax.plot(df.index, ols_trend)
-#     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via OLS")
-    return ols_model, ols_trend
-
-def linear_model_trend(df):
-    '''
-    creates X & y
-    plots linear regression line
-    returns: linear_model ,linear_trend
-    '''
-    X = add_constant(np.arange(1, len(df) + 1))
-    y = df
-    linear_model = sm.OLS(y, X).fit()
-    linear_trend = linear_model.predict(X)
-#     fig, ax = plt.subplots(1, figsize=(16, 3))
-#     ax.plot(df.index, df)
-#     ax.plot(df.index, linear_trend)
-#     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline")
-    return linear_model ,linear_trend
-
-def random_forest_model(df):
-    X = add_constant(np.arange(1, len(df) + 1))
-    y = df
-    rf = RandomForestRegressor(oob_score=True,n_jobs=-1)
-    rf.fit(X,y)
-#     print('OOB Score: {}'.format(rf.oob_score_))
-#     print('r2 score on test: {}'.format(rf.score(X,y)))
-    rf_trend = rf.predict(X)
-    #rfmse = mean_squared_error(y,rf_trend)
-    return rf,rf_trend
-    
-def score_table(df, ols_model, linear_model, rf):
-    rf_trend = rf.predict(add_constant(np.arange(1,len(df)+ 1)))
-    models = ['OLS', 'LINEAR', 'RF',]
-    scores = pd.DataFrame(models)
-    scores.rename(columns={0:'Models'}, inplace=True)
-    scores.set_index('Models', drop=True, inplace= True)
-    scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
-    scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
-    scores['RMSE'] = [np.sqrt(scores.MSE[0]), np.sqrt(scores.MSE[1]), np.sqrt(scores.MSE[2])]
-    
-    ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
-    scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
-    return scores
-
-        
-# def stationary_test_on_models(ols_model, linear_model, rf_trend):
-#     ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
-#     model_list = [ols_df, lin_df, rf_df]
-#     print('p-value of original data (ols, linear,rf)')
-#     [print((adfuller(i, autolag='AIC')[1]))for i in model_list]
-#     print('-------')
-#     print('p-value of differenced data(ols, linear,rf)')
-#     [print(adfuller(i.diff(periods=1).dropna(), autolag='AIC')[1]) for i in model_list]
-
-    
-# OLS   
- # def rolling_ols(df):  #not helpful
-#     X = add_constant(np.arange(1, len(df) + 1))
-#     y = df
-#     rolols_model = RollingOLS(y, X, window=3).fit()
-#     #rolols_trend = rolols_model.predict(X)
-#     return rolols_model
-   
-# LINEAR  ___
-
-#robust linear
-# def rob_lin(df):
-#     X = add_constant(np.arange(1, len(df) + 1))
-#     y = df
-#     roblin_model = sm.RLM(y,X, ).fit()
-#     roblin_trend = roblin_model.predict()
-#     return roblin_model, roblin_trend 
- 
-def least_squares(df):
-    y = df
-    X = add_constant(np.arange(1, len(y) + 1))
-    lst_sq_mods = pd.DataFrame()
-    lst_sq_mods['OLS'] = sm.OLS(y, X).fit().predict(X)
-    lst_sq_mods['GLS'] = sm.GLS(y, X).fit().predict(X)
-    lst_sq_mods['avg'] = linear_plots.mean(axis=1)
-    lst_sq_mods['orig'] = np.array(y.cost_per_watt)
-    return lst_sq_mods
-
-def lm_resids(df, linear_trend):    
-    '''
-    takes in df and linear trend
-    
-    '''
-    lm_residuals = pd.Series(df.cost_per_watt - linear_trend, index=df.index)
-    fig, axs = plt.subplots(3, figsize=(16, 8))
-    # The model predicts zero for the first few datapoints, so the residuals
-    # are the actual values.
-    axs[0].plot(lm_residuals.index, lm_residuals)
-    plot_acf_and_pacf(lm_residuals, axs[1:])
-    plt.tight_layout()
-
-def lm_residual_model(lm_residuals):
-    lm_residual_model = ARIMA(
-    lm_residuals, order=( )).fit()
-
-def lm_preds(df): 
-    X = np.column_stack([df,
-                     add_constant(np.arange(1, len(df) + 1))])
-    lm_preds = pd.Series(
-    linear_model.predict(X),
-    index=df.index) 
-    #lm_preds= lm_preds[arima_preds.index.min():]
-    
-def holt_linear_model(df):
-    y_hat_avg = df.copy()
-    fit1 = Holt(np.asarray(df['cost_per_watt'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
-    y_hat_avg['Holt_linear'] = fit1.forecast(len(test))
-    plt.figure(figsize=(16,8))
-    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
-    plt.plot(y_hat_avg['Holt_linear'], label='Holt_linear')
-    plt.legend(loc='best')
-    plt.show()
-    model_type = 'Holt_linear'
-    print('RMS Score:',  rms_score(df, model_type))
-    rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
-    return rms
-    
-    
-# RF ___
-def rf_gs():    
-    X = add_constant(np.arange(1, len(df) + 1))
-    y = df
-    rf = RandomForestRegressor(oob_score=True,n_jobs=-1)
-    rf.fit(X,y)
-    thePipe = Pipeline([('RFR', RandomForestRegressor())])
-    thePipe.get_params()
-    # Specify the hyperparameter space.
-    num_estimators_space = np.array(range(5, 25, 5))
-    max_depth_space = np.array(range(5, 25, 5))
-    # Create the hyperparameter grid.
-    param_grid = {'RFR__n_estimators': num_estimators_space,
-              'RFR__max_depth': max_depth_space}
-
-    # Create train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-    # Create the GridSearchCV object: gm_cv
-    gs_cv = GridSearchCV(thePipe, param_grid, cv=3, return_train_score=True, verbose=2)
-
-    # Fit to the training set
-    gs_cv.fit(X_train, y_train)
-    
-    # Compute and print the metrics
-    theR2 = gs_cv.score(X_test, y_test)
-    print("Best parameters: {}".format(gs_cv.best_params_))
-    print("test R squared: {}".format(theR2))    
-    return gs_cv.cv_results_
-
 # MOVING AVG __ 
 def moving_avg_model(df):
     y_hat_avg = df.copy()
@@ -495,9 +351,7 @@ def moving_avg_model(df):
     model_type = 'moving_avg_forecast'
     print('RMS Score:', np.sqrt(mean_squared_error(df, model_type)))
     
-    
-    
-    
+
 num = 3    
 tscv = TimeSeriesSplit(n_splits=num)
 
@@ -519,14 +373,13 @@ def timeseries_train_test_split(X, y, test_size):
 
 def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalies=False, scale=1.96):
     """
-        Plots modelled vs fact values, prediction intervals and anomalies
+    Plots modeled vs fact values, forecast intervals and anomalies
     
     """
     
-    prediction = model.predict(X_test)
-    
+    forcst = model.predict(X_test)
     plt.figure(figsize=(15, 7))
-    plt.plot(prediction, "g", label="prediction", linewidth=2.0)
+    plt.plot(forcst, "g", label="forecast", linewidth=2.0)
     plt.plot(y_test.values, label="actual", linewidth=2.0)
     
     if plot_intervals:
@@ -536,8 +389,8 @@ def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalie
         #mae = cv.mean() * (-1)
         deviation = np.sqrt(cv.std())
         
-        lower = prediction - (scale * deviation)
-        upper = prediction + (scale * deviation)
+        lower = forcst - (scale * deviation)
+        upper = forcst + (scale * deviation)
         
         plt.plot(lower, "r--", label="upper bond / lower bond", alpha=0.5)
         plt.plot(upper, "r--", alpha=0.5)
@@ -548,91 +401,78 @@ def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalie
             anomalies[y_test>upper] = y_test[y_test>upper]
             plt.plot(anomalies, "o", markersize=10, label = "Anomalies")
     
-    error = mean_absolute_percentage_error(prediction, y_test)
+    error = mean_absolute_percentage_error(forecast, y_test)
     print("Mean absolute percentage error", error)
     plt.legend(loc="best")
     plt.tight_layout()
     plt.grid(True);
     
     
-    
-    
-#gridsearch(ETS)===============================================
-# walk-forward validation for univariate data
+# === VALIDATE/SCORE ===============================================  
+ 
+    #gridsearch(ETS)===
 def walk_forward_validation(data, n_test, cfg):
-	predictions = list()
-	train, test = train_test_split(data, n_test)
-	# seed history with training dataset
-	history = [x for x in train]
-	# step over each time-step in the test set
-	for i in range(len(test)):
-		# fit model and make forecast for history
-		yhat = exp_smoothing_forecast(history, cfg)# store forecast in list of predictions		
-		predictions.append(yhat)
-		# add actual observation to history for the next loop
-		history.append(test[i])
-	# estimate prediction error
-	error = measure_rmse(test, predictions)
-	return error
+    '''walk-forward validation for univariate data
+    #forecst = list() '''
+    train, test = train_test_split(data, n_test)
+    # seed history with training dataset
+    history = [x for x in train]
+    # step over each time-step in the test set
+    for i in range(len(test)):
+        # fit model and make forecast for history
+        yhat = exp_smoothing_forecast(history, cfg)# store forecast in list of predictions        
+        forecst.append(yhat)
+        # add actual observation to history for the next loop
+        history.append(test[i])
+    # estimate forecast error
+    error = measure_rmse(test, forecast)
+    return error
     
-# score a model, return None on failure
-def score_model(data, n_test, cfg, debug=False):
-	result = None
-	# convert config to a key
-	key = str(cfg)
-	# show all warnings and fail on exception if debugging
-	if debug:
-		result = walk_forward_validation(data, n_test, cfg)
-	else:
-		# one failure during model validation suggests an unstable config
-		try:
-			# never show warnings when grid searching, too noisy
-			with catch_warnings():
-				filterwarnings("ignore")
-				result = walk_forward_validation(data, n_test, cfg)
-		except:
-			error = None
-	# check for an interesting result
-	if result is not None:
-		print(' > Model[%s] %.3f' % (key, result))
-	return (key, result)
 
-# grid search configs
+def score_model(data, n_test, cfg, debug=False):
+    '''
+    score a model, return None on failure
+    '''
+    result = None
+    # convert config to a key
+    key = str(cfg)
+    # show all warnings and fail on exception if debugging
+    if debug:
+        result = walk_forward_validation(data, n_test, cfg)
+    else:
+        # one failure during model validation suggests an unstable config
+        try:
+            # never show warnings when grid searching, too noisy
+            with catch_warnings():
+                filterwarnings("ignore")
+                result = walk_forward_validation(data, n_test, cfg)
+        except:
+            error = None
+    # check for an interesting result
+    if result is not None:
+        print(' > Model[%s] %.3f' % (key, result))
+    return (key, result)
+
+
 def grid_search(data, cfg_list, n_test, parallel=True):
-	scores = None
-	if parallel:
-		# execute configs in parallel
-		executor = Parallel(n_jobs=cpu_count(), backend='multiprocessing')
-		tasks = (delayed(score_model)(data, n_test, cfg) for cfg in cfg_list)
-		scores = executor(tasks)
-	else:
-		scores = [score_model(data, n_test, cfg) for cfg in cfg_list]
-	# remove empty results
-	scores = [r for r in scores if r[1] != None]
-	# sort configs by error, asc
-	scores.sort(key=lambda tup: tup[1])
-	return scores   
+    '''
+    grid search configs
+    '''
+    scores = None
+    if parallel:
+        # execute configs in parallel
+        executor = Parallel(n_jobs=cpu_count(), backend='multiprocessing')
+        tasks = (delayed(score_model)(data, n_test, cfg) for cfg in cfg_list)
+        scores = executor(tasks)
+    else:
+        scores = [score_model(data, n_test, cfg) for cfg in cfg_list]
+    # remove empty results
+    scores = [r for r in scores if r[1] != None]
+    # sort configs by error, asc
+    scores.sort(key=lambda tup: tup[1])
+    return scores   
         
 #scores = grid_search(data, cfg_list, n_test)
-        
-
-   
- # === SCORE ===============================================                       
-                        
-def RMSE(y_true, y_pred):
-    return np.sqrt(mean_squared_error(y_true, y_pred))                                   
-                        
-# def rms_score(df, model_type):
-#     '''
-#     calculate RMSE to check to accuracy of model on data set
-#     model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
-#     '''
-#     #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
-#     #return rms                     
-# actual = w_diff.cost_per_watt
-# forecast = pd.DataFrame(all_year_preds[1:])
-# forecast = forecast[0]
-# forecastt =  forecast.loc[forecast.index < '2019-01-07']
 
 def forecast_accuracy(forecast, actual):
     mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
@@ -641,15 +481,33 @@ def forecast_accuracy(forecast, actual):
     mpe = np.mean((forecast - actual)/actual)   # MPE
     rmse = np.mean((forecast - actual)**2)**.5  # RMSE
     corr = np.corrcoef(forecast, actual)[0,1]   # corr
-    #mins = np.amin(np.hstack([forecast[:,None], 
-                              #actual[:,None]]), axis=1)
-    #maxs = np.amax(np.hstack([forecast[:,None], 
-                              #actual[:,None]]), axis=1)
-    #minmax = 1 - np.mean(mins/maxs)             # minmax
-    #acf1 = acf(fc-test)[1]                      # ACF1
-    #return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
-            #'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
-            #'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
     print('Mean Absolute Percentage Error:  ', mape, '\nMean Error:                      ',me, '\nMean Absolute Error :            ', mae, 
-            '\nMean Percentage Error:           ', mpe, '\nRoot Mean Squared Error :        ',rmse, #'Lag 1 Autocorrelation of Error':acf1, 
-            '\nCorrelation between the \nActual and the Forecast:         ',corr) #'Min-Max Error ':minmax})    
+            '\nMean Percentage Error:           ', mpe, '\nRoot Mean Squared Error :        ',rmse, 
+            '\nCorrelation between the \nActual and the Forecast:         ',corr)    
+    
+                     
+                        
+def RMSE(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))                                   
+                        
+def rms_score(df, model_type):
+    '''
+    calculate RMSE to check to accuracy of model on data set
+    model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
+    '''
+    #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
+    #return rms                     
+    # actual = w_diff.cost_per_watt
+    # forecast = pd.DataFrame(all_year_preds[1:])
+    # forecast = forecast[0]
+    # forecastt =  forecast.loc[forecast.index < '2019-01-07']
+    mins = np.amin(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
+    maxs = np.amax(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
+    minmax = 1 - np.mean(mins/maxs)             minmax
+    acf1 = acf(fc-test)[1]                      ACF1
+    return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
+            'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
+            'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
+
+def format_list_of_floats():
+    return ["{0:2.2f}".format(f) for f in L]
