@@ -28,7 +28,7 @@ from statsmodels.tsa.arima_model import ARMA
 from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.stats.diagnostic import acorr_ljungbox
-from statsmodels.tsa.stattools import adfuller, acf
+from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
 from statsmodels.regression.rolling import RollingOLS
 from statsmodels.regression import *
 import pyramid
@@ -85,13 +85,12 @@ def autocor_plots(df):
 
 def get_differences(df):
     weekly_differences = df.diff(periods=1)
-    fig, axs = plt.subplots(3, figsize=(16, 8))
-    axs[0].plot(weekly_differences.index, weekly_differences)
+    plt.plot(weekly_differences.index, weekly_differences)
     # The first entry in the differenced series is NaN.
-    axs[1].plot_acf(weekly_differences[1:]) #lags=lags)
-    axs[2].plot_pacf(weekly_differences[1:]) #lags=lags) 
-    
+    plot_acf(weekly_differences[1:]) #lags=lags)
+    plot_pacf(weekly_differences[1:]) #lags=lags) 
     plt.tight_layout()
+    plt.show()
     return weekly_differences
 
 def test_for_stationarity(df):  
@@ -241,25 +240,35 @@ def ARMA_plots(df):
     print(res3.summary())
     
 # === ARIMA TIME SERIES MODEL=========================================
-#may add disp=-1 into .fit()
-def arima_model(df):
-    y_hat_avg = df.copy()
-    fit1 = sm.tsa.statespace.ARIMA(df['cost_per_watt'], order=(2, 0, 4)).fit()
-    y_hat_avg['ARIMA'] = fit1.predict(start="2019-1-6", end="2020-1-6", dynamic=True)
-    plt.figure(figsize=(16,8))
-    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
-    plt.plot(y_hat_avg['ARIMA'], label='ARIMA')
-    plt.legend(loc='best')
-    plt.show()
-    model_type = 'ARIMA'
-    print('RMS Score:',  rms_score(df, model_type))
+
 
 def arima_pdq_get(df):
     df = np.array(df)
     print('P, D, Q parameters to use in ARIMA model =', auto_arima(df[1:]).order)
-    mod = ARIMA(weekly_differences[1:], order=auto_arima(df[1:]).order)
+    
+def arima_model(df):    
+    mod = ARIMA(df[1:], order=auto_arima(df[1:]).order)
     res = mod.fit()
     print(res.summary())
+
+def arima_model_predict(df):
+    y_hat_avg = df[1:'2016-01-06']
+    new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
+    new_dates['cost_per_watt'] = 0
+    new_dates.set_index(0, drop=True, inplace=True)
+    y_hat_avg = pd.concat([y_hat_avg, new_dates])
+    fit1 = ARIMA(df['cost_per_watt'], order=(auto_arima(df[1:]).order)).fit()
+    fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06", dynamic=True))
+    y_hat_avg['ARIMA'] = fit_preds
+    plt.figure(figsize=(12,8))
+    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
+    plt.plot(y_hat_avg['ARIMA'], label='ARIMA')
+    plt.legend(loc='best')
+    plt.title('ARIMA Model Predictions Beginning 1-10-2016')
+    plt.show()
+    print(' Mean Absolute Error =       {}\n Mean Squared Error =        {}\n Root Mean Squared Error =   {}'.format(round(mean_absolute_error(fit_preds,df[731:]),6), round(mean_squared_error(fit_preds,df[731:]),6), round(np.sqrt(mean_squared_error(fit_preds,df[731:]))),6))
+    return fit1
+
     
 #df = weekly_differences
 def arima_coefs(df):
@@ -498,13 +507,12 @@ def rms_score(df, model_type):
     #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
     #return rms                     
     # actual = w_diff.cost_per_watt
-    # forecast = pd.DataFrame(all_year_preds[1:])
-    # forecast = forecast[0]
-    # forecastt =  forecast.loc[forecast.index < '2019-01-07']
+    forecast = pd.DataFrame(df[1:])
+    forecastt =  forecast.loc[forecast.index < '2019-01-07']
     mins = np.amin(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
     maxs = np.amax(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
-    minmax = 1 - np.mean(mins/maxs)             minmax
-    acf1 = acf(fc-test)[1]                      ACF1
+    minmax = 1 - np.mean(mins/maxs)             #minmax
+    acf1 = acf(fc-test)[1]                      #ACF1
     return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
             'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
             'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
