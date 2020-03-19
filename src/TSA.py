@@ -68,7 +68,6 @@ from sklearn.metrics import make_scorer, r2_score, mean_absolute_error, mean_squ
 
 
 def precision(data,predict,origin):
-    Rsquared = r2_score(data[origin],data[predict]).round(2)
     MAE = mean_absolute_error(data[origin],data[predict]).round(2)
     MSE = mean_squared_error(data[origin],data[predict]).round(2)
     RMSE = np.sqrt(mean_squared_error(data[origin],data[predict])).round(2)

@@ -9,6 +9,7 @@ from scipy import signal
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
+
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
@@ -27,6 +28,8 @@ from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tsa.stattools import adfuller, acf
+from statsmodels.regression.rolling import RollingOLS
+from statsmodels.regression import *
 import pyramid
 from pmdarima.arima import auto_arima
 
@@ -76,12 +79,20 @@ def dfuller_test(df):
         dfoutput['Critical Value (%s)'%key] = value
     print(dfoutput)
     
+def autocor_plots(df):
+    fig, ax = plt.subplots(2, figsize=(15,7))
+    sm.graphics.tsa.plot_acf(df, ax=ax[0])
+    sm.graphics.tsa.plot_pacf(df, ax=ax[1])
+    plt.show()   
+
 def get_differences(df):
     weekly_differences = df.diff(periods=1)
     fig, axs = plt.subplots(3, figsize=(16, 8))
     axs[0].plot(weekly_differences.index, weekly_differences)
     # The first entry in the differenced series is NaN.
-    plot_acf_and_pacf(weekly_differences[1:], axs[1:])
+    axs[1].plot_acf(weekly_differences[1:]) #lags=lags)
+    axs[2].plot_pacf(weekly_differences[1:]) #lags=lags) 
+    
     plt.tight_layout()
     return weekly_differences
 
@@ -101,16 +112,7 @@ def test_for_stationarity(df):
 
         
 # === CORRELATION =========================================
-   
-def plot_acf_and_pacf(df, axs):
-    """
-    *** For use in get_differences function***
-    Plot the autocorrelation and partial autocorrelation plots of a series
-    on a pair of axies.
-    """
-    _ = plot_acf(df, ax=axs[0]) #lags=lags)
-    _ = plot_pacf(df, ax=axs[1]) #lags=lags)       
-        
+ 
 def series_lag(series, lag=1):
     '''
     ***For use within plot_ac_scat function***
@@ -296,6 +298,20 @@ def see_fitted(df, target):
     plt.title('RSS: %.4f'% sum((yt_res.fittedvalues - target)**2))
 
     
+# === SIMPLE TIME MODEL =========================================
+def simple_move(df): 
+    predict = pd.DataFrame(df.loc[df.index.year>2017])
+    predict['cost_1weekago'] = df['cost_per_watt'].shift(1)
+    predict['cost_3weeksago'] = df['cost_per_watt'].shift(3)
+    print(precision(predict,'cost_1weekago','cost_per_watt'), precision(predict,'cost_3weeksago','cost_per_watt'))
+
+    from sklearn.metrics import make_scorer, mean_absolute_error, mean_squared_error
+def precision(data,predict,origin):
+    MAE = mean_absolute_error(data[origin],data[predict]).round(2)
+    MSE = mean_squared_error(data[origin],data[predict]).round(2)
+    RMSE = np.sqrt(mean_squared_error(data[origin],data[predict])).round(2)
+    print(predict,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')    
+    
     
 # === REGRESSION MODELS =========================================
 def lag_ols(df):    
@@ -309,10 +325,13 @@ def lag_ols(df):
     Try using ols_model.summary afterward
     '''
     lag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
-    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost).fit()    
-    ols_y = pd.DataFrame(ols_model.fittedvalues)
-    ols_y.rename(columns={0:'cost_per_watt'}, inplace=True)
-    return ols_model, ols_y
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost).fit() 
+    ols_trend = ols_model.fittedvalues
+#     fig, ax = plt.subplots(1, figsize=(16, 3))
+#     ax.plot(df.index, df)
+#     ax.plot(df.index, ols_trend)
+#     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via OLS")
+    return ols_model, ols_trend
 
 def linear_model_trend(df):
     '''
@@ -338,33 +357,62 @@ def random_forest_model(df):
 #     print('OOB Score: {}'.format(rf.oob_score_))
 #     print('r2 score on test: {}'.format(rf.score(X,y)))
     rf_trend = rf.predict(X)
-    rfmse = mean_squared_error(y,rf_predict)
+    #rfmse = mean_squared_error(y,rf_trend)
     return rf,rf_trend
-
+    
 def score_table(df, ols_model, linear_model, rf):
     rf_trend = rf.predict(add_constant(np.arange(1,len(df)+ 1)))
-    models = ['OLS', 'LINEAR', 'RF']
+    models = ['OLS', 'LINEAR', 'RF',]
     scores = pd.DataFrame(models)
     scores.rename(columns={0:'Models'}, inplace=True)
     scores.set_index('Models', drop=True, inplace= True)
     scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
     scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
     scores['RMSE'] = [np.sqrt(scores.MSE[0]), np.sqrt(scores.MSE[1]), np.sqrt(scores.MSE[2])]
-    return scores
-        
-def statationary_test_on_models():
+    
     ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
-    model_list = [ols_df, lin_df, rf_df]
-    print('p-value of original data (ols, linear,rf)')
-    [print((adfuller(i, autolag='AIC')[1]))for i in model_list]
-    print('-------')
-    print('p-value of differenced data(ols, linear,rf)')
-    [print(adfuller(i.diff(periods=1).dropna(), autolag='AIC')[1]) for i in model_list]
+    scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
+    return scores
+
+        
+# def stationary_test_on_models(ols_model, linear_model, rf_trend):
+#     ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
+#     model_list = [ols_df, lin_df, rf_df]
+#     print('p-value of original data (ols, linear,rf)')
+#     [print((adfuller(i, autolag='AIC')[1]))for i in model_list]
+#     print('-------')
+#     print('p-value of differenced data(ols, linear,rf)')
+#     [print(adfuller(i.diff(periods=1).dropna(), autolag='AIC')[1]) for i in model_list]
 
     
-    
-    
+# OLS   
+ # def rolling_ols(df):  #not helpful
+#     X = add_constant(np.arange(1, len(df) + 1))
+#     y = df
+#     rolols_model = RollingOLS(y, X, window=3).fit()
+#     #rolols_trend = rolols_model.predict(X)
+#     return rolols_model
+   
 # LINEAR  ___
+
+#robust linear
+# def rob_lin(df):
+#     X = add_constant(np.arange(1, len(df) + 1))
+#     y = df
+#     roblin_model = sm.RLM(y,X, ).fit()
+#     roblin_trend = roblin_model.predict()
+#     return roblin_model, roblin_trend 
+ 
+def least_squares(df):
+    y = df
+    X = add_constant(np.arange(1, len(y) + 1))
+    lst_sq_mods = pd.DataFrame()
+    lst_sq_mods['OLS'] = sm.OLS(y, X).fit().predict(X)
+    lst_sq_mods['GLS'] = sm.GLS(y, X).fit().predict(X)
+    lst_sq_mods['avg'] = linear_plots.mean(axis=1)
+    lst_sq_mods['orig'] = np.array(y.cost_per_watt)
+    return lst_sq_mods
+
 def lm_resids(df, linear_trend):    
     '''
     takes in df and linear trend
