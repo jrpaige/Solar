@@ -57,9 +57,9 @@ def lag_ols_model(df):
 
 def linear_ols_model(df):
     '''
-    creates X & y
-    plots linear regression line
-    returns: linear_model ,linear_trend
+    Creates X & y
+    Plots linear regression line
+    Returns: linear_model ,linear_trend
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -79,6 +79,10 @@ def randomforest_model(df):
     return rf_model,rf_trend
 
 def score_table(df, ols_model, linear_model, rf_model):
+    '''
+    Returns a table which shows the MAE, MSE, and RMSE score \
+    for each regression model 
+    ''' 
     rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
     models = ['OLS', 'LINEAR', 'RF',]
     reg_scores = pd.DataFrame(models)
@@ -87,19 +91,22 @@ def score_table(df, ols_model, linear_model, rf_model):
     reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
     reg_scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
     reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
-    
     ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
     #reg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
     return reg_scores
     
-def plot_regres_model(df, model_trend, model_string_name):    
+def plot_regres_model(df, model_trend, model_name):  
+    '''
+    Plots the regression model entered
+    [model_name] should be entered as a string
+    '''
     fig, ax = plt.subplots(1, figsize=(16, 3))
     ax.plot(df.index, df, label= 'cost_per_watt')
     ax.plot(df.index, model_trend, label= model_string_name)
     plt.ylabel('Cost Per Watt ($)')
     plt.xlabel('Year')
     plt.legend(loc='best')
-    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_string_name))
+    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
     plt.show()
     print(model_name.summary())
     
@@ -110,6 +117,7 @@ def plot_regres_model(df, model_trend, model_string_name):
 
 def stat_lag_ols_model(df):    
     '''
+    OLS Regression for differenced/stationary data
     Creates lag table and processes through OLS
     Returns:
         [ols_model: ols of 3 lagged colummns]
@@ -123,9 +131,10 @@ def stat_lag_ols_model(df):
     
 def stat_linear_ols_model(df):
     '''
-    creates X & y
-    plots linear regression line
-    returns: linear_model ,linear_trend
+    Linear Regression for differenced/stationary data
+    Creates X & y
+    Plots linear regression line
+    Returns: linear_model ,linear_trend
     '''
     df = df[1:]
     X = add_constant(np.arange(1, len(df) + 1))
@@ -137,6 +146,7 @@ def stat_linear_ols_model(df):
     
 def stat_randomforest_model(df):
     '''
+    Random Forest Regressor for differenced/stationary data
     Uses simple Random Forest Regressor to forecast
     '''
     df = df[1:]
@@ -147,6 +157,11 @@ def stat_randomforest_model(df):
     return tsrf_model,tsrf_trend
 
 def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
+    '''
+    Returns a table which shows the MAE, MSE, and RMSE score
+        for each regression model specifically for after using 
+        differenced/stationary data
+    '''
     df = df[1:]
     tsrf_trend = tsrf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
     tsmodels = ['OLS', 'LINEAR', 'RF',]
@@ -159,18 +174,6 @@ def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
     ols_df, lin_df, rf_df = pd.DataFrame(tsols_model.fittedvalues), pd.DataFrame(tslinear_model.fittedvalues), pd.DataFrame(tsrf_trend)
     #tsreg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
     return tsreg_scores
-    
-def stat_plot_regres_model(df, model_trend, model_string_name):    
-    fig, ax = plt.subplots(1, figsize=(16, 3))
-    ax.plot(df.index, df, label= 'cost_per_watt')
-    ax.plot(df.index, model_trend, label= model_string_name)
-    plt.ylabel('Cost Per Watt ($)')
-    plt.xlabel('Year')
-    plt.legend(loc='best')
-    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_string_name))
-    plt.show()
-    print(model_name.summary())
-
 
 
 # === REGRESSION MODELS =========================================
@@ -203,6 +206,11 @@ def rob_lin(df):
     return roblin_model, roblin_trend 
  
 def least_squares(df):
+    
+    ''' 
+    Difference Least Squares Regression Models
+    Seem to be identical 
+    '''
     y = df
     X = add_constant(np.arange(1, len(y) + 1))
     lst_sq_mods = pd.DataFrame()
@@ -214,7 +222,8 @@ def least_squares(df):
 
 def lm_resids(df, linear_trend):    
     '''
-    takes in df and linear trend
+    Linear Model Residuals
+    Takes in df and linear trend
     '''
     lm_residuals = pd.Series(df.cost_per_watt - linear_trend, index=df.index)
     fig, axs = plt.subplots(3, figsize=(16, 8))
@@ -225,18 +234,16 @@ def lm_resids(df, linear_trend):
     plt.tight_layout()
 
 def lm_residual_model(lm_residuals):
+    '''
+    ARIMA on LM residuals
+    '''
     lm_residual_model = ARIMA(
     lm_residuals, order=( )).fit()
 
-def lm_preds(df): 
-    X = np.column_stack([df,
-                     add_constant(np.arange(1, len(df) + 1))])
-    lm_preds = pd.Series(
-    linear_model.predict(X),
-    index=df.index) 
-    #lm_preds= lm_preds[arima_preds.index.min():]
-    
 def holt_linear_model(df):
+    '''
+    Holt's Linear Regression Model
+    '''
     y_hat_avg = df.copy()
     fit1 = Holt(np.asarray(df['cost_per_watt'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
     y_hat_avg['Holt_linear'] = fit1.forecast(len(test))
@@ -268,22 +275,17 @@ def rf_gs(df):
     # Create the hyperparameter grid.
     param_grid = {'RFR__n_estimators': num_estimators_space,
               'RFR__max_depth': max_depth_space}
-
     # Create train and test sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
     # Create the GridSearchCV object: gm_cv
     gs_cv = GridSearchCV(thePipe, param_grid, cv=3, return_train_score=True, verbose=2)
-
     # Fit to the training set
-    gs_cv.fit(X_train, y_train)
-    
+    gs_cv.fit(X_train, y_train)  
     # Compute and print the metrics
     theR2 = gs_cv.score(X_test, y_test)
     print("Best parameters: {}".format(gs_cv.best_params_))
     print("test R squared: {}".format(theR2))    
     return gs_cv.cv_results_
-
 
 
 # === COEFFICIENTS =========================================

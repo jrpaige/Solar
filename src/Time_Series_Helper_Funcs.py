@@ -6,39 +6,40 @@ import datetime
 # MATH
 from math import sqrt
 from scipy import signal
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
-
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
 #TIME
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.formula.api import ols
-from statsmodels.tsa import stattools
-from statsmodels.tools.tools import add_constant
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
-from statsmodels.tsa.arima_model import ARMA
-from statsmodels.tsa.arima_process import ArmaProcess
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-from statsmodels.stats.diagnostic import acorr_ljungbox
-from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
 from statsmodels.regression.rolling import RollingOLS
 from statsmodels.regression import *
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.tools.tools import add_constant
+from statsmodels.tsa import stattools
+from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
+from statsmodels.tsa.arima_model import ARMA
+from statsmodels.tsa.arima_model import *
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
 import pyramid
 from pmdarima.arima import auto_arima
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
 from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
+plt.style.use('ggplot')
+
+
 
 # === TS PREP =========================================
 def time_frame(df):
@@ -46,8 +47,8 @@ def time_frame(df):
     removes the volatile data points in the beginning. 
     df is now only data beginning 1/1/2002
     returns: 
-        y : shortened timeline to remove volatility in the beginning 
-            of the data and resamples the data weekly by median
+        y : shortened timeline to remove volatility in the beginning\ 
+        of the data and resamples the data weekly by median
     '''
     sdf = df.loc[df.index.date > datetime.date(2001,12,31)]
     y = pd.DataFrame(sdf.cost_per_watt)
@@ -55,6 +56,10 @@ def time_frame(df):
     return y
 
 def rolling_plot(df):
+    '''
+    Plots original data, and data with a rolling 
+    window of 3 using mean, median, and standard deviation
+    '''
     ywn = pd.DataFrame(df.cost_per_watt).dropna()
     rollingmedian = ywn.rolling(window=3).median()
     rollingmean = ywn.rolling(window=3).mean()
@@ -64,15 +69,20 @@ def rolling_plot(df):
     med = plt.plot(rollingmedian, color='red', label='Rolling Median')
     std = plt.plot(rollingstd, color='black', label = 'Rolling Std')
     plt.legend(loc='best')
-    plt.title('Weekly Rolling Mean, Median, & Standard Deviation with Window 3')
+    plt.title('Weekly Rolling Mean, Median, \
+              & Standard Deviation with Window 3')
     plt.ylabel('Cost Per Watt $')
     plt.show()
         
 def dfuller_test(df):
-    #Perform Dickey-Fuller test:
+    '''
+    Performs Dickey-Fuller test 
+    '''
     print('Results of Dickey-Fuller Test:')
     dftest = adfuller(df, autolag='AIC')
-    dfoutput = pd.Series(dftest[0:4], index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
+    dfoutput = pd.Series(dftest[0:4], index=['Test Statistic',
+                                             'p-value','#Lags Used',
+                                             'Number of Observations Used'])
     for key,value in dftest[4].items():
         dfoutput['Critical Value (%s)'%key] = value
     print(dfoutput)
@@ -95,7 +105,9 @@ def get_differences(df):
 
 def test_for_stationarity(df):  
     '''
-    should pass in weekly_differences
+    Tests data for stationarity 
+    Should pass in weekly_differences
+    Prints result
     '''
     test = sm.tsa.stattools.adfuller(df[1:])
     print("ADF p-value: {0:2.2f}".format(test[1]))
@@ -125,9 +137,8 @@ def compute_autocorrelation(series, lag=1):
 
 def plot_ac_scat(df):
     '''
-    plots autocorrelation scatter plot
-    use weekly differences array
-    
+    Plots autocorrelation scatter plot
+    Should like use weekly differences array
     '''
     fig, axs = plt.subplots(3, 3, figsize=(8, 8))
 
@@ -144,9 +155,9 @@ def plot_ac_scat(df):
     
 # === COEFFICIENTS =========================================
 def plotCoefficients(model):
-    """
-        Plots sorted coefficient values of the model
-    """
+    ''' 
+    Plots sorted coefficient values of the model
+    '''
     coefs = pd.DataFrame(model.coef_, X_train.columns)
     coefs.columns = ["coef"]
     coefs["abs"] = coefs.coef.apply(np.abs)
@@ -180,25 +191,24 @@ def precision(data,forecast,origin):
     
 def ARMA_model(df, begin_year):
     '''
-    forecasts beginning from fcst_start through end of df
-    fcst_start - date time string index from df entered in date time string format "YYYY-MM-DD"
+    Forecasts beginning from begin year through end of df
     '''
-    trunc_df = df[1:]
-    trunc_df = df.loc[df.index.year <begin_year]   
+    trunc_df = df.loc[df.index.year <begin_year][1:]   
     mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
     res1 = mod1.fit()
-    res.plot_predict(end=)
+    res1.plot_predict(end=str(df.index.year[-1])
     return res1
         
-    
 def ARMA_plots(df):
     '''
     Plot + Confidence Interval + Model Summary
-    Plot1 = ARMA forecasted data through 2030 based on data through end of 2016 using .plotpredict
-    Plot2 = ARMA forecasted data through 2030 based on full data using .plotpredict
-    df should be stationary, likely the differenced values.
+    Plot1 = ARMA forecasted data through 2030 based on data 
+        through end of 2016 using .plotpredict
+    Plot2 = ARMA forecasted data through 2030 based on full 
+        data using .plotpredict
+    Df should be stationary, likely the differenced values.
     Prints confidence intervals and model summary of each ARMA model
-    returns models from each 
+    Returns models from each 
     '''
     ts_diff = df[1:] #remove the NaN
     first_14 = ts_diff.loc[ts_diff.index.year <2017]
@@ -228,6 +238,9 @@ def ARMA_plots(df):
 
 # === ARIMA PARAMS
 def auto_arima_pdq(df):
+     '''
+     Auto ARIMA to obtain best parameters for data
+     '''                 
     df = np.array(df)
     print('P, D, Q parameters to use in ARIMA model =', auto_arima(df[1:]).order)
     
@@ -286,7 +299,7 @@ def basic_arima_model(df):
 
 def arima_model_forecast(df):
     '''
-    Forecasts for
+    Forecasts for 2016-2019
     '''
     y_hat_avg = df[1:'2016-01-06']
     new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
@@ -319,15 +332,18 @@ def arima_scores(res):
  
     #gridsearch(ETS)===
 def walk_forward_validation(data, n_test, cfg):
-    '''walk-forward validation for univariate data
-    #forecst = list() '''
+    '''
+    walk-forward validation for univariate data
+    #forecst = list() 
+    '''
     train, test = train_test_split(data, n_test)
     # seed history with training dataset
     history = [x for x in train]
     # step over each time-step in the test set
     for i in range(len(test)):
         # fit model and make forecast for history
-        yhat = exp_smoothing_forecast(history, cfg)# store forecast in list of predictions        
+        yhat = exp_smoothing_forecast(history, cfg) 
+                      # store forecast in list of predictions        
         forecst.append(yhat)
         # add actual observation to history for the next loop
         history.append(test[i])
@@ -338,7 +354,7 @@ def walk_forward_validation(data, n_test, cfg):
 
 def score_model(data, n_test, cfg, debug=False):
     '''
-    score a model, return None on failure
+    Score a model, return None on failure
     '''
     result = None
     # convert config to a key
@@ -363,7 +379,7 @@ def score_model(data, n_test, cfg, debug=False):
 
 def grid_search(data, cfg_list, n_test, parallel=True):
     '''
-    grid search configs
+    Grid search for configs
     '''
     scores = None
     if parallel:
@@ -382,6 +398,9 @@ def grid_search(data, cfg_list, n_test, parallel=True):
 #scores = grid_search(data, cfg_list, n_test)
 
 def forecast_accuracy(forecast, actual):
+    '''
+    Prints MAPE, ME, MAE, MPE, RMSE, and Corr(Actual,Forecast)
+    '''
     mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
     me = np.mean(forecast - actual)             # ME
     mae = np.mean(np.abs(forecast - actual))    # MAE
@@ -399,8 +418,9 @@ def RMSE(y_true, y_pred):
                         
 def rms_score(df, model_type):
     '''
-    calculate RMSE to check to accuracy of model on data set
-    model_type = [moving_avg_forecast, Holt_linear, ARIMA, OLS, RF, Linear Regression]
+    Calculates RMSE to check accuracy of model on data set
+    model_type = [moving_avg_forecast, Holt_linear, ARIMA, 
+        OLS, RF, Linear Regression]
     '''
     #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
     #return rms                     
@@ -411,6 +431,9 @@ def rms_score(df, model_type):
     maxs = np.amax(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
     minmax = 1 - np.mean(mins/maxs)             #minmax
     acf1 = acf(fc-test)[1]                      #ACF1
-    return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, 'Mean Absolute Error ': mae, 
-            'Mean Percentage Error': mpe, 'Root Mean Squared Error ':rmse, #'Lag 1 Autocorrelation of Error':acf1, 
-            'Correlation between the Actual and the Forecast':corr}) #'Min-Max Error ':minmax})
+    return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, \
+            'Mean Absolute Error ': mae, 'Mean Percentage Error': mpe,\
+            'Root Mean Squared Error ':rmse, \
+            #'Lag 1 Autocorrelation of Error':acf1, \
+            'Correlation between the Actual and the Forecast':corr}) \
+            #'Min-Max Error ':minmax})
