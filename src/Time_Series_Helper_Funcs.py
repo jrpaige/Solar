@@ -190,15 +190,34 @@ def precision(data,forecast,origin):
     print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
     
     
-def ARMA_model(df, begin_year):
+def ARMA_model(df, st_date):
     '''
-    Forecasts beginning from begin year through end of df
+    Forecasts from BOY of begin year through end of df
     '''
-    trunc_df = df.loc[df.index.year <begin_year][1:]   
-    mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
-    res1 = mod1.fit()
-    res1.plot_predict(end=str(df.index.year[-1]))
-    return res1
+    y_hat = df[:df.index.get_loc(st_date)].dropna()
+    armatry = ARMA(diff[1:782], order=(4,1), dates=diff[:782].dropna().index, freq='W').fit()
+    armatry_pred = armatry.predict(start='2017-01-01', end='2019-01-06')
+    plt.plot(diff[782:], label='Actual', alpha=0.5)
+    plt.plot(armatry_pred, label= 'Forecast')
+    plt.legend(loc='best')
+    plt.title('Forecasted VS Actual 2017-2019 Values \n ARMA (4,0) \n \
+                Based on 2002 - EOY2016 Values \n MSE= \
+                {}'.format(round(mean_squared_error(diff[782:],armatry_pred),5)))
+    plt.show()
+    
+    
+    
+#     trunc_df = df.loc[df.index.year <begin_year][1:]   
+#     mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
+#     res1 = mod1.fit()
+#     res1.plot_predict(end=str(df.index.year[-1]))
+#     return res1
+
+def ARMA_
+
+
+
+
         
 def ARMA_plots(df):
     '''
@@ -216,7 +235,7 @@ def ARMA_plots(df):
     last_few = ts_diff.loc[ts_diff.index.year >2016]
     
     #Plot1
-    mod1 = ARMA(first_14, order=(1,0), freq='W', )
+    mod1 = ARMA(first_14, order=(8,0), freq='W', )
     res1 = mod1.fit()
     res1.plot_predict(end='2030', alpha=0.5)
     plt.title('ARMA Forecast through 2030 on Data from 2002-2016')
