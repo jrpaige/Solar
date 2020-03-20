@@ -190,16 +190,28 @@ def precision(data,forecast,origin):
     print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
     
     
-def ARMA_model(df, begin_year):
+def ARMA_model(df,order, years_off):
     '''
-    Forecasts beginning from begin year through end of df
+    Forecasts from BOY of begin year through end of df
+    years_off = number of years at the end of the df that the forecast should predict
     '''
-    trunc_df = df.loc[df.index.year <begin_year][1:]   
-    mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
-    res1 = mod1.fit()
-    res1.plot_predict(end=str(df.index.year[-1]))
-    return res1
-        
+    ts_df = df.dropna()
+    #removing the last three years of observations as hold out for forecasting
+    y_hat = ts_df[:len(ts_df) - (52*years_off)]
+    actual = ts_df[len(ts_df) - (52*years_off):]
+    arma_pred = ARMA(y_hat, order=order, freq='W').fit().predict(start=actual.index.date[0], end=actual.index.date[-1])
+    actual_date_s, actual_date_e = actual.index.year[0], actual.index.year[-1]
+    forcst_date_s, forcst_date_e = y_hat.index.year[0], y_hat.index.year[-1]
+    plt.plot(actual, label='Actual', alpha=0.5)
+    plt.plot(arma_pred, label= 'Forecast')
+    plt.legend(loc='best')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+                                actual_date_s, actual_date_e, 
+                                forcst_date_s, forcst_date_e,order,
+                                round(mean_squared_error(actual, arma_pred),5)))
+    plt.show()
+    
+    
 def ARMA_plots(df):
     '''
     Plot + Confidence Interval + Model Summary
@@ -216,7 +228,7 @@ def ARMA_plots(df):
     last_few = ts_diff.loc[ts_diff.index.year >2016]
     
     #Plot1
-    mod1 = ARMA(first_14, order=(1,0), freq='W', )
+    mod1 = ARMA(first_14, order=(8,0), freq='W', )
     res1 = mod1.fit()
     res1.plot_predict(end='2030', alpha=0.5)
     plt.title('ARMA Forecast through 2030 on Data from 2002-2016')
@@ -258,7 +270,7 @@ def evaluate_arima_model(X, arima_order):
     # make predictions
     predictions = list()
     for t in range(len(test)):
-        model = ARIMA(history, order=arima_order)
+        model = ARIMA(history, order=arima_order, missing='drop')
         model_fit = model.fit(disp=0)
         yhat = model_fit.forecast()[0]
         predictions.append(yhat)
@@ -274,9 +286,10 @@ def evaluate_models(dataset):
     Returns params with the best cfg + best MSE
     use [evaluate_models(df.values.dropna(), p_values, d_values, q_values)]  
     '''
-    p_values = [0, 1, 2, 4, 6, 8, 10]
-    d_values = range(0, 3)
-    q_values = range(0, 3)
+    #p_values = [0, 1, 2, 4, 6, 8, 10]
+    p_values = [0, 1, 2, 4]
+    d_values = range(0, 4)
+    q_values = range(0, 4)
     best_score, best_cfg = float("inf"), None
     for p in p_values:
         for d in d_values:

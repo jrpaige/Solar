@@ -190,35 +190,28 @@ def precision(data,forecast,origin):
     print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
     
     
-def ARMA_model(df, st_date):
+def ARMA_model(df,order, years_off):
     '''
     Forecasts from BOY of begin year through end of df
+    years_off = number of years at the end of the df that the forecast should predict
     '''
-    y_hat = df[:df.index.get_loc(st_date)].dropna()
-    armatry = ARMA(diff[1:782], order=(4,1), dates=diff[:782].dropna().index, freq='W').fit()
-    armatry_pred = armatry.predict(start='2017-01-01', end='2019-01-06')
-    plt.plot(diff[782:], label='Actual', alpha=0.5)
-    plt.plot(armatry_pred, label= 'Forecast')
+    ts_df = df.dropna()
+    #removing the last three years of observations as hold out for forecasting
+    y_hat = ts_df[:len(ts_df) - (52*years_off)]
+    actual = ts_df[len(ts_df) - (52*years_off):]
+    arma_pred = ARMA(y_hat, order=order, freq='W').fit().predict(start=actual.index.date[0], end=actual.index.date[-1])
+    actual_date_s, actual_date_e = actual.index.year[0], actual.index.year[-1]
+    forcst_date_s, forcst_date_e = y_hat.index.year[0], y_hat.index.year[-1]
+    plt.plot(actual, label='Actual', alpha=0.5)
+    plt.plot(arma_pred, label= 'Forecast')
     plt.legend(loc='best')
-    plt.title('Forecasted VS Actual 2017-2019 Values \n ARMA (4,0) \n \
-                Based on 2002 - EOY2016 Values \n MSE= \
-                {}'.format(round(mean_squared_error(diff[782:],armatry_pred),5)))
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+                                actual_date_s, actual_date_e, 
+                                forcst_date_s, forcst_date_e,order,
+                                round(mean_squared_error(actual, arma_pred),5)))
     plt.show()
     
     
-    
-#     trunc_df = df.loc[df.index.year <begin_year][1:]   
-#     mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
-#     res1 = mod1.fit()
-#     res1.plot_predict(end=str(df.index.year[-1]))
-#     return res1
-
-def ARMA_
-
-
-
-
-        
 def ARMA_plots(df):
     '''
     Plot + Confidence Interval + Model Summary
