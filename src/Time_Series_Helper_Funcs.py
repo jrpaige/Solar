@@ -258,7 +258,7 @@ def evaluate_arima_model(X, arima_order):
     # make predictions
     predictions = list()
     for t in range(len(test)):
-        model = ARIMA(history, order=arima_order)
+        model = ARIMA(history, order=arima_order, missing='drop')
         model_fit = model.fit(disp=0)
         yhat = model_fit.forecast()[0]
         predictions.append(yhat)
