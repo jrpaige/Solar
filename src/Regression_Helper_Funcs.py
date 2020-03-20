@@ -102,15 +102,12 @@ def plot_regres_model(df, model_trend, model_name):
     '''
     fig, ax = plt.subplots(1, figsize=(16, 3))
     ax.plot(df.index, df, label= 'cost_per_watt')
-    ax.plot(df.index, model_trend, label= model_string_name)
+    ax.plot(df.index, model_trend, label= model_name)
     plt.ylabel('Cost Per Watt ($)')
     plt.xlabel('Year')
     plt.legend(loc='best')
     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
     plt.show()
-    print(model_name.summary())
-    
-    
     
 # === STATIONARY REGRESSION =========================================   
 

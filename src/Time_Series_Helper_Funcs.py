@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 import datetime
+from datetime import datetime
 
 # MATH
 from math import sqrt
@@ -50,7 +51,7 @@ def time_frame(df):
         y : shortened timeline to remove volatility in the beginning\ 
         of the data and resamples the data weekly by median
     '''
-    sdf = df.loc[df.index.date > datetime.date(2001,12,31)]
+    sdf = df.loc[df.index > '2001-12-31']
     y = pd.DataFrame(sdf.cost_per_watt)
     y = pd.DataFrame(y['cost_per_watt'].resample('W').median())
     return y
@@ -196,7 +197,7 @@ def ARMA_model(df, begin_year):
     trunc_df = df.loc[df.index.year <begin_year][1:]   
     mod1 = ARMA(trunc_df, order=(1,0), freq='W', )
     res1 = mod1.fit()
-    res1.plot_predict(end=str(df.index.year[-1])
+    res1.plot_predict(end=str(df.index.year[-1]))
     return res1
         
 def ARMA_plots(df):
@@ -222,7 +223,7 @@ def ARMA_plots(df):
     plt.show()
     print('Confidence Intervals for ARMA Forecast through 2030 on Data from 2002-2016', res1.conf_int())
     print(res1.summary())
-    return res1
+
   
     #Plot2
     mod2 = ARMA(ts_diff, order=(1,0), freq='W', )
@@ -232,15 +233,15 @@ def ARMA_plots(df):
     plt.show()
     print('Confidence Intervals for ARMA Forecast through 2030 on Full Data', res2.conf_int())
     print(res2.summary())
-    return res2
+    return res1, res2
     
 # === ARIMA TIME SERIES MODEL=========================================
 
 # === ARIMA PARAMS
 def auto_arima_pdq(df):
-     '''
-     Auto ARIMA to obtain best parameters for data
-     '''                 
+    '''
+    Auto ARIMA to obtain best parameters for data
+    '''
     df = np.array(df)
     print('P, D, Q parameters to use in ARIMA model =', auto_arima(df[1:]).order)
     
@@ -266,7 +267,7 @@ def evaluate_arima_model(X, arima_order):
     error = mean_squared_error(test, predictions)
     return error
     
-def evaluate_models(dataset, p_values, d_values, q_values):
+def evaluate_models(dataset):
     '''
     Uses various p,d,qs within below range
     Tests out each combination 
@@ -301,13 +302,14 @@ def arima_model_forecast(df):
     '''
     Forecasts for 2016-2019
     '''
-    y_hat_avg = df[1:'2016-01-06']
+    st_date = '2016-01-10'
+    y_hat_avg = df[1:df.index.get_loc(st_date)]
     new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
     new_dates['cost_per_watt'] = 0
     new_dates.set_index(0, drop=True, inplace=True)
     y_hat_avg = pd.concat([y_hat_avg, new_dates])
-    fit1 = ARIMA(df['cost_per_watt'], order=(auto_arima(df[1:]).order)).fit()
-    fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06", dynamic=True))
+    fit1 = ARIMA(y_hat_avg['cost_per_watt'], order=(auto_arima(df[1:]).order)).fit()
+    fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06"))
     y_hat_avg['ARIMA'] = fit_preds
     plt.figure(figsize=(12,8))
     plt.plot(df['cost_per_watt'], label='Cost Per Watt')
