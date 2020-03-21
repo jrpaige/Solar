@@ -239,6 +239,41 @@ def auto_arma_pd(df):
     print('P, D parameters to use in ARMA model =', arma_pd)
     return arma_pd
 
+def arma_model(df, order, years_off, plot, use_years):
+    '''   
+    ==Parameters==
+    |use_years| - bool
+        if use_years =True, function will use years_off parameter
+        if use_years = False, function will use a simple train/test 80/20 split                     
+    |years_off| - integer
+        if use_years=True, years_off = number of years to set aside as test set 
+        if use_years=False, feel free to enter 0 or 'NA'
+    |order| - tuple
+        should be entered in as a tuple ex. "order=(1,1)"
+    |plot| - bool
+        if plot=True, function will return a plot with data in the title
+        if plot=False, function will print out ARMA order used and resulting MSE 
+    ==Returns==
+    plot and/or MSE score
+    '''
+    
+    df = df.dropna()
+    if use_years == True:
+        train = df[:len(df) - (52*years_off)]
+        test = df[len(df) - (52*years_off):]
+        pred = ARMA(train, order=order, freq='W').fit().predict(start=test.index.date[0], end=test.index.date[-1])
+    else:
+        train= df.dropna()[:round(len(df.dropna())*.8)]
+        test = df[len(train):]
+        order=order
+        pred = ARMA(train, order, freq='W').fit().predict(start=test.index.date[0],end=test.index.date[-1])
+
+    if plot==True:
+        plot_arma(test, pred,train, order)
+    else:
+        print('ARMA Order Used: {}'.format(order))
+        print('MSE:',round(mean_squared_error(test, pred),5))
+
 def arma_years_model(df,order, years_off, plot):
     '''
     ==Parameters==
@@ -260,20 +295,6 @@ def arma_years_model(df,order, years_off, plot):
         print('ARMA Order Used: {}'.format(order))
         print('MSE:',round(mean_squared_error(actual, arma_pred),5))
     return ARMA(y_hat, order=order, freq='W').fit()
-    
-    
-def plot_arma(test_data, ARMA_preds,train_data, order):    
-    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
-    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
-    plt.plot(test_data, label='Actual', alpha=0.5)
-    plt.plot(ARMA_preds, label= 'Forecast')
-    plt.legend(loc='best')
-    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
-                                test_start, test_end, 
-                                forcst_start, forcst_end,order,
-                                round(mean_squared_error(test_data, ARMA_preds),5)))
-    plt.show()
-
 
 def simple_arma_model(df, plot):
     
@@ -296,6 +317,18 @@ def simple_arma_model(df, plot):
         print('ARMA Order Used: {}'.format(auto_arima(train).order[:2]))
         print('MSE:',round(mean_squared_error(test, pred),5))
     return result
+    
+def plot_arma(test_data, ARMA_preds,train_data, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    plt.plot(test_data, label='Actual', alpha=0.5)
+    plt.plot(ARMA_preds, label= 'Forecast')
+    plt.legend(loc='best')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARMA_preds),5)))
+    plt.show()
 
     
 # === ARIMA TIME SERIES MODEL=========================================
