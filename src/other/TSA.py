@@ -357,8 +357,69 @@ def plotModelResults(model, X_train, X_test, plot_intervals=False, plot_anomalie
     plt.grid(True);
     
     
+
+def spec_arma_plots(df):
+    '''
+    ==Parameters==
+    df should be stationary, likely the differenced values.
     
+    ==Plots Included:==
+    Plot1 = ARMA forecasted data through 2030 based on data 
+        through end of 2016 using .plotpredict
+    Plot2 = ARMA forecasted data through 2030 based on full 
+        data using .plotpredict
+   
+    ==Returns==
+    Plots
+    Confidence Intervals 
+    Model Summary
+    Model variable
+    '''
+    ts_diff = df[1:] #remove the NaN
+    first_14 = ts_diff.loc[ts_diff.index.year <2017]
+    last_few = ts_diff.loc[ts_diff.index.year >2016]
     
+    #Plot1
+    mod1 = ARMA(first_14, order=(8,0), freq='W', )
+    res1 = mod1.fit()
+    res1.plot_predict(end='2030', alpha=0.5)
+    plt.title('ARMA Forecast through 2030 on Data from 2002-2016')
+    plt.show()
+    print('Confidence Intervals for ARMA Forecast through 2030 on Data from 2002-2016', res1.conf_int())
+    print(res1.summary())
+  
+    #Plot2
+    mod2 = ARMA(ts_diff, order=(1,0), freq='W', )
+    res2 = mod2.fit()
+    res2.plot_predict(end='2030', alpha=0.5)
+    plt.title('ARMA Forecast through 2030 on Full Data ')
+    plt.show()
+    print('Confidence Intervals for ARMA Forecast through 2030 on Full Data', res2.conf_int())
+    print(res2.summary())
+    return res1, res2
+
+
+def simple_move(df): 
+    '''
+    ==Returns== 
+    Simple forecast based on shifted data of 1 week and 3 week lags
+    '''
+    forcst = pd.DataFrame(df.loc[df.index.year>2017])
+    forcst['cost_1weekago'] = df['cost_per_watt'].shift(1)
+    forcst['cost_3weeksago'] = df['cost_per_watt'].shift(3)
+    print('MSE for cost_1weekago =', mean_squared_error(forcst['cost_1weekago'],forcst['cost_per_watt']).round(4))
+    print('MSE for cost_3weeksago =', mean_squared_error(forcst['cost_3weeksago'],forcst['cost_per_watt']).round(4))
+    print(precision(forcst,'cost_1weekago','cost_per_watt'), precision(forcst,'cost_3weeksago','cost_per_watt'))
+
+def precision(data,forecast,origin):
+    '''
+    Returns MAE, MSE, and RMSE scoring for simple move model
+    '''
+    MAE = mean_absolute_error(data[origin],data[forecast]).round(2)
+    MSE = mean_squared_error(data[origin],data[forecast]).round(2)
+    RMSE = np.sqrt(mean_squared_error(data[origin],data[forecast])).round(2)
+    print(forecast,'\n MSE :',MSE)
+    print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']') 
         
 # === RESIDUALS =========================================
     

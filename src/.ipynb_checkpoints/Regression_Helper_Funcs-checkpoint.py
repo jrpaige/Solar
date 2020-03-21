@@ -44,10 +44,12 @@ from pmdarima.arima import auto_arima
 # === INITIAL REGRESSION MODELS =========================================
 def lag_ols_model(df):    
     '''
+    ==Function==
     Creates lag table and processes through OLS
-    Returns:
-        [ols_model: ols of 3 lagged colummns]
-        [ols_trend: df of fitted values]
+    
+    ==Returns==
+    |ols_model| : ols of 3 lagged colummns]
+    |ols_trend| : df of fitted values]
     '''
     lag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
     ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost).fit() 
@@ -57,10 +59,12 @@ def lag_ols_model(df):
 
 def linear_ols_model(df):
     '''
+    ==Function==
     Creates X & y
-    Returns:
-        [linear_model: model of ols]
-        [linear_trend : df of fitted values] 
+    
+    ==Returns==
+    |linear_model| : model of ols]
+    |linear_trend| : df of fitted values] 
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -71,10 +75,12 @@ def linear_ols_model(df):
     
 def randomforest_model(df):
     '''
+    ==Function==
     Uses simple Random Forest Regressor to forecast
-    Returns:
-        [rf_model: the model of the rf regressor]
-        [rf_trend:df of fitted values]
+   
+    ==Returns==
+    |rf_model| : the model of the rf regressor]
+    |rf_trend| : df of fitted values]
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -84,8 +90,8 @@ def randomforest_model(df):
 
 def score_table(df, ols_model, linear_model, rf_model):
     '''
-    Returns:
-        a table which shows the MSE score for each regression model 
+    ==Returns==
+    Table with MSE scores for each regression model 
     ''' 
     rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
     models = ['OLS', 'LINEAR', 'RF',]
@@ -101,8 +107,11 @@ def score_table(df, ols_model, linear_model, rf_model):
     
 def plot_regres_model(df, model_trend, model_name):  
     '''
+    ==Function==
     Plots the regression model entered
-    [model_name] parameter should be entered as a string
+    
+    ==Parameters==
+    |model_name| : should be entered as a string
     '''
     fig, ax = plt.subplots(1, figsize=(16, 3))
     ax.plot(df.index, df, label= 'cost_per_watt')
@@ -118,11 +127,12 @@ def plot_regres_model(df, model_trend, model_name):
 
 def stat_lag_ols_model(df):    
     '''
+    ==Function==
     OLS Regression for differenced/stationary data
     Creates lag table and processes through OLS
-    Returns:
-        [ols_model: ols of 3 lagged colummns on the differenced data]
-        [ols_trend: df of fitted values for the differenced data]
+    ==Returns==
+    |ols_model| : ols of 3 lagged colummns on the differenced data]
+    |ols_trend| : df of fitted values for the differenced data]
     '''
     df = df[1:]
     tslag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
@@ -132,12 +142,13 @@ def stat_lag_ols_model(df):
     
 def stat_linear_ols_model(df):
     '''
+    ==Function==
     Linear Regression for differenced/stationary data
     Creates X & y
     Plots linear regression line
-    Returns: 
-        [linear_model: model of ols on differenced data]
-        [linear_trend : df of fitted values for differenced data] 
+    ==Returns== 
+    |linear_model| : model of ols on differenced data]
+    |linear_trend| : df of fitted values for differenced data] 
     '''
     df = df[1:]
     X = add_constant(np.arange(1, len(df) + 1))
@@ -149,11 +160,12 @@ def stat_linear_ols_model(df):
     
 def stat_randomforest_model(df):
     '''
+    ==Function==
     Random Forest Regressor for differenced/stationary data
     Uses simple Random Forest Regressor to forecast
-    Returns:
-        [rf_model: the model of the rf regressor on the differenced data]
-        [rf_trend:df of fitted values for the differenced data]        
+    ==Returns==
+    |rf_model| : the model of the rf regressor on the differenced data]
+    |rf_trend| : df of fitted values for the differenced data]        
     '''
     df = df[1:]
     X = add_constant(np.arange(1, len(df) + 1))
@@ -164,9 +176,11 @@ def stat_randomforest_model(df):
 
 def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
     '''
-    Returns a table which shows the MSE score
-        for each regression model specifically for after using 
-        differenced/stationary data
+    ==Function==
+    Specifically for after using differenced/stationary data
+    
+    ==Returns==
+    Table with MSE scores for each regression model 
     '''
     df = df[1:]
     tsrf_trend = tsrf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
@@ -203,7 +217,11 @@ def rolling_ols(df):  #not helpful
 
 def rob_lin(df):
     '''
-    robust linear
+    ==Function==
+    robust linear model
+    ==Returns==
+    |roblin_model| : model.fit()
+    |roblin_trend| : model.fit().predict()
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -213,9 +231,17 @@ def rob_lin(df):
  
 def least_squares(df):
     
-    ''' 
+    '''     
+    ==Function==
     Difference Least Squares Regression Models
-    Seem to be identical 
+    Uses OLS and GLS the average between the two
+    
+    ==Returns==
+    |lst_sq_mods| : table with predictions from each model
+    
+    ==Note==
+    Results seem to be nearly identical
+    
     '''
     y = df
     X = add_constant(np.arange(1, len(y) + 1))
@@ -228,6 +254,7 @@ def least_squares(df):
 
 def lm_resids(df, linear_trend):    
     '''
+    ==Function==
     Linear Model Residuals
     Takes in df and linear trend
     '''
@@ -241,14 +268,22 @@ def lm_resids(df, linear_trend):
 
 def lm_residual_model(lm_residuals):
     '''
+    ==Function==
     ARIMA on LM residuals
+    
+    ==Note==
+    for use in other funcs
     '''
     lm_residual_model = ARIMA(
     lm_residuals, order=( )).fit()
 
 def holt_linear_model(df):
     '''
+    ==Function==
     Holt's Linear Regression Model
+    
+    ==Returns==
+    RMS score 
     '''
     y_hat_avg = df.copy()
     fit1 = Holt(np.asarray(df['cost_per_watt'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
@@ -267,7 +302,19 @@ def holt_linear_model(df):
 # RF ___
 def rf_gs(df): 
     '''
+    ==Function==
     Random Forest Grid Search
+    - Specifies hyperparameter space
+    - Creates a hyperparameter grid.
+    - Creates train and test sets
+    - Creates GridSearchCV object
+    - Fits to the training set
+    - Computes and prints the metrics
+    
+    ==Returns==
+    Best Parameters
+    Test R Squared
+    Grid Search results    
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -302,7 +349,10 @@ def model_coefs_params(model_list):
         
 def cov_table(df):
     '''
+    ==Function==
     Estimate a covariance matrix
+    
+    ==Input Suggestion==
     Can Enter in lag_cost from ols
     '''
     plt.figure(figsize=(20,12))
