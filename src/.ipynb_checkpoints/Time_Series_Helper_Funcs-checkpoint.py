@@ -110,7 +110,7 @@ def test_for_stationarity(df):
     Should pass in weekly_differences
     Prints result
     '''
-    test = sm.tsa.stattools.adfuller(df[1:])
+    test = adfuller(df.dropna())
     print("ADF p-value: {0:2.2f}".format(test[1]))
     if test[1] < 0.51:
         print('Achieved stationarity! Reject ADF H0.')
@@ -178,16 +178,19 @@ def simple_move(df):
     forcst = pd.DataFrame(df.loc[df.index.year>2017])
     forcst['cost_1weekago'] = df['cost_per_watt'].shift(1)
     forcst['cost_3weeksago'] = df['cost_per_watt'].shift(3)
-    print(precision(forcst,'cost_1weekago','cost_per_watt'), precision(forcst,'cost_3weeksago','cost_per_watt'))
+    print('MSE for cost_1weekago =', mean_squared_error(forcst['cost_1weekago'],forcst['cost_per_watt']).round(4))
+    print('MSE for cost_3weeksago =', mean_squared_error(forcst['cost_3weeksago'],forcst['cost_per_watt']).round(4))
+    #print(precision(forcst,'cost_1weekago','cost_per_watt'), precision(forcst,'cost_3weeksago','cost_per_watt'))
 
-def precision(data,forecast,origin):
-    '''
-    Returns MAE, MSE, and RMSE scoring for simple move model
-    '''
-    MAE = mean_absolute_error(data[origin],data[forecast]).round(2)
-    MSE = mean_squared_error(data[origin],data[forecast]).round(2)
-    RMSE = np.sqrt(mean_squared_error(data[origin],data[forecast])).round(2)
-    print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
+#def precision(data,forecast,origin):
+#     '''
+#     Returns MAE, MSE, and RMSE scoring for simple move model
+#     '''
+#     MAE = mean_absolute_error(data[origin],data[forecast]).round(2)
+#     MSE = mean_squared_error(data[origin],data[forecast]).round(2)
+#     RMSE = np.sqrt(mean_squared_error(data[origin],data[forecast])).round(2)
+#     print(forecast,'\n MSE :',MSE)
+#     print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']')
     
     
 def ARMA_model(df,order, years_off):
@@ -210,6 +213,7 @@ def ARMA_model(df,order, years_off):
                                 forcst_date_s, forcst_date_e,order,
                                 round(mean_squared_error(actual, arma_pred),5)))
     plt.show()
+    return ARMA(y_hat, order=order, freq='W').fit()
     
     
 def ARMA_plots(df):

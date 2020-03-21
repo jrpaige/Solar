@@ -88,10 +88,10 @@ def score_table(df, ols_model, linear_model, rf_model):
     reg_scores = pd.DataFrame(models)
     reg_scores.rename(columns={0:'Models'}, inplace=True)
     reg_scores.set_index('Models', drop=True, inplace= True)
-    reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
+    #reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
     reg_scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
-    reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
-    ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
+    #reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
+    #ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
     #reg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
     return reg_scores
     
@@ -165,10 +165,10 @@ def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
     tsreg_scores = pd.DataFrame(tsmodels)
     tsreg_scores.rename(columns={0:'Models'}, inplace=True)
     tsreg_scores.set_index('Models', drop=True, inplace= True)
-    tsreg_scores['MAE'] = [mean_absolute_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_absolute_error(df,tsrf_trend)]
+    #tsreg_scores['MAE'] = [mean_absolute_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_absolute_error(df,tsrf_trend)]
     tsreg_scores['MSE'] = [mean_squared_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_squared_error(df,tsrf_trend)]
-    tsreg_scores['RMSE'] = [np.sqrt(tsreg_scores.MSE[0]), np.sqrt(tsreg_scores.MSE[1]), np.sqrt(tsreg_scores.MSE[2])]
-    ols_df, lin_df, rf_df = pd.DataFrame(tsols_model.fittedvalues), pd.DataFrame(tslinear_model.fittedvalues), pd.DataFrame(tsrf_trend)
+    #tsreg_scores['RMSE'] = [np.sqrt(tsreg_scores.MSE[0]), np.sqrt(tsreg_scores.MSE[1]), np.sqrt(tsreg_scores.MSE[2])]
+    #ols_df, lin_df, rf_df = pd.DataFrame(tsols_model.fittedvalues), pd.DataFrame(tslinear_model.fittedvalues), pd.DataFrame(tsrf_trend)
     #tsreg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
     return tsreg_scores
 
