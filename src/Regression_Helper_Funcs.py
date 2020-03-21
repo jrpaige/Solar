@@ -93,7 +93,7 @@ def score_table(df, ols_model, linear_model, rf_model):
     reg_scores.rename(columns={0:'Models'}, inplace=True)
     reg_scores.set_index('Models', drop=True, inplace= True)
     #reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
-    reg_scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
+    reg_scores['MSE'] = [round(mean_squared_error(df[3:], ols_model.fittedvalues),5), round(mean_absolute_error(df, linear_model.fittedvalues),5), round(mean_squared_error(df,rf_trend),5)]
     #reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
     #ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
     #reg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   

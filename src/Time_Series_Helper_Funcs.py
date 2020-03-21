@@ -195,8 +195,9 @@ def simple_move(df):
     
 def ARMA_model(df,order, years_off):
     '''
-    Forecasts from BOY of begin year through end of df
+    PARAMETERS:
     years_off = number of years at the end of the df that the forecast should predict
+    order = ARMA order to use entered in as a tuple
     '''
     ts_df = df.dropna()
     #removing the last three years of observations as hold out for forecasting
@@ -258,8 +259,8 @@ def auto_arima_pdq(df):
     '''
     Auto ARIMA to obtain best parameters for data
     '''
-    df = np.array(df)
-    print('P, D, Q parameters to use in ARIMA model =', auto_arima(df[1:]).order)
+    ts_df = np.array(df.dropna())
+    print('P, D, Q parameters to use in ARIMA model =', auto_arima(ts_df, seasonal=False, stationary=True,).order)
     
 def evaluate_arima_model(X, arima_order):
     '''

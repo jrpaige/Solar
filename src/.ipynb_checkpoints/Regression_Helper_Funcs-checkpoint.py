@@ -58,8 +58,9 @@ def lag_ols_model(df):
 def linear_ols_model(df):
     '''
     Creates X & y
-    Plots linear regression line
-    Returns: linear_model ,linear_trend
+    Returns:
+        [linear_model: model of ols]
+        [linear_trend : df of fitted values] 
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -71,6 +72,9 @@ def linear_ols_model(df):
 def randomforest_model(df):
     '''
     Uses simple Random Forest Regressor to forecast
+    Returns:
+        [rf_model: the model of the rf regressor]
+        [rf_trend:df of fitted values]
     '''
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -80,8 +84,8 @@ def randomforest_model(df):
 
 def score_table(df, ols_model, linear_model, rf_model):
     '''
-    Returns a table which shows the MAE, MSE, and RMSE score \
-    for each regression model 
+    Returns:
+        a table which shows the MSE score for each regression model 
     ''' 
     rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
     models = ['OLS', 'LINEAR', 'RF',]
@@ -89,7 +93,7 @@ def score_table(df, ols_model, linear_model, rf_model):
     reg_scores.rename(columns={0:'Models'}, inplace=True)
     reg_scores.set_index('Models', drop=True, inplace= True)
     #reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
-    reg_scores['MSE'] = [mean_squared_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_squared_error(df,rf_trend)]
+    reg_scores['MSE'] = [round(mean_squared_error(df[3:], ols_model.fittedvalues),5), round(mean_absolute_error(df, linear_model.fittedvalues),5), round(mean_squared_error(df,rf_trend),5)]
     #reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
     #ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
     #reg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
@@ -98,7 +102,7 @@ def score_table(df, ols_model, linear_model, rf_model):
 def plot_regres_model(df, model_trend, model_name):  
     '''
     Plots the regression model entered
-    [model_name] should be entered as a string
+    [model_name] parameter should be entered as a string
     '''
     fig, ax = plt.subplots(1, figsize=(16, 3))
     ax.plot(df.index, df, label= 'cost_per_watt')
@@ -117,8 +121,8 @@ def stat_lag_ols_model(df):
     OLS Regression for differenced/stationary data
     Creates lag table and processes through OLS
     Returns:
-        [ols_model: ols of 3 lagged colummns]
-        [ols_trend: df of fitted values]
+        [ols_model: ols of 3 lagged colummns on the differenced data]
+        [ols_trend: df of fitted values for the differenced data]
     '''
     df = df[1:]
     tslag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
@@ -131,7 +135,9 @@ def stat_linear_ols_model(df):
     Linear Regression for differenced/stationary data
     Creates X & y
     Plots linear regression line
-    Returns: linear_model ,linear_trend
+    Returns: 
+        [linear_model: model of ols on differenced data]
+        [linear_trend : df of fitted values for differenced data] 
     '''
     df = df[1:]
     X = add_constant(np.arange(1, len(df) + 1))
@@ -145,6 +151,9 @@ def stat_randomforest_model(df):
     '''
     Random Forest Regressor for differenced/stationary data
     Uses simple Random Forest Regressor to forecast
+    Returns:
+        [rf_model: the model of the rf regressor on the differenced data]
+        [rf_trend:df of fitted values for the differenced data]        
     '''
     df = df[1:]
     X = add_constant(np.arange(1, len(df) + 1))
@@ -155,7 +164,7 @@ def stat_randomforest_model(df):
 
 def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
     '''
-    Returns a table which shows the MAE, MSE, and RMSE score
+    Returns a table which shows the MSE score
         for each regression model specifically for after using 
         differenced/stationary data
     '''
