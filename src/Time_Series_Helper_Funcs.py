@@ -53,11 +53,13 @@ plt.style.use('ggplot')
 # === TS PREP =========================================
 def time_frame(df):
     '''
-    removes the volatile data points in the beginning. 
-    df is now only data beginning 1/1/2002
-    returns: 
-        y : shortened timeline to remove volatility in the beginning\ 
-        of the data and resamples the data weekly by median
+    ==Function==
+    Removes the volatile data points in the beginning 
+    Resamples data into the weekly medians 
+    Time Frame = 1/2002 - 12/2018 
+    
+    ==Returns== 
+    |y| : resampled and cropped df 
     '''
     sdf = df.loc[df.index > '2001-12-31']
     y = pd.DataFrame(sdf.cost_per_watt)
@@ -66,8 +68,12 @@ def time_frame(df):
 
 def rolling_plot(df):
     '''
-    Plots original data, and data with a rolling 
-    window of 3 using mean, median, and standard deviation
+    ==Returns==
+    Plot with 
+    - Original data 
+    - Data with a rolling mean window of 3 
+    - Data with a rolling median window of 3
+    - Data with a rolling standard deviation window of 3
     '''
     ywn = pd.DataFrame(df.cost_per_watt).dropna()
     rollingmedian = ywn.rolling(window=3).median()
@@ -85,24 +91,41 @@ def rolling_plot(df):
         
 def dfuller_test(df):
     '''
-    Performs Dickey-Fuller test 
+    ==Function ==
+    Performs Dickey-Fuller test using AIC
+    
+    ==Returns==
+    Results including:
+    Test Statistic, p-value, #Lags Used, #Observations Used, and Critical Values
     '''
     print('Results of Dickey-Fuller Test:')
     dftest = adfuller(df, autolag='AIC')
     dfoutput = pd.Series(dftest[0:4], index=['Test Statistic',
                                              'p-value','#Lags Used',
-                                             'Number of Observations Used'])
+                                             '#Observations Used'])
     for key,value in dftest[4].items():
         dfoutput['Critical Value (%s)'%key] = value
     print(dfoutput)
     
 def autocor_plots(df):
+    '''
+    ==Returns==
+    Autocorrelation and Partial Autocorrelation plots
+    '''
     fig, ax = plt.subplots(2, figsize=(15,7))
     sm.graphics.tsa.plot_acf(df, ax=ax[0])
     sm.graphics.tsa.plot_pacf(df, ax=ax[1])
     plt.show()   
 
 def get_differences(df):
+    '''
+    ==Function ==
+    Differences the data to attempt to achieve stationarity
+    Each data point is representative of the change in value from the previous data point
+    
+    ==Returns==
+    weekly_differences
+    '''
     weekly_differences = df.diff(periods=1)
     plt.plot(weekly_differences.index, weekly_differences)
     # The first entry in the differenced series is NaN.
@@ -114,9 +137,15 @@ def get_differences(df):
 
 def test_for_stationarity(df):  
     '''
+    ==Function ==
     Tests data for stationarity 
-    Should pass in weekly_differences
-    Prints result
+    
+    ==Returns==
+    p-value and result
+    
+    ==Input Suggestion==
+    weekly_differences
+    
     '''
     test = adfuller(df.dropna())
     print("ADF p-value: {0:2.2f}".format(test[1]))
@@ -146,9 +175,13 @@ def compute_autocorrelation(series, lag=1):
 
 def plot_ac_scat(df):
     '''
-    Plots autocorrelation scatter plot
-    Should like use weekly differences array
+    ==Returns==
+    Autocorrelation scatter plot
+    
+    ==Input Suggestion==
+    weekly_differences
     '''
+    df = np.array(df)
     fig, axs = plt.subplots(3, 3, figsize=(8, 8))
 
     lags = [1,2,3,4,5,6,7,26,52]
@@ -165,7 +198,11 @@ def plot_ac_scat(df):
 # === COEFFICIENTS =========================================
 def plotCoefficients(model):
     ''' 
-    Plots sorted coefficient values of the model
+    ==Parameters==
+    |model| = model.fit() variable
+    
+    ==Returns==
+    Plot with sorted coefficient values of the model
     '''
     coefs = pd.DataFrame(model.coef_, X_train.columns)
     coefs.columns = ["coef"]
@@ -181,7 +218,8 @@ def plotCoefficients(model):
 # === SIMPLE TIME SERIES MODELS =========================================
 def simple_move(df): 
     '''
-    Returns simple forecast based on shifted data of 1 week and 3 week lags
+    ==Returns== 
+    Simple forecast based on shifted data of 1 week and 3 week lags
     '''
     forcst = pd.DataFrame(df.loc[df.index.year>2017])
     forcst['cost_1weekago'] = df['cost_per_watt'].shift(1)
@@ -203,9 +241,12 @@ def simple_move(df):
     
 def ARMA_model(df,order, years_off):
     '''
-    PARAMETERS:
-    years_off = number of years at the end of the df that the forecast should predict
-    order = ARMA order to use entered in as a tuple
+    ==Parameters==
+    |years_off| = number of years at the end of the df that the forecast should predict
+    |order| should be entered in as a tuple ex. "order=(1,1,1)"
+    
+    ==Returns==
+    ARMAmodel.fit()
     '''
     ts_df = df.dropna()
     #removing the last three years of observations as hold out for forecasting
@@ -227,14 +268,20 @@ def ARMA_model(df,order, years_off):
     
 def ARMA_plots(df):
     '''
-    Plot + Confidence Interval + Model Summary
+    ==Parameters==
+    df should be stationary, likely the differenced values.
+    
+    ==Plots Included:==
     Plot1 = ARMA forecasted data through 2030 based on data 
         through end of 2016 using .plotpredict
     Plot2 = ARMA forecasted data through 2030 based on full 
         data using .plotpredict
-    Df should be stationary, likely the differenced values.
-    Prints confidence intervals and model summary of each ARMA model
-    Returns models from each 
+   
+    ==Returns==
+    Plots
+    Confidence Intervals 
+    Model Summary
+    Model variable
     '''
     ts_diff = df[1:] #remove the NaN
     first_14 = ts_diff.loc[ts_diff.index.year <2017]
@@ -248,7 +295,6 @@ def ARMA_plots(df):
     plt.show()
     print('Confidence Intervals for ARMA Forecast through 2030 on Data from 2002-2016', res1.conf_int())
     print(res1.summary())
-
   
     #Plot2
     mod2 = ARMA(ts_diff, order=(1,0), freq='W', )
@@ -265,16 +311,20 @@ def ARMA_plots(df):
 # === ARIMA PARAMS
 def auto_arima_pdq(df):
     '''
-    Auto ARIMA to obtain best parameters for data
+    ==Function==
+    Uses Auto ARIMA to obtain best parameters for data
     '''
     ts_df = np.array(df.dropna())
     print('P, D, Q parameters to use in ARIMA model =', auto_arima(ts_df, seasonal=False, stationary=True,).order)
     
 def evaluate_arima_model(X, arima_order):
     '''
+    ==Function ==
     Splits data into training/test
-    Pushes through ARIMA models
-    Obtains and returns MSE 
+    Pushes through ARIMA models 
+   
+    ==Returns==
+    MSE
     '''
     # prepare training dataset
     train_size = int(len(X) * 0.7)
@@ -292,12 +342,20 @@ def evaluate_arima_model(X, arima_order):
     error = mean_squared_error(test, predictions)
     return error
     
-def evaluate_models(dataset):
+def evaluate_models(df):
     '''
+    ==Function==
     Uses various p,d,qs within below range
     Tests out each combination 
-    Returns params with the best cfg + best MSE
-    use [evaluate_models(df.values.dropna(), p_values, d_values, q_values)]  
+    
+    ==Returns== 
+    Params with the best cfg + best MSE
+    
+    ==Input Suggestion==
+    Use [evaluate_models(df.values.dropna(), p_values, d_values, q_values)]
+    
+    ==Note==
+    Computationally expensive! 
     '''
     #p_values = [0, 1, 2, 4, 6, 8, 10]
     p_values = [0, 1, 2, 4]
@@ -309,7 +367,7 @@ def evaluate_models(dataset):
             for q in q_values:
                 order = (p,d,q)
                 try:
-                    mse = evaluate_arima_model(dataset, order)
+                    mse = evaluate_arima_model(df, order)
                     if mse < best_score:
                         best_score, best_cfg = mse, order
                     print('ARIMA%s MSE=%.3f' % (order,mse))
@@ -319,14 +377,25 @@ def evaluate_models(dataset):
 
 
 # === ARIMA MODELS   
-def basic_arima_model(df):    
-    mod = ARIMA(df[1:], order=auto_arima(df[1:]).order)
+def basic_arima_model(df):  
+    '''
+    ==Function==
+    Uses auto_arima's parameter suggestions and runs a no frills ARIMA
+    
+    ==Returns==
+    Model Summary
+    '''
+    mod = ARIMA(df[1:], order=auto_arima(df.dropna()).order)
     res = mod.fit()
     print(res.summary())
 
 def arima_model_forecast(df):
     '''
-    Forecasts for 2016-2019
+    ==Function==
+    Forecasts for 2016-2019 using ARIMA
+    
+    ==Returns==
+    model.fit()
     '''
     st_date = '2016-01-10'
     y_hat_avg = df[1:df.index.get_loc(st_date)]
@@ -347,6 +416,10 @@ def arima_model_forecast(df):
     return fit1
     
 def arima_scores(res):
+    '''
+    ==Parameters==
+    |res| = variable from model.fit() 
+    '''
     print('standard errors :',res.bse)
     print('----------')
     print('pvalues :',res.pvalues)
@@ -358,37 +431,53 @@ def arima_scores(res):
 # === ARIMA MODELS VIA SKTIME
 
 def skt_arima(df, order):
+    '''
+    ==Function==
+    Splits dataset into 70/30 train test split
+    Applies the ARIMAForecaster from sktime 
+    Collects Forecast predictions 
+    
+    ==Parameters==
+    |order| should be entered in as a tuple ex. "order=(1,1,1)"
+    
+    ==Returns==
+    Plot with the train, test, and forecast data
+    The model's MSE score
+    '''
     idx = round(len(df) * .7)
-    tsdf = df['cost_per_watt'][1:]
+    tsdf = df['cost_per_watt'][1:] 
     tsdf.reset_index(drop=True, inplace=True)
     train = pd.Series([tsdf[:idx]])
     test = pd.Series([tsdf[idx:]])
     m = ARIMAForecaster(order=order)
     m.fit(train)
-    fh = np.arange(1, (len(tsdf)-idx)-2)
+    fh = np.arange(1, (len(tsdf)-idx)+1)
     y_pred = m.predict(fh=fh)
     skt_mse = m.score(test, fh=fh)**2
     skt_arima_plot(test,train,y_pred, fh, skt_mse)
     
-def skt_arima_plot(test,train,y_pred, fh, skt_mse):    
+def skt_arima_plot(test,train,y_pred,fh, skt_mse):    
     fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
     train.iloc[0].plot(ax=ax, label='train')
     test.iloc[0].plot(ax=ax, label='test')
     y_pred.plot(ax=ax, label='forecast')
     ax.set(ylabel='cost_per_watt')
-    plt.title('ARIMA Model MSE =', skt_mse)
+    plt.title('ARIMA Model MSE ={}'.format(skt_mse))
     plt.legend(loc='best')
     plt.show()
 
 # === VALIDATE/SCORE ===============================================  
  
     #gridsearch(ETS)===
-def walk_forward_validation(data, n_test, cfg):
+def walk_forward_validation(df, n_test, cfg):
     '''
+    ==Function==
     walk-forward validation for univariate data
-    #forecst = list() 
+    
+    ==Note==
+    # forecst = list() 
     '''
-    train, test = train_test_split(data, n_test)
+    train, test = train_test_split(df, n_test)
     # seed history with training dataset
     history = [x for x in train]
     # step over each time-step in the test set
@@ -404,23 +493,28 @@ def walk_forward_validation(data, n_test, cfg):
     return error
     
 
-def score_model(data, n_test, cfg, debug=False):
+def score_model(df, n_test, cfg, debug=False):
     '''
-    Score a model, return None on failure
+    ==Function==
+    Scores a model
+    
+    ==Returns==
+    cfg key and result
+    or None on failure
     '''
     result = None
     # convert config to a key
     key = str(cfg)
     # show all warnings and fail on exception if debugging
     if debug:
-        result = walk_forward_validation(data, n_test, cfg)
+        result = walk_forward_validation(df, n_test, cfg)
     else:
         # one failure during model validation suggests an unstable config
         try:
             # never show warnings when grid searching, too noisy
             with catch_warnings():
                 filterwarnings("ignore")
-                result = walk_forward_validation(data, n_test, cfg)
+                result = walk_forward_validation(df, n_test, cfg)
         except:
             error = None
     # check for an interesting result
@@ -429,18 +523,19 @@ def score_model(data, n_test, cfg, debug=False):
     return (key, result)
 
 
-def grid_search(data, cfg_list, n_test, parallel=True):
+def grid_search(df, cfg_list, n_test, parallel=True):
     '''
-    Grid search for configs
+    ==Function==
+    Grid searches for configs
     '''
     scores = None
     if parallel:
         # execute configs in parallel
         executor = Parallel(n_jobs=cpu_count(), backend='multiprocessing')
-        tasks = (delayed(score_model)(data, n_test, cfg) for cfg in cfg_list)
+        tasks = (delayed(score_model)(df, n_test, cfg) for cfg in cfg_list)
         scores = executor(tasks)
     else:
-        scores = [score_model(data, n_test, cfg) for cfg in cfg_list]
+        scores = [score_model(df, n_test, cfg) for cfg in cfg_list]
     # remove empty results
     scores = [r for r in scores if r[1] != None]
     # sort configs by error, asc
@@ -451,7 +546,8 @@ def grid_search(data, cfg_list, n_test, parallel=True):
 
 def forecast_accuracy(forecast, actual):
     '''
-    Prints MAPE, ME, MAE, MPE, RMSE, and Corr(Actual,Forecast)
+    ==Returns==
+    MAPE, ME, MAE, MPE, RMSE, and Corr(Actual,Forecast)
     '''
     mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
     me = np.mean(forecast - actual)             # ME
@@ -470,9 +566,15 @@ def RMSE(y_true, y_pred):
                         
 def rms_score(df, model_type):
     '''
+    ==Function==
     Calculates RMSE to check accuracy of model on data set
-    model_type = [moving_avg_forecast, Holt_linear, ARIMA, 
+    
+    ==Parameters==
+    |model_type| = [moving_avg_forecast, Holt_linear, ARIMA, 
         OLS, RF, Linear Regression]
+    
+    ==Returns==
+    MAPE, ME, MAE, MPE, RMSE, Correlation(Actual, Forecast)
     '''
     #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
     #return rms                     
