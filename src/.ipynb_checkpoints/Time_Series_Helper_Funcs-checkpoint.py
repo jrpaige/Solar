@@ -33,6 +33,14 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
 import pyramid
 from pmdarima.arima import auto_arima
+from sktime.forecasters import ARIMAForecaster
+from sktime.highlevel.tasks import ForecastingTask
+from sktime.highlevel.strategies import ForecastingStrategy
+from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
+from sktime.transformers.compose import Tabulariser
+from sktime.pipeline import Pipeline
+
+
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -347,7 +355,31 @@ def arima_scores(res):
     print('----------')
     print('plot diagnositcs :', res.plot_diagnostics())
 
+# === ARIMA MODELS VIA SKTIME
+
+def skt_arima(df, order):
+    idx = round(len(df) * .7)
+    tsdf = df['cost_per_watt'][1:]
+    tsdf.reset_index(drop=True, inplace=True)
+    train = pd.Series([tsdf[:idx]])
+    test = pd.Series([tsdf[idx:]])
+    m = ARIMAForecaster(order=order)
+    m.fit(train)
+    fh = np.arange(1, (len(tsdf)-idx)-2)
+    y_pred = m.predict(fh=fh)
+    skt_mse = m.score(test, fh=fh)**2
+    skt_arima_plot(test,train,y_pred, fh, skt_mse)
     
+def skt_arima_plot(test,train,y_pred, fh, skt_mse):    
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train.iloc[0].plot(ax=ax, label='train')
+    test.iloc[0].plot(ax=ax, label='test')
+    y_pred.plot(ax=ax, label='forecast')
+    ax.set(ylabel='cost_per_watt')
+    plt.title('ARIMA Model MSE =', skt_mse)
+    plt.legend(loc='best')
+    plt.show()
+
 # === VALIDATE/SCORE ===============================================  
  
     #gridsearch(ETS)===
