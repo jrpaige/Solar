@@ -216,6 +216,32 @@ def format_list_of_floats():
 # ============= UNUSED TAKEN FROM TIME SERIES HELPER FUNCS 
 
 
+
+     
+        
+        
+        
+# === RESIDUALS =========================================
+    
+def residual_plot(ax, x, y, y_hat, n_bins=50):
+    residuals = y_hat - y
+    ax.axhline(0, color="black", linestyle="--")
+    ax.scatter(x, residuals, color="grey", alpha=0.5)
+    ax.set_ylabel("Residuals ($\hat y - y$)")
+
+def plot_many_residuals(df, var_names, y_hat, n_bins=50):
+    fig, axs = plt.subplots(len(var_names), figsize=(12, 3*len(var_names)))
+    for ax, name in zip(axs, var_names):
+        x = df[name]
+        residual_plot(ax, x, df['cost_per_watt'], y_hat)
+        ax.set_xlabel(name)
+        ax.set_title("Model Residuals by {}".format(name))
+    return fig, axs
+
+
+
+
+
     
 #df = weekly_differences
 def arima_coefs(df):
@@ -421,19 +447,49 @@ def precision(data,forecast,origin):
     print(forecast,'\n MSE :',MSE)
     print(forecast,'[\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,']') 
         
-# === RESIDUALS =========================================
+        
+def arma_years_model(df,order, years_off, plot):
+    '''
+    ==Parameters==
+    |years_off| = number of years at the end of the df that the forecast should predict
+    |order| should be entered in as a tuple ex. "order=(1,1,1)"
+    |plot| if plot=True, function will return a plot with data in the title
+            if plot=False, function will print out ARMA order used and resulting MSE
     
-def residual_plot(ax, x, y, y_hat, n_bins=50):
-    residuals = y_hat - y
-    ax.axhline(0, color="black", linestyle="--")
-    ax.scatter(x, residuals, color="grey", alpha=0.5)
-    ax.set_ylabel("Residuals ($\hat y - y$)")
+    ==Returns==
+    ARMAmodel.fit()
+    '''
+    df = df.dropna()
+    y_hat = df[:len(df) - (52*years_off)]
+    actual = df[len(df) - (52*years_off):]
+    arma_pred = ARMA(y_hat, order=order, freq='W').fit().predict(start=actual.index.date[0], end=actual.index.date[-1])
+    if plot==True:
+        plot_arma(actual, arma_pred,y_hat, order)
+    else:
+        print('ARMA Order Used: {}'.format(order))
+        print('MSE:',round(mean_squared_error(actual, arma_pred),5))
+    return ARMA(y_hat, order=order, freq='W').fit()
 
-def plot_many_residuals(df, var_names, y_hat, n_bins=50):
-    fig, axs = plt.subplots(len(var_names), figsize=(12, 3*len(var_names)))
-    for ax, name in zip(axs, var_names):
-        x = df[name]
-        residual_plot(ax, x, df['cost_per_watt'], y_hat)
-        ax.set_xlabel(name)
-        ax.set_title("Model Residuals by {}".format(name))
-    return fig, axs
+def simple_arma_model(df, plot):
+    
+    '''
+     ==Parameters==
+    |plot| if plot=True, function will return a plot with data in the title
+            if plot=False, function will print out ARMA order used and resulting MSE
+    ==Returns==
+    ARMAmodel.fit()
+    '''
+    train= df.dropna()[:round(len(df.dropna())*.8)]
+    test = df[len(train):]
+    order=auto_arima(train).order[:2]
+    mod = ARMA(train, order)
+    result = mod.fit()
+    pred = result.predict(start=test.index.date[0],end=test.index.date[-1])
+    if plot==True:
+        plot_arma(test, pred,train, order)
+    else:
+        print('ARMA Order Used: {}'.format(auto_arima(train).order[:2]))
+        print('MSE:',round(mean_squared_error(test, pred),5))
+    return result        
+        
+   
