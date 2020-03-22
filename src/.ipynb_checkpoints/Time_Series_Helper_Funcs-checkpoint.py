@@ -420,7 +420,7 @@ def arima_model_forecast(df):
     model.fit()
     '''
     st_date = '2016-01-10'
-    y_hat_avg = df[1:df.index.get_loc(st_date)]
+    y_hat_avg = df[1:df.index.get_loc(st_date)-1]
     new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
     new_dates['cost_per_watt'] = 0
     new_dates.set_index(0, drop=True, inplace=True)
