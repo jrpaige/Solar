@@ -40,8 +40,6 @@ from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
 from sktime.transformers.compose import Tabulariser
 from sktime.pipeline import Pipeline
 
-
-
 #VISUALIZATION 
 import matplotlib.pyplot as plt
 from matplotlib.pylab import rcParams
@@ -61,7 +59,7 @@ def time_frame(df):
     ==Returns== 
     |y| : resampled and cropped df 
     '''
-    sdf = df.loc[df.index > '2001-12-31']
+    sdf = df.loc[df.index > '2000-12-31']
     y = pd.DataFrame(sdf.cost_per_watt)
     y = pd.DataFrame(y['cost_per_watt'].resample('W').median())
     return y
@@ -260,13 +258,16 @@ def arma_model(df, order, years_off, plot, use_years):
     if use_years == True:
         train = df[:len(df) - (52*years_off)]
         test = df[len(df) - (52*years_off):]
-        pred = ARMA(train, order=order, freq='W').fit().predict(start=test.index.date[0], end=test.index.date[-1])
+        m = ARMA(train, order=order).fit(train)
+        pred = ARMA(train, order=order).fit().predict(start=test.index.date[0], end=test.index.date[-1])
     else:
-        train= df.dropna()[:round(len(df.dropna())*.8)]
-        test = df[len(train):]
+        df = df['cost_per_watt'].dropna()
+        idx = round(len(df) * .8)
+        train= df[:idx]
+        test = df[idx:]
         order=order
-        pred = ARMA(train, order, freq='W').fit().predict(start=test.index.date[0],end=test.index.date[-1])
-
+        pred = ARMA(train, order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
+    
     if plot==True:
         plot_arma(test, pred,train, order)
     else:
@@ -424,10 +425,16 @@ def arima_model_forecast(df):
     new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
     new_dates['cost_per_watt'] = 0
     new_dates.set_index(0, drop=True, inplace=True)
+    
     y_hat_avg = pd.concat([y_hat_avg, new_dates])
+    
     fit1 = ARIMA(y_hat_avg['cost_per_watt'], order=(auto_arima(df.dropna()).order)).fit()
     fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06"))
     y_hat_avg['ARIMA'] = fit_preds
+    
+    
+    
+    
     plt.figure(figsize=(12,8))
     plt.plot(df['cost_per_watt'], label='Cost Per Watt')
     plt.plot(y_hat_avg['ARIMA'], label='ARIMA')

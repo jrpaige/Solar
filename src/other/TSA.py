@@ -570,3 +570,92 @@ def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
     #tsreg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
     return tsreg_scores
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    idx = round(len(df) * .8)
+    tsdf = df['cost_per_watt'].dropna()
+    tsdf.reset_index(drop=True, inplace=True)
+    train = pd.Series([tsdf[:idx]])
+    test = pd.Series([tsdf[idx:]])
+    m = ARIMAForecaster(order=order)
+    m.fit(train)
+    fh = np.arange(1, (len(tsdf)-idx)+1)
+    y_pred = m.predict(fh=fh)
+    skt_mse = m.score(test, fh=fh)**2
+    skt_arima_plot(test,train,y_pred, fh, skt_mse)
+    
+def skt_arima_plot(test,train,y_pred,fh, skt_mse):    
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train.iloc[0].plot(ax=ax, label='train')
+    test.iloc[0].plot(ax=ax, label='test')
+    y_pred.plot(ax=ax, label='forecast')
+    ax.set(ylabel='cost_per_watt')
+    plt.title('ARIMA Model MSE ={}'.format(round(skt_mse,5)))
+    plt.legend(loc='best')
+    plt.show()
+    
+    
+    
+    
+    
+    
+    
+    tsdf = df['cost_per_watt'].dropna()
+    idx = round(len(tsdf) * .8)
+    tsdf.reset_index(drop=True, inplace=True)
+    train = pd.Series([tsdf[:idx]])
+    test = pd.Series([tsdf[idx:]])
+    m = ARIMAForecaster(order=order)
+    m.fit(train)
+    fh = np.arange(1, (len(tsdf)-idx))
+    y_pred = m.predict(fh=fh)
+    skt_mse = m.score(test, fh=fh)**2
+    skt_arima_plot(test,train,y_pred, fh, skt_mse)
+    
+def skt_arima_plot(test,train,y_pred,fh, skt_mse):    
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train.iloc[0].plot(ax=ax, label='train')
+    test.iloc[0].plot(ax=ax, label='test')
+    y_pred.plot(ax=ax, label='forecast')
+    ax.set(ylabel='cost_per_watt')
+    plt.title('ARIMA Model MSE ={}'.format(round(skt_mse,5)))
+    plt.legend(loc='best')
+    plt.show()
+    
+    
+    
+    
+    
+    
+    
+    
+        df = df.dropna()
+    if use_years == True:
+        train = df[:len(df) - (52*years_off)]
+        test = df[len(df) - (52*years_off):]
+        pred = ARMA(train, order=order, freq='W').fit().predict(start=test.index.date[0], end=test.index.date[-1])
+    else:
+        df = df['cost_per_watt'].dropna()
+        idx = round(len(df) * .8)
+        train= df[:idx]
+        test = df[idx:]
+        order=order
+        pred = ARMA(train, order, freq='W').fit().predict(start=test.index.date[0],end=test.index.date[-1])
+    
+    if plot==True:
+        plot_arma(test, pred,train, order)
+    else:
+        print('ARMA Order Used: {}'.format(order))
+        print('MSE:',round(mean_squared_error(test, pred),5))

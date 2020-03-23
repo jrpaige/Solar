@@ -9,7 +9,6 @@ from scipy import signal
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
-
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
@@ -42,6 +41,11 @@ from pmdarima.arima import auto_arima
 
    
 # === INITIAL REGRESSION MODELS =========================================
+
+def reg_test_train(df):
+    train, test, = train_test_split(df ,test_size=0.2)
+    return train, test
+    
 # need to add constant 
 # need to split into train test
 def lag_ols_model(df):    
@@ -68,10 +72,12 @@ def linear_ols_model(df):
     |linear_model| : model of ols]
     |linear_trend| : df of fitted values] 
     '''
-    X = add_constant(np.arange(1, len(df) + 1))
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
     y = df
-    linear_model = sm.OLS(y, X).fit()
-    linear_trend = linear_model.predict(X)
+    linear_model = sm.OLS(y, X_train).fit()
+    linear_trend = linear_model.predict(X_train)
     return linear_model ,linear_trend
 
     

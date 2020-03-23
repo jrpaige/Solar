@@ -53,10 +53,10 @@ def prep():
                     parse_dates=['Installation Date'], 
                     usecols=['Installation Date', 'System Size','Total Installed Price' , 'Customer Segment'], 
                     na_values=(-9999, '-9999'))
-    t.toc()
+   
 
     print("2 of 11 |    Reading in second dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
-    t.tic()
+    
     dfMod2 = pd.read_csv(file_path_2,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 

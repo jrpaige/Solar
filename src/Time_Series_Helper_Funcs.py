@@ -59,7 +59,7 @@ def time_frame(df):
     ==Returns== 
     |y| : resampled and cropped df 
     '''
-    sdf = df.loc[df.index > '2001-12-31']
+    sdf = df.loc[df.index > '2000-12-31']
     y = pd.DataFrame(sdf.cost_per_watt)
     y = pd.DataFrame(y['cost_per_watt'].resample('W').median())
     return y
@@ -258,13 +258,16 @@ def arma_model(df, order, years_off, plot, use_years):
     if use_years == True:
         train = df[:len(df) - (52*years_off)]
         test = df[len(df) - (52*years_off):]
-        pred = ARMA(train, order=order, freq='W').fit().predict(start=test.index.date[0], end=test.index.date[-1])
+        m = ARMA(train, order=order).fit(train)
+        pred = ARMA(train, order=order).fit().predict(start=test.index.date[0], end=test.index.date[-1])
     else:
-        train= df.dropna()[:round(len(df.dropna())*.8)]
-        test = df[len(train):]
+        df = df['cost_per_watt'].dropna()
+        idx = round(len(df) * .8)
+        train= df[:idx]
+        test = df[idx:]
         order=order
-        pred = ARMA(train, order, freq='W').fit().predict(start=test.index.date[0],end=test.index.date[-1])
-
+        pred = ARMA(train, order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
+    
     if plot==True:
         plot_arma(test, pred,train, order)
     else:
