@@ -40,8 +40,6 @@ from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
 from sktime.transformers.compose import Tabulariser
 from sktime.pipeline import Pipeline
 
-
-
 #VISUALIZATION 
 import matplotlib.pyplot as plt
 from matplotlib.pylab import rcParams

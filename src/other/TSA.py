@@ -493,3 +493,80 @@ def simple_arma_model(df, plot):
     return result        
         
    
+
+
+
+
+# === STATIONARY REGRESSION =========================================   
+
+
+def stat_lag_ols_model(df):    
+    '''
+    ==Function==
+    OLS Regression for differenced/stationary data
+    Creates lag table and processes through OLS
+    ==Returns==
+    |ols_model| : ols of 3 lagged colummns on the differenced data]
+    |ols_trend| : df of fitted values for the differenced data]
+    '''
+    df = df[1:]
+    tslag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    tsols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=tslag_cost).fit() 
+    tsols_trend = tsols_model.fittedvalues
+    return tsols_model, tsols_trend
+    
+def stat_linear_ols_model(df):
+    '''
+    ==Function==
+    Linear Regression for differenced/stationary data
+    Creates X & y
+    Plots linear regression line
+    ==Returns== 
+    |linear_model| : model of ols on differenced data]
+    |linear_trend| : df of fitted values for differenced data] 
+    '''
+    df = df[1:]
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
+    tslinear_model = sm.OLS(y, X).fit()
+    tslinear_trend = tslinear_model.predict(X)
+    return tslinear_model ,tslinear_trend
+
+    
+def stat_randomforest_model(df):
+    '''
+    ==Function==
+    Random Forest Regressor for differenced/stationary data
+    Uses simple Random Forest Regressor to forecast
+    ==Returns==
+    |rf_model| : the model of the rf regressor on the differenced data]
+    |rf_trend| : df of fitted values for the differenced data]        
+    '''
+    df = df[1:]
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
+    tsrf_model = RandomForestRegressor(n_jobs=-1).fit(X,y)
+    tsrf_trend = tsrf_model.predict(X)
+    return tsrf_model,tsrf_trend
+
+def stat_score_table(df, tsols_model, tslinear_model, tsrf_model):
+    '''
+    ==Function==
+    Specifically for after using differenced/stationary data
+    
+    ==Returns==
+    Table with MSE scores for each regression model 
+    '''
+    df = df[1:]
+    tsrf_trend = tsrf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
+    tsmodels = ['OLS', 'LINEAR', 'RF',]
+    tsreg_scores = pd.DataFrame(tsmodels)
+    tsreg_scores.rename(columns={0:'Models'}, inplace=True)
+    tsreg_scores.set_index('Models', drop=True, inplace= True)
+    #tsreg_scores['MAE'] = [mean_absolute_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_absolute_error(df,tsrf_trend)]
+    tsreg_scores['MSE'] = [mean_squared_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_squared_error(df,tsrf_trend)]
+    #tsreg_scores['RMSE'] = [np.sqrt(tsreg_scores.MSE[0]), np.sqrt(tsreg_scores.MSE[1]), np.sqrt(tsreg_scores.MSE[2])]
+    #ols_df, lin_df, rf_df = pd.DataFrame(tsols_model.fittedvalues), pd.DataFrame(tslinear_model.fittedvalues), pd.DataFrame(tsrf_trend)
+    #tsreg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
+    return tsreg_scores
+
