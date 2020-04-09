@@ -26,9 +26,9 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tools.tools import add_constant
 from statsmodels.tsa import stattools
 from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
-from statsmodels.tsa.arima_model import ARMA
 from statsmodels.tsa.arima_model import *
 from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.holtwinters import *
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
 import pyramid
@@ -37,8 +37,9 @@ from sktime.forecasters import ARIMAForecaster
 from sktime.highlevel.tasks import ForecastingTask
 from sktime.highlevel.strategies import ForecastingStrategy
 from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
-from sktime.transformers.compose import Tabulariser
 from sktime.pipeline import Pipeline
+from sktime.transformers.compose import Tabulariser
+
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -336,7 +337,7 @@ def arma_model(df, order, years_off, plot, use_years):
         arma_plot(test, train,pred, order)
     else:
         print('ARMA Order Used: {}'.format(order))
-        print('MSE:',round(mean_squared_error(test, pred),5))
+        #print('MSE:',round(.red_error(test, pred),5))
     
 # === PLOT ARMA =========================================    
 def plot_arma(test_data, ARMA_preds,train_data, order):    

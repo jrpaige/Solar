@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 import datetime
 from datetime import datetime
-from src.Plot import * 
+from Solar.src.Plot import * 
 
 # MATH
 from math import sqrt
@@ -61,6 +61,11 @@ def reg_test_train(df):
     train, test, = train_test_split(df ,test_size=0.2)
     return train, test
     
+    
+# idx = round(len(df) * .8)
+# train= df[:idx]
+# test = df[idx:]
+# pred = ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
     
 # === LAGGED OLS =========================================    
 # need to add constant 

@@ -337,7 +337,7 @@ def arma_model(df, order, years_off, plot, use_years):
         arma_plot(test, train,pred, order)
     else:
         print('ARMA Order Used: {}'.format(order))
-        print('MSE:',round(mean_squared_error(test, pred),5))
+        #print('MSE:',round(.red_error(test, pred),5))
     
 # === PLOT ARMA =========================================    
 def plot_arma(test_data, ARMA_preds,train_data, order):    
