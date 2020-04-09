@@ -47,8 +47,11 @@ rcParams['figure.figsize'] = 10, 6
 plt.style.use('ggplot')
 
 
+# =============================================================================
+# TIME SERIES PREP
+# =============================================================================
 
-# === TS PREP =========================================
+# === REMOVE FIRST FEW YEARS DUE TO NON-CONTINUITY =========================================
 def time_frame(df):
     '''
     ==Function==
@@ -64,6 +67,8 @@ def time_frame(df):
     y = pd.DataFrame(y['cost_per_watt'].resample('W').median())
     return y
 
+
+# === ROLLING PLOTS =========================================
 def rolling_plot(df):
     '''
     ==Returns==
@@ -87,6 +92,7 @@ def rolling_plot(df):
     plt.ylabel('Cost Per Watt $')
     plt.show()
         
+# === DICKEY FULLER TEST =========================================        
 def dfuller_test(df):
     '''
     ==Function ==
@@ -104,7 +110,9 @@ def dfuller_test(df):
     for key,value in dftest[4].items():
         dfoutput['Critical Value (%s)'%key] = value
     print(dfoutput)
+
     
+# === AUTOCORRELATION PLOTS =========================================    
 def autocor_plots(df):
     '''
     ==Returns==
@@ -115,6 +123,8 @@ def autocor_plots(df):
     sm.graphics.tsa.plot_pacf(df, ax=ax[1])
     plt.show()   
 
+    
+# === GET DIFFERENCED DATA ========================================= 
 def get_differences(df):
     '''
     ==Function ==
@@ -133,6 +143,8 @@ def get_differences(df):
     plt.show()
     return weekly_differences
 
+
+# === STATIONARITY TESTING ========================================= 
 def test_for_stationarity(df):  
     '''
     ==Function ==
@@ -152,8 +164,14 @@ def test_for_stationarity(df):
     else:
         print('Time Series is not stationary. Fail to reject ADF H0')
 
+
         
-# === CORRELATION & COEFFICIENTS =========================================
+# =============================================================================
+# CORRELATION & COEFFICIENTS
+# =============================================================================        
+
+
+# === CREATE LAG =========================================
  
 def series_lag(series, lag=1):
     '''
@@ -163,6 +181,8 @@ def series_lag(series, lag=1):
     lagged = np.copy(series)[:(len(truncated))]
     return truncated, lagged
 
+
+# === COMPUTE AUTOCORRELATION NUMBERS =========================================
 def compute_autocorrelation(series, lag=1):
     '''
     ***for use within plot_ac_scat function***
@@ -171,6 +191,35 @@ def compute_autocorrelation(series, lag=1):
     autocorr = np.corrcoef(series, lagged)[0, 1]
     return autocorr 
 
+
+# === PLOT AC, PARTIAL AC, HIST, & LINE  =========================================
+def tsplot(y, lags=None, title='', figsize=(14, 8)):
+    '''
+    ==Input Suggestion==
+    tsplot(ts_train, title='', lags=)
+    '''
+    
+    
+    fig = plt.figure(figsize=figsize)
+    layout = (2, 2)
+    ts_ax   = plt.subplot2grid(layout, (0, 0))
+    hist_ax = plt.subplot2grid(layout, (0, 1))
+    acf_ax  = plt.subplot2grid(layout, (1, 0))
+    pacf_ax = plt.subplot2grid(layout, (1, 1))
+    
+    y.plot(ax=ts_ax)
+    ts_ax.set_title(title)
+    y.plot(ax=hist_ax, kind='hist', bins=25)
+    hist_ax.set_title('Histogram')
+    smt.graphics.plot_acf(y, lags=lags, ax=acf_ax)
+    smt.graphics.plot_pacf(y, lags=lags, ax=pacf_ax)
+    [ax.set_xlim(0) for ax in [acf_ax, pacf_ax]]
+    sns.despine()
+    fig.tight_layout()
+    return ts_ax, acf_ax, pacf_ax
+
+
+# === PLOT AUTOCORRELATION ON A SCATTER PLOT =========================================
 def plot_ac_scat(df):
     '''
     ==Returns==
@@ -192,6 +241,7 @@ def plot_ac_scat(df):
         #ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
         plt.tight_layout()
 
+# === PLOT COEFFICIENTS =========================================        
 def plotcoefficients(model):
     ''' 
     ==Parameters==
@@ -211,6 +261,10 @@ def plotcoefficients(model):
     plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
 
     
+# =============================================================================
+# SIMPLE TIME SEIRES
+# =============================================================================        
+    
 # === SIMPLE TIME SERIES MODELS =========================================
 def simple_move(df): 
     '''
@@ -223,20 +277,30 @@ def simple_move(df):
     print('MSE for cost_1weekago =', mean_squared_error(forcst['cost_1weekago'],forcst['cost_per_watt']).round(4))
     print('MSE for cost_3weeksago =', mean_squared_error(forcst['cost_3weeksago'],forcst['cost_per_watt']).round(4))
 
+
+# =============================================================================
+# ARMA MODELS
+# =============================================================================         
     
-# === ARMA MODELS =========================================
-def auto_arma_pd(df):
+# === GET PD FOR ARMA VIA AUTO ARIMA =========================================
+def auto_arma_pd(df,trace_list=False):
     '''
     ==Function==
     Uses Auto ARIMA to obtain best parameters for data
+    ==Parameters==
+    |trace_list| : bool
+        if True, function will return list of all searched pairs
+        default=False
     ==Returns==
     printed pd variable
     arma_pd variable to use in other functions
     '''
-    arma_pd = auto_arima(df).order[:2]
+    arma_pd = auto_arima(df, trace=trace_list, stepwise=False, max_p=6, max_P =6, max_order=6).order[:2]
     print('P, D parameters to use in ARMA model =', arma_pd)
     return arma_pd
 
+    
+# === ARMA MODEL  =========================================
 def arma_model(df, order, years_off, plot, use_years):
     '''   
     ==Parameters==
@@ -261,7 +325,7 @@ def arma_model(df, order, years_off, plot, use_years):
         m = ARMA(train, order=order).fit(train)
         pred = ARMA(train, order=order).fit().predict(start=test.index.date[0], end=test.index.date[-1])
     else:
-        df = df['cost_per_watt'].dropna()
+        df = df.dropna()
         idx = round(len(df) * .8)
         train= df[:idx]
         test = df[idx:]
@@ -269,38 +333,62 @@ def arma_model(df, order, years_off, plot, use_years):
         pred = ARMA(train, order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
     
     if plot==True:
-        plot_arma(test, pred,train, order)
+        arma_plot(test, train,pred, order)
     else:
         print('ARMA Order Used: {}'.format(order))
         print('MSE:',round(mean_squared_error(test, pred),5))
     
+# === PLOT ARMA =========================================    
 def plot_arma(test_data, ARMA_preds,train_data, order):    
     test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
     forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
     plt.plot(test_data, label='Actual', alpha=0.5)
-    plt.plot(ARMA_preds, label= 'Forecast')
+    plt.plot(ARMA_preds, label= 'Forecast', color='black')
     plt.legend(loc='best')
     plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
                                 test_start, test_end, 
                                 forcst_start, forcst_end,order,
                                 round(mean_squared_error(test_data, ARMA_preds),5)))
     plt.show()
+    
+    
+def arma_plot(test_data,train_data,ARMA_preds, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    fig, ax = plt.subplots(1, figsize=(10,6))
+    train_data.plot(ax=ax, label='Train', linewidth=1)
+    test_data.plot(ax=ax, label='Test', linewidth=1)
+    ARMA_preds.plot(ax=ax, label='Forecast', color='black', alpha=0.7,linewidth=2)
+    ax.set(ylabel='cost_per_watt')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARMA_preds),5)))
+    plt.legend(loc='best')
+    plt.show()    
 
+# =============================================================================
+# ARIMA PARAMETERS
+# ============================================================================= 
 
-# === ARIMA PARAMS =========================================
-def auto_arima_pdq(df):
+# === GET PDQ VIA AUTO ARIMA =========================================
+def auto_arima_pdq(df,trace_list=False):
     '''
     ==Function==
     Uses Auto ARIMA to obtain best parameters for data
+    ==Parameters==
+    |trace_list| : bool
+        if True, function will return list of all searched pairs
+        default=False
     ==Returns==
     printed pdq variable
     auto_arima variable to use in other functions
     '''
-    arima_pdq = auto_arima(df, seasonal=False, stationary=True).order
+    arima_pdq = auto_arima(df, trace=trace_list, stepwise=False, max_p=8,max_P = 8, max_order=12).order
     print('P, D, Q parameters to use in ARIMA model =', arima_pdq)
     return arima_pdq
  
-    
+# === TEST VARIOUS PDQ'S MSE =========================================    
 def evaluate_arima_model(X, arima_order):
     '''
     ==Function ==
@@ -328,7 +416,9 @@ def evaluate_arima_model(X, arima_order):
     # calculate out of sample error
     error = mean_squared_error(test, predictions)
     return error
-    
+
+
+# === FIND BEST PARAMETERS BY RUNNING THROUGH DIFFERENT PDQ'S =========================================      
 def arima_order_mses(df):
     '''
     ==Function==
@@ -346,7 +436,7 @@ def arima_order_mses(df):
     '''
     df = df.dropna().values
     #p_values = [0, 1, 2, 4, 6, 8, 10]
-    p_values = [0, 1, 2, 4]
+    p_values = [0, 1, 2, 4, 5, 7]
     d_values = range(0, 4)
     q_values = range(0, 4)
     best_score, best_cfg = float("inf"), None
@@ -362,9 +452,14 @@ def arima_order_mses(df):
                 except:
                     continue
     print('Best ARIMA %s MSE=%.3f' % (best_cfg, best_score))
+    
+          
 
-
-# === ARIMA TIME SERIES MODEL=========================================
+# =============================================================================
+# ARIMA TIME SERIES
+# ============================================================================= 
+  
+# === ARIMA MODEL =========================================
 
 def arima_model(df, order, years_off, plot, use_years):
     '''   
@@ -392,26 +487,46 @@ def arima_model(df, order, years_off, plot, use_years):
         train= df.dropna()[:round(len(df.dropna())*.8)]
         test = df[len(train):]
         order=order
-        pred = ARMA(train, order, freq='W').fit().predict(start=test.index.date[0],end=test.index.date[-1])
+        pred = ARIMA(train, order, freq='W').fit().predict(start=test.index.date[0],end=test.index.date[-1])
 
     if plot==True:
-        plot_arima(test, pred,train, order)
+        #plot_arima(test, pred,train, order)
+        arima_plot(test, train, pred, order)
     else:
         print('ARIMA Order Used: {}'.format(order))
         print('MSE:',round(mean_squared_error(test, pred),5))
-    
+
+          
+# === PLOT ARIMA MODEL =========================================    
 def plot_arima(test_data, ARIMA_preds,train_data, order):    
     test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
     forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
     plt.plot(test_data, label='Actual', alpha=0.5)
     plt.plot(ARIMA_preds, label= 'Forecast')
     plt.legend(loc='best')
-    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
                                 test_start, test_end, 
                                 forcst_start, forcst_end,order,
                                 round(mean_squared_error(test_data, ARIMA_preds),5)))
 
+
+def arima_plot(test_data,train_data,ARIMA_preds, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train_data.plot(ax=ax, label='Train')
+    test_data.plot(ax=ax, label='Test')
+    ARIMA_preds.plot(ax=ax, label='Forecast')
+    ax.set(ylabel='cost_per_watt')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARIMA_preds),5)))
+    plt.legend(loc='best')
+    plt.show()    
     
+    
+# === SPECIFIC FORECAST =========================================    
 def arima_model_forecast(df):
     '''
     ==Function==
@@ -431,10 +546,6 @@ def arima_model_forecast(df):
     fit1 = ARIMA(y_hat_avg['cost_per_watt'], order=(auto_arima(df.dropna()).order)).fit()
     fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06"))
     y_hat_avg['ARIMA'] = fit_preds
-    
-    
-    
-    
     plt.figure(figsize=(12,8))
     plt.plot(df['cost_per_watt'], label='Cost Per Watt')
     plt.plot(y_hat_avg['ARIMA'], label='ARIMA')
@@ -443,7 +554,9 @@ def arima_model_forecast(df):
     plt.show()
     print(' Mean Absolute Error =       {}\n Mean Squared Error =        {}\n Root Mean Squared Error =   {}'.format(round(mean_absolute_error(fit_preds,df[731:]),6), round(mean_squared_error(fit_preds,df[731:]),6), round(np.sqrt(mean_squared_error(fit_preds,df[731:]))),6))
     return fit1
-    
+
+          
+# === GET ERROR SCORES FROM ARIMA MODEL RESULTS =========================================             
 def arima_scores(res):
     '''
     ==Parameters==
@@ -457,7 +570,8 @@ def arima_scores(res):
     print('----------')
     print('plot diagnositcs :', res.plot_diagnostics())
 
-# === ARIMA MODELS VIA SKTIME
+
+# === ARIMA MODELS VIA SKTIME =========================================   
 
 def skt_arima(df, order):
     '''
@@ -485,8 +599,9 @@ def skt_arima(df, order):
     y_pred = m.predict(fh=fh)
     skt_mse = m.score(test, fh=fh)**2
     skt_arima_plot(test,train,y_pred, fh, skt_mse)
-    
-def skt_arima_plot(test,train,y_pred,fh, skt_mse):    
+
+# === PLOT ARIMA MODELS VIA SKTIME =========================================             
+def skt_arima_plot(test,train,y_pred, skt_mse):    
     fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
     train.iloc[0].plot(ax=ax, label='train')
     test.iloc[0].plot(ax=ax, label='test')
@@ -496,9 +611,13 @@ def skt_arima_plot(test,train,y_pred,fh, skt_mse):
     plt.legend(loc='best')
     plt.show()
 
-# === VALIDATE/SCORE ===============================================  
- 
-    #gridsearch(ETS)===
+          
+          
+# =============================================================================
+# VALIDATE/SCORE
+# =============================================================================           
+
+# === GRID SEARCH EXPONENTIAL SMOOTHING  ===============================================  
 def walk_forward_validation(df, n_test, cfg):
     '''
     ==Function==
@@ -523,7 +642,7 @@ def walk_forward_validation(df, n_test, cfg):
     error = measure_rmse(test, forecast)
     return error
     
-
+# === SCORE ===============================================  
 def score_model(df, n_test, cfg, debug=False):
     '''
     ==Function==
@@ -553,7 +672,7 @@ def score_model(df, n_test, cfg, debug=False):
         print(' > Model[%s] %.3f' % (key, result))
     return (key, result)
 
-
+# === GRID SEARCH ===============================================  
 def grid_search(df, cfg_list, n_test, parallel=True):
     '''
     ==Function==
@@ -575,6 +694,8 @@ def grid_search(df, cfg_list, n_test, parallel=True):
         
 #scores = grid_search(data, cfg_list, n_test)
 
+          
+# === MAPE, ME, MAE, MPE, RMSE, CORRELATION ===============================================  
 def forecast_accuracy(forecast, actual):
     '''
     ==Returns==
@@ -590,13 +711,15 @@ def forecast_accuracy(forecast, actual):
             '\nMean Percentage Error:           ', mpe, '\nRoot Mean Squared Error :        ',rmse, 
             '\nCorrelation between the \nActual and the Forecast:         ',corr)    
 
-
+# === MAPE ===============================================  
 def mean_average_percentage_error(y_true, y_pred):
     return np.mean(np.abs((y_true-y_pred)/ y_true)) * 100
-                 
+
+# === RMSE ===============================================            
 def rmse(y_true, y_pred):
     return np.sqrt(mean_squared_error(y_true, y_pred))                                   
-                        
+
+# === RMS ===============================================            
 def rms_score(df, model_type):
     '''
     ==Function==

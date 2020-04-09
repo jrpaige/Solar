@@ -2,19 +2,46 @@ import numpy as np
 import pandas as pd
 import sys
 import datetime
+from datetime import datetime
+from src.Plot import * 
 
 # MATH
 from math import sqrt
 from scipy import signal
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.tree import DecisionTreeRegressor
+
+#TIME
+from sklearn.model_selection import TimeSeriesSplit
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.formula.api import ols
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.regression.rolling import RollingOLS
+from statsmodels.regression import *
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.tools.tools import add_constant
+from statsmodels.tsa import stattools
+from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
+from statsmodels.tsa.arima_model import *
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.holtwinters import *
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
+import pyramid
+from pmdarima.arima import auto_arima
+from sktime.forecasters import ARIMAForecaster
+from sktime.highlevel.tasks import ForecastingTask
+from sktime.highlevel.strategies import ForecastingStrategy
+from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
+from sktime.pipeline import Pipeline
+from sktime.transformers.compose import Tabulariser
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -22,28 +49,23 @@ plt.style.use('ggplot')
 from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
 
-#TIME
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-from statsmodels.formula.api import ols
-from statsmodels.tsa import stattools
-from statsmodels.tools.tools import add_constant
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
-from statsmodels.tsa.arima_model import ARMA
-from statsmodels.tsa.arima_process import ArmaProcess
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-from statsmodels.stats.diagnostic import acorr_ljungbox
-from statsmodels.tsa.stattools import adfuller, acf
-from statsmodels.regression.rolling import RollingOLS
-from statsmodels.regression import *
-import pyramid
-from pmdarima.arima import auto_arima
 
-   
-# === INITIAL REGRESSION MODELS =========================================
+
+# =============================================================================
+# INITIAL REGRESSION MODELS 
+# =============================================================================
+
+
+# === TRAIN TEST =========================================
+def reg_test_train(df):
+    train, test, = train_test_split(df ,test_size=0.2)
+    return train, test
+    
+    
+# === LAGGED OLS =========================================    
 # need to add constant 
 # need to split into train test
+
 def lag_ols_model(df):    
     '''
     ==Function==
@@ -53,11 +75,18 @@ def lag_ols_model(df):
     |ols_model| : ols of 3 lagged colummns]
     |ols_trend| : df of fitted values]
     '''
-    lag_cost = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
-    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost).fit() 
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
+    lag_cost_train = (pd.concat([X_train.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    lag_cost_test = (pd.concat([X_test.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    y = df 
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost_train).fit() 
     ols_trend = ols_model.fittedvalues
     return ols_model, ols_trend
 
+
+# === LINEAR OLS =========================================
 # need to split into train test
 def linear_ols_model(df):
     '''
@@ -68,14 +97,17 @@ def linear_ols_model(df):
     |linear_model| : model of ols]
     |linear_trend| : df of fitted values] 
     '''
-    X = add_constant(np.arange(1, len(df) + 1))
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
     y = df
-    linear_model = sm.OLS(y, X).fit()
-    linear_trend = linear_model.predict(X)
+    
+    linear_model = sm.OLS(y, X_train).fit()
+    linear_trend = linear_model.predict(X_train)
     return linear_model ,linear_trend
 
     
-    
+# === RANDOM FOREST =========================================    
 # need to re-evalute RF code. should not have constant
 # need to split into train test
 def randomforest_model(df):
@@ -87,12 +119,18 @@ def randomforest_model(df):
     |rf_model| : the model of the rf regressor]
     |rf_trend| : df of fitted values]
     '''
-    X = add_constant(np.arange(1, len(df) + 1))
+    X = df.index
     y = df
     rf_model = RandomForestRegressor(n_jobs=-1).fit(X,y)
     rf_trend = rf_model.predict(X)
     return rf_model,rf_trend
 
+
+# =============================================================================
+# SCORING/ TESTING/ PLOTTING
+# =============================================================================   
+
+# === MSE OF REGRESSION MODELS =========================================
 def score_table(df, ols_model, linear_model, rf_model):
     '''
     ==Returns==
@@ -103,34 +141,38 @@ def score_table(df, ols_model, linear_model, rf_model):
     reg_scores = pd.DataFrame(models)
     reg_scores.rename(columns={0:'Models'}, inplace=True)
     reg_scores.set_index('Models', drop=True, inplace= True)
-    #reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
     reg_scores['MSE'] = [round(mean_squared_error(df[3:], ols_model.fittedvalues),5), round(mean_absolute_error(df, linear_model.fittedvalues),5), round(mean_squared_error(df,rf_trend),5)]
-    #reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
-    #ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
-    #reg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
     return reg_scores
     
-def plot_regres_model(df, model_trend, model_name):  
+    
+# === MSE OF STATIONARY REGRESSION MODELS =========================================   
+
+def stat_score_table(df, ols_model, linear_model, rf_model, reg_scores):
     '''
     ==Function==
-    Plots the regression model entered
+    Specifically for after using regression models on differenced/stationary data
     
     ==Parameters==
-    |model_name| : should be entered as a string
-    '''
-    fig, ax = plt.subplots(1, figsize=(16, 3))
-    ax.plot(df.index, df, label= 'cost_per_watt')
-    ax.plot(df.index, model_trend, label= model_name)
-    plt.ylabel('Cost Per Watt ($)')
-    plt.xlabel('Year')
-    plt.legend(loc='best')
-    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
-    plt.show()
+    |df| : differenced/stationary data
+    ols, linear, rf models :
+    |reg_scores| :  previous score table from regression models on original data
     
-
-
-
-# === OTHER REGRESSION MODELS =========================================
+    ==Returns==
+    Table with MSE scores for each regression model 
+    '''
+    df = df.dropna()
+    rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
+    models = ['OLS_DIFF', 'LINEAR_DIFF', 'RF_DIFF',]
+    reg_scores = pd.DataFrame(models)
+    reg_scores.rename(columns={0:'Models'}, inplace=True)
+    reg_scores.set_index('Models', drop=True, inplace= True)
+    tsreg_scores['MSE'] = [mean_squared_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_squared_error(df,tsrf_trend)]
+    diff_reg_scores = (stat_score_table(diff, ols_model, linear_model, rf_model).T)
+    diff_reg_scores = diff_reg_scores.T
+    scores_for_all = pd.concat([reg_scores, diff_reg_scores])
+    return scores_for_all
+    
+# === TEST ON STATIONARY MODELS =========================================
 def stationary_test_on_models(ols_model, linear_model, rf_trend):
     ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
     model_list = [ols_df, lin_df, rf_df]
@@ -140,6 +182,12 @@ def stationary_test_on_models(ols_model, linear_model, rf_trend):
     print('p-value of differenced data(ols, linear,rf)')
     [print(adfuller(i.diff(periods=1).dropna(), autolag='AIC')[1]) for i in model_list]
 
+    
+# =============================================================================
+# OTHER REGRESSION MODELS
+# =============================================================================    
+
+# === ROLLING OLS =========================================
 def rolling_ols(df):  #not helpful
     X = add_constant(np.arange(1, len(df) + 1))
     y = df
@@ -147,7 +195,8 @@ def rolling_ols(df):  #not helpful
     #rolols_trend = rolols_model.predict(X)
     return rolols_model
    
-# LINEAR  ___
+    
+# === ROBUST LINEAR  =========================================
 
 def rob_lin(df):
     '''
@@ -163,6 +212,8 @@ def rob_lin(df):
     roblin_trend = roblin_model.predict()
     return roblin_model, roblin_trend 
  
+
+# === OLS and GLS =========================================    
 def least_squares(df):
     
     '''     
@@ -186,6 +237,8 @@ def least_squares(df):
     lst_sq_mods['orig'] = np.array(y.cost_per_watt)
     return lst_sq_mods
 
+
+# === LINEAR MODEL RESIDUALS =========================================
 def lm_resids(df, linear_trend):    
     '''
     ==Function==
@@ -200,6 +253,8 @@ def lm_resids(df, linear_trend):
     plot_acf_and_pacf(lm_residuals, axs[1:])
     plt.tight_layout()
 
+    
+# === ARIMA ON LINEAR MODEL RESIDUALS =========================================    
 def lm_residual_model(lm_residuals):
     '''
     ==Function==
@@ -211,6 +266,8 @@ def lm_residual_model(lm_residuals):
     lm_residual_model = ARIMA(
     lm_residuals, order=( )).fit()
 
+    
+# === HOLT LINEAR REGRESSION =========================================    
 def holt_linear_model(df):
     '''
     ==Function==
@@ -219,21 +276,25 @@ def holt_linear_model(df):
     ==Returns==
     RMS score 
     '''
-    y_hat_avg = df.copy()
-    fit1 = Holt(np.asarray(df['cost_per_watt'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
-    y_hat_avg['Holt_linear'] = fit1.forecast(len(test))
-    plt.figure(figsize=(16,8))
-    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
-    plt.plot(y_hat_avg['Holt_linear'], label='Holt_linear')
-    plt.legend(loc='best')
-    plt.show()
-    model_type = 'Holt_linear'
-    print('RMS Score:',  rms_score(df, model_type))
-    rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
-    return rms
+    idx = round(len(df) * .8)
+    train = df[:idx]
+    test = df[idx:]
+    fit1 = Holt(np.asarray(train['cost_per_watt'])).fit()
+    test['forecast'] = fit1.forecast(len(test))
+#     mse = mean_squared_error(test['cost_per_watt'],test['forecast'])
+    model_plot(test['cost_per_watt'], train, test['forecast'], 'Holt Linear')
+    
+#     plt.figure(figsize=(16,8))
+#     plt.plot(train['cost_per_watt'], label='Train')
+#     plt.plot(test['cost_per_watt'], label='Test')
+#     plt.plot(test['Holt_linear'], label='Holt_linear')
+#     plt.legend(loc='best')
+#     mse = mean_squared_error(test['cost_per_watt'],test['Holt_linear'])
+#     plt.title('MSE = {}'.format(round(mse,5)))
+#     plt.show()
     
     
-# RF ___
+# === RANDOM FOREST GRID SEARCH =========================================    
 def rf_gs(df): 
     '''
     ==Function==
@@ -275,11 +336,58 @@ def rf_gs(df):
     return gs_cv.cv_results_
 
 
+# === NARX RANDOM FOREST GRID SEARCH =========================================
+from fireTS.models import NARX
+
+def narx_rf(df):
+    
+    x = df
+    y = df
+
+    mdl = NARX(RandomForestRegressor(), auto_order=2, exog_order=[2], exog_delay=[1])
+    para_grid = {'n_estimators': [10, 30, 100]}
+    mdl.grid_search(x, y, para_grid, verbose=2)
+
+    # Best hyper-parameters are set after grid search, print the model to see the difference
+    print(mdl)
+    mdl.fit(x, y)
+    ypred = mdl.predict(x, y, step=3)
+    return ypred
+
+# === DIRECTAUTOREGRESSOR OF RF =========================================
+from fireTS.models import DirectAutoRegressor
+
+def dir_autoreg(df):
+    x = df
+    y = df
+    mdl = DirectAutoRegressor(RandomForestRegressor(), 
+                              auto_order=2, 
+                              exog_order=[2], 
+                              exog_delay=[1], 
+                              pred_step=3)
+    mdl.fit(x, y)
+    ypred = mdl.predict(x, y)
+    return ypred
+
+# === NARX =========================================
+
+def narx(df):
+    x = df
+    y = df
+    mdl = NARX(RandomForestRegressor(), auto_order=2, exog_order=[2], exog_delay=[1])
+    mdl.fit(x, y)
+    ypred = mdl.predict(x, y, step=3)
+    return ypred
+
+# =============================================================================
+# COEFFICIENTS & COVARIANCE
+# =============================================================================
+
 # === COEFFICIENTS =========================================
 def model_coefs_params(model_list):
     [print('Params for {} \n {}'.format(i, i.params)) for i in model_list]   
     
-# === Covariance =========================================    
+# === COVARIANCE =========================================    
         
 def cov_table(df):
     '''

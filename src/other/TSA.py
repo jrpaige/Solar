@@ -633,12 +633,7 @@ def skt_arima_plot(test,train,y_pred,fh, skt_mse):
     plt.title('ARIMA Model MSE ={}'.format(round(skt_mse,5)))
     plt.legend(loc='best')
     plt.show()
-    
-    
-    
-    
-    
-    
+
     
     
         df = df.dropna()
@@ -659,3 +654,188 @@ def skt_arima_plot(test,train,y_pred,fh, skt_mse):
     else:
         print('ARMA Order Used: {}'.format(order))
         print('MSE:',round(mean_squared_error(test, pred),5))
+        
+        
+        
+        
+        
+        
+        
+        
+
+# === INITIAL REGRESSION MODELS =========================================
+        
+        def reg_test_train(df):
+    train, test, = train_test_split(df ,test_size=0.2)
+    return train, test
+    
+# need to add constant 
+# need to split into train test
+
+def lag_ols_model(df):    
+    '''
+    ==Function==
+    Creates lag table and processes through OLS
+    
+    ==Returns==
+    |ols_model| : ols of 3 lagged colummns]
+    |ols_trend| : df of fitted values]
+    '''
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
+    lag_cost_train = (pd.concat([X_train.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    lag_cost_test = (pd.concat([X_test.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    y = df 
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost_).fit() 
+    ols_trend = ols_model.fittedvalues
+    return ols_model, ols_trend
+
+# need to split into train test
+def linear_ols_model(df):
+    '''
+    ==Function==
+    Creates X & y
+    
+    ==Returns==
+    |linear_model| : model of ols]
+    |linear_trend| : df of fitted values] 
+    '''
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
+    y = df
+    
+    linear_model = sm.OLS(y, X_train).fit()
+    linear_trend = linear_model.predict(X_train)
+    return linear_model ,linear_trend
+
+    
+    
+# need to re-evalute RF code. should not have constant
+# need to split into train test
+def randomforest_model(df):
+    '''
+    ==Function==
+    Uses simple Random Forest Regressor to forecast
+   
+    ==Returns==
+    |rf_model| : the model of the rf regressor]
+    |rf_trend| : df of fitted values]
+    '''
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
+    rf_model = RandomForestRegressor(n_jobs=-1).fit(X,y)
+    rf_trend = rf_model.predict(X)
+    return rf_model,rf_trend
+
+def score_table(df, ols_model, linear_model, rf_model):
+    '''
+    ==Returns==
+    Table with MSE scores for each regression model 
+    ''' 
+    rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
+    models = ['OLS', 'LINEAR', 'RF',]
+    reg_scores = pd.DataFrame(models)
+    reg_scores.rename(columns={0:'Models'}, inplace=True)
+    reg_scores.set_index('Models', drop=True, inplace= True)
+    #reg_scores['MAE'] = [mean_absolute_error(df[3:], ols_model.fittedvalues), mean_absolute_error(df, linear_model.fittedvalues), mean_absolute_error(df,rf_trend)]
+    reg_scores['MSE'] = [round(mean_squared_error(df[3:], ols_model.fittedvalues),5), round(mean_absolute_error(df, linear_model.fittedvalues),5), round(mean_squared_error(df,rf_trend),5)]
+    #reg_scores['RMSE'] = [np.sqrt(reg_scores.MSE[0]), np.sqrt(reg_scores.MSE[1]), np.sqrt(reg_scores.MSE[2])]
+    #ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
+    #reg_scores['P_VALUE'] = [ adfuller(ols_df, autolag='AIC')[1],adfuller(lin_df, autolag='AIC')[1], adfuller(rf_df, autolag='AIC')[1]]   
+    return reg_scores
+    
+def plot_regres_model(df, model_trend, model_name):  
+    '''
+    ==Function==
+    Plots the regression model entered
+    
+    ==Parameters==
+    |model_name| : should be entered as a string
+    '''
+    fig, ax = plt.subplots(1, figsize=(16, 3))
+    ax.plot(df.index, df, label= 'cost_per_watt')
+    ax.plot(df.index, model_trend, label= model_name)
+    plt.ylabel('Cost Per Watt ($)')
+    plt.xlabel('Year')
+    plt.legend(loc='best')
+    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
+    plt.show()
+    
+    
+    
+    
+# === CREATE MATRIX OF PAIRED P & Q  =========================================            
+import itertools
+
+def pdq_matrix(df)
+p_min = 0
+d_min = 0
+q_min = 0
+p_max = 11
+d_max = 0
+q_max = 6
+
+# Initialize a DataFrame to store the results
+results_bic = pd.DataFrame(index=['AR{}'.format(i) for i in range(p_min,p_max+1)],
+                           columns=['MA{}'.format(i) for i in range(q_min,q_max+1)])
+
+for p,d,q in itertools.product(range(p_min,p_max+1),
+                               range(d_min,d_max+1),
+                               range(q_min,q_max+1)):
+    if p==0 and d==0 and q==0:
+        results_bic.loc['AR{}'.format(p), 'MA{}'.format(q)] = np.nan
+        continue
+    
+    try:
+        model = smt.SARIMAX(ts_train, order=(p, d, q),
+                               enforce_stationarity=True,
+                               enforce_invertibility=False,seasonal_order=None
+                              )
+        results = model.fit()
+        results_bic.loc['AR{}'.format(p), 'MA{}'.format(q)] = results.mse
+        
+    except:
+        continue
+results_bic = results_bic[results_bic.columns].astype(float)
+    
+    
+    
+    
+    
+    
+    
+def model_plot(test_data,train_data,forecasts,method, order=None):
+    '''
+     ==Function==
+    Plots the regression model entered
+    
+    ==Parameters==
+    |method| : string
+            name of regression or time series model used
+            ex: 'Random Forest Regressor', 'ARIMA'
+    |order| : tuple or None (default is set to None)
+            if time series method is being used, enter in order used 
+    '''
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train_data.plot(ax=ax, label='Train')
+    test_data.plot(ax=ax, label='Test')
+    forecasts.plot(ax=ax, label='{} Forecast'.format(method))
+    ax.set(ylabel='cost_per_watt')
+    if order=None:
+        plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n {} Method  MSE= {}'.format(
+                                    test_start, test_end, 
+                                    forcst_start, forcst_end,method,
+                                    round(mean_squared_error(test_data, forecasts),5)))
+        
+    else:
+        plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n {} {} MSE= {}'.format(
+                                    test_start, test_end, 
+                                    forcst_start, forcst_end,method,order,
+                                    round(mean_squared_error(test_data, forecasts),5)))
+    plt.legend(loc='best')
+    plt.show()    
+    
