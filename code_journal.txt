@@ -1,8 +1,11 @@
 journal 
 
+
+=====April 9th ======
+
 I think I need to use the stationary data (perhaps in lagged form?) in the regression models and basically do the same thing for the regression that I did in the time series? 
 
-pseudo code 
+==pseudo code==
 df = lag_stationary_data
 idx = round(len(df) * .8)
 train= df[:idx]
@@ -11,3 +14,10 @@ run regression models on train.
 
 result.fit().predict(start=test.index.date[0], end=test.index.date[-1])
 mean_squared_error(test, result)
+
+
+for splitting, should I use 
+- sklearn test_train_split
+- sklearn TimeSeriesSplit 
+- manual 80/20 split?
+
