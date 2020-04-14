@@ -159,9 +159,8 @@ def random_forest_model(df):
     ==Prints== 
     MSE score
     '''
-
     count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
-    for i in range(1, len(df)+1):
+    for i in range(len(df)):
         count_cons.append((count, 1))
         count +=1
     X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
