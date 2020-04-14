@@ -146,6 +146,33 @@ def linear_ols_model(df):
 
     
 # === RANDOM FOREST =========================================    
+
+
+
+def random_forest_model(df):
+
+    '''
+    ==Function==
+    Uses simple Random Forest Regressor to forecast
+   
+    ==Returns==
+    |rf_trend| : df of fitted values]
+    
+    ==Prints== 
+    MSE score
+    '''
+
+    count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
+    for i in range(1, len(df)+1):
+        count_cons.append((count, 1))
+        count +=1
+    X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
+    rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
+    rf_trend = rf_model.predict(X_test)
+    print('MSE =', mean_squared_error(y_test, rf_trend) )
+    return rf_trend
+
+
 # need to re-evalute RF code. should not have constant
 # need to split into train test
 # def randomforest_model(df):
@@ -169,19 +196,30 @@ def linear_ols_model(df):
 #     rf_trend = rf_model.predict(X)
 #     return rf_model,rf_trend
 
+# def randomforest_model(df):
+#     count_cons, count = [], 1
+#     for i in range(1, len(df)+1):
+#         count_cons.append((count,1))
+#         count +=1
+#     ct_con = np.array(count_cons)
+#     df_vals = df.cost_per_watt.values
+#     idx = round(len(df)*.8)
+#     X_train, y_train, X_test, y_test = ct_con[:idx], df_vals[:idx], ct_con[idx:],df_vals[idx:]
+#     rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
+#     rf_trend = rf_model.predict(X_test)
+#     return rf_model,rf_trend, mean_squared_error(y_test, rf_trend)
 
-def randomforest_model(df):
-    counter_r, count = [], 1
+
+def random_forest_model(df):
+    count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
     for i in range(1, len(df)+1):
-        counter_r.append((count,count))
+        count_cons.append((count, 1))
         count +=1
-    ct_arr = np.array(counter_r)
-    df_vals = df.cost_per_watt.values
-    idx = round(len(df)*.8)
-    X_train, y_train, X_test, y_test = ct_arr[:idx], df_vals[:idx], ct_arr[idx:],df_vals[idx:]
+    X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
     rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
     rf_trend = rf_model.predict(X_test)
-    return rf_model,rf_trend, mean_squared_error(y_test, rf_trend)
+    print('MSE =', mean_squared_error(y_test, rf_trend) )
+    return rf_trend
 
 
 # =============================================================================
