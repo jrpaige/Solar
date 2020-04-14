@@ -57,15 +57,48 @@ rcParams['figure.figsize'] = 10, 6
 
 
 # === TRAIN TEST =========================================
-def reg_test_train(df):
-    train, test, = train_test_split(df ,test_size=0.2)
+def reg_test_train(df, train_size=.8):
+    '''
+    ==Function==
+    Basic manual 80/20 split
+    
+     ==Parameters==
+    |train_size| : can input specific % of data to use for training set
+                    default set to 80%
+    
+    ==Returns==
+    |train| : % of data from beginning 
+    |test| : remaining % of data until end
+    '''
+    idx = round(len(df)*train_size)
+    train, test = df[:idx], df[idx:]
     return train, test
+
+# === TIME SERIES SPLIT =========================================
+def time_train_test_split():
+    '''
+    ==Function==
+    Completes sklearn's TimeSeriesSplit using kfolds on data
     
-    
-# idx = round(len(df) * .8)
-# train= df[:idx]
-# test = df[idx:]
-# pred = ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
+    ==Returns==
+    |train| : array of values 
+    |test| : array of values
+    '''
+    tss = TimeSeriesSplit()
+    dfn = df.values
+    for strain_index, stest_index in tss.split(dfn):
+        train, test = dfn[strain_index], dfn[stest_index]
+        print('Observations: %d' % (len(train) + len(test)))
+        print('Training Observations: %d' % (len(train)))
+        print('Testing Observations: %d' % (len(test)))
+        pyplot.plot(train)
+        pyplot.plot([None for i in train] + [x for x in test])
+        pyplot.show()
+    return train, test
+
+#ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
+
+
     
 # === LAGGED OLS =========================================    
 # need to add constant 
@@ -115,20 +148,40 @@ def linear_ols_model(df):
 # === RANDOM FOREST =========================================    
 # need to re-evalute RF code. should not have constant
 # need to split into train test
-def randomforest_model(df):
-    '''
-    ==Function==
-    Uses simple Random Forest Regressor to forecast
+# def randomforest_model(df):
+#     '''
+#     ==Function==
+#     Uses simple Random Forest Regressor to forecast
    
-    ==Returns==
-    |rf_model| : the model of the rf regressor]
-    |rf_trend| : df of fitted values]
-    '''
-    X = df.index
-    y = df
-    rf_model = RandomForestRegressor(n_jobs=-1).fit(X,y)
-    rf_trend = rf_model.predict(X)
-    return rf_model,rf_trend
+#     ==Returns==
+#     |rf_model| : the model of the rf regressor]
+#     |rf_trend| : df of fitted values]
+#     '''
+    
+#     counter_r, count = [], 1
+#     for i in range(1, len(df)+1):
+#         counter_r.append((count,count))
+#         count +=1
+#     ct_arr = np.array(counter_r)
+#     X = ct_arr
+#     y = df.cost_per_watt.values
+#     rf_model = RandomForestRegressor(n_jobs=-1).fit(X,y)
+#     rf_trend = rf_model.predict(X)
+#     return rf_model,rf_trend
+
+
+def randomforest_model(df):
+    counter_r, count = [], 1
+    for i in range(1, len(df)+1):
+        counter_r.append((count,count))
+        count +=1
+    ct_arr = np.array(counter_r)
+    df_vals = df.cost_per_watt.values
+    idx = round(len(df)*.8)
+    X_train, y_train, X_test, y_test = ct_arr[:idx], df_vals[:idx], ct_arr[idx:],df_vals[idx:]
+    rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
+    rf_trend = rf_model.predict(X_test)
+    return rf_model,rf_trend, mean_squared_error(y_test, rf_trend)
 
 
 # =============================================================================
