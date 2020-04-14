@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 import datetime
 from datetime import datetime
-from Solar.src.Plot import * 
+from src.Plot import * 
 
 # MATH
 from math import sqrt
