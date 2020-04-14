@@ -839,3 +839,41 @@ def model_plot(test_data,train_data,forecasts,method, order=None):
     plt.legend(loc='best')
     plt.show()    
     
+    
+# === RANDOM FOREST =========================================    
+    
+# need to re-evalute RF code. should not have constant
+# need to split into train test
+# def randomforest_model(df):
+#     '''
+#     ==Function==
+#     Uses simple Random Forest Regressor to forecast
+   
+#     ==Returns==
+#     |rf_model| : the model of the rf regressor]
+#     |rf_trend| : df of fitted values]
+#     '''
+    
+#     counter_r, count = [], 1
+#     for i in range(1, len(df)+1):
+#         counter_r.append((count,count))
+#         count +=1
+#     ct_arr = np.array(counter_r)
+#     X = ct_arr
+#     y = df.cost_per_watt.values
+#     rf_model = RandomForestRegressor(n_jobs=-1).fit(X,y)
+#     rf_trend = rf_model.predict(X)
+#     return rf_model,rf_trend
+
+# def randomforest_model(df):
+#     count_cons, count = [], 1
+#     for i in range(1, len(df)+1):
+#         count_cons.append((count,1))
+#         count +=1
+#     ct_con = np.array(count_cons)
+#     df_vals = df.cost_per_watt.values
+#     idx = round(len(df)*.8)
+#     X_train, y_train, X_test, y_test = ct_con[:idx], df_vals[:idx], ct_con[idx:],df_vals[idx:]
+#     rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
+#     rf_trend = rf_model.predict(X_test)
+#     return rf_model,rf_trend, mean_squared_error(y_test, rf_trend)
