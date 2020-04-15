@@ -11,7 +11,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
-from sklearn.model_selection import TimeSeriesSplit, train_test_split, cross_val_score, KFold, GridSearchCV
+from sklearn.model_selection import TimeSeriesSplit, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
@@ -39,7 +39,6 @@ from sktime.highlevel.strategies import ForecastingStrategy
 from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
 from sktime.pipeline import Pipeline
 from sktime.transformers.compose import Tabulariser
-
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -164,8 +163,7 @@ def test_for_stationarity(df):
         print('Achieved stationarity! Reject ADF H0.')
     else:
         print('Time Series is not stationary. Fail to reject ADF H0')
-
-
+        
         
 # =============================================================================
 # CORRELATION & COEFFICIENTS

@@ -75,7 +75,7 @@ def reg_test_train(df, train_size=.8):
     return train, test
 
 # === TIME SERIES SPLIT =========================================
-def time_train_test_split():
+def time_train_test_split(df):
     '''
     ==Function==
     Completes sklearn's TimeSeriesSplit using kfolds on data
@@ -91,9 +91,9 @@ def time_train_test_split():
         print('Observations: %d' % (len(train) + len(test)))
         print('Training Observations: %d' % (len(train)))
         print('Testing Observations: %d' % (len(test)))
-        pyplot.plot(train)
-        pyplot.plot([None for i in train] + [x for x in test])
-        pyplot.show()
+        plt.plot(train)
+        plt.plot([None for i in train] + [x for x in test])
+        plt.show()
     return train, test
 
 #ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
