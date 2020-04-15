@@ -9,8 +9,8 @@ from src.Plot import *
 from math import sqrt
 from scipy import signal
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.ensemble import RandomForestRegressor, BaggingRegressor, AdaBoostRegressor
+from sklearn.linear_model import LinearRegression, Ridge, LassoLars
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
@@ -73,6 +73,16 @@ def reg_test_train(df, train_size=.8):
     idx = round(len(df)*train_size)
     train, test = df[:idx], df[idx:]
     return train, test
+
+
+def train_test_xy(df):
+    count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
+    for i in range(len(df)):
+        count_cons.append((count, 1))
+        count +=1
+    X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
+    return X_train, y_train, X_test, y_test
+
 
 # === TIME SERIES SPLIT =========================================
 def time_train_test_split(df):
@@ -168,6 +178,20 @@ def random_forest_model(df):
     rf_trend = rf_model.predict(X_test)
     print('MSE =', mean_squared_error(y_test, rf_trend) )
     return rf_trend
+
+
+
+def multiple_regressors(df):
+    X_train, y_train, X_test, y_test = train_test_xy(df)
+    rf_trend = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
+    print('Random Forest Regressor MSE  ', mean_squared_error(y_test, rf_trend))
+    lr_trend = LinearRegression().fit(X_train, y_train).predict(X_test)
+    print('Linear Regression MSE        ', mean_squared_error(y_test, lr_trend))
+    br_trend = BaggingRegressor().fit(X_train, y_train).predict(X_test)
+    print('Bagging Regressor MSE        ', mean_squared_error(y_test, br_trend))
+    abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
+    print('AdaBoost Regressor MSE       ', mean_squared_error(y_test, abr_trend))
+
 
 
 # =============================================================================
