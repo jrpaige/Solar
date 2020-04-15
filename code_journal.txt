@@ -23,23 +23,18 @@ for splitting, should I use
 
 
 
-
+=====April 14th ======
 Random Forest 
 
 Instead of just averaging the prediction of trees, a RF uses two key concepts that give it the name random:
-
 - Random sampling of training observations when building trees
 - Random subsets of features for splitting nodes
-
 In other words, Random Forest builds multiple decision trees and merges their predictions together to get a more accurate and stable prediction, rather than relying on individual decision trees.
 
+Random Forest requires X be array-like or sparse matrix of shape (n_samples, n_features). As such, I made a 2d array of counts and constants [1,1], [2,1], [3,1]... [750,1] to pass in as X. Given I only have 1 feature, that should stay constant. 
 
 
+The OLS lag model is also called a koyck distributed lag. 
+A distributed lag model is a model for time series data in which a regression equation is used to predict current values of a dependent variable based on both the current values of an explanatory variable and the lagged values of this explanatory variable.
 
-Made a 2d array of just counts [1,1], [2,2], [3,3]..etc to pass in as X
-
-Made a 2d array of counts and constants [1,1], [2,1], [3,1]... [750,1] to pass in as X
-
-rf requires X be array-like or sparse matrix of shape (n_samples, n_features)
-
-given I only have 1 feature, that should stay constant! 
+Here, I have

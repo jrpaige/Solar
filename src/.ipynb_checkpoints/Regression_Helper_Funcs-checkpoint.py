@@ -57,31 +57,45 @@ rcParams['figure.figsize'] = 10, 6
 
 
 # === TRAIN TEST =========================================
-def reg_test_train(df, train_size=.8):
-    '''
-    ==Function==
-    Basic manual 80/20 split
-    
-     ==Parameters==
-    |train_size| : can input specific % of data to use for training set
-                    default set to 80%
-    
-    ==Returns==
-    |train| : % of data from beginning 
-    |test| : remaining % of data until end
-    '''
-    idx = round(len(df)*train_size)
-    train, test = df[:idx], df[idx:]
-    return train, test
-
 
 def train_test_xy(df):
+    '''
+    ==Function==
+    Creates 4 values: X_train, y_train, X_test, y_test   
+    
+    ==Returns==
+    |X_train| = 2d array of [sample#, 1] = length of first 80% of data
+    |y_train| = array of first 80% of data values
+    |X_test|  = 2d array of [sample#, 1] = length of last 20% of data
+    |y_test|  = arrat of last 20% of data values
+    '''
     count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
     for i in range(len(df)):
         count_cons.append((count, 1))
         count +=1
     X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
     return X_train, y_train, X_test, y_test
+
+
+# def reg_test_train(df, train_size=.8):
+#     '''
+#     ==Function==
+#     Basic manual 80/20 split
+    
+#      ==Parameters==
+#     |train_size| : can input specific % of data to use for training set
+#                     default set to 80%
+    
+#     ==Returns==
+#     |train| : % of data from beginning 
+#     |test| : remaining % of data until end
+#     '''
+#     idx = round(len(df)*train_size)
+#     train, test = df[:idx], df[idx:]
+#     return train, test
+
+
+
 
 
 # === TIME SERIES SPLIT =========================================
@@ -109,6 +123,31 @@ def time_train_test_split(df):
 #ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
 
 
+
+# === Multiple Regressions =========================================    
+def multiple_regressors(df):
+    '''
+    ==Function==
+    Uses train_test_xy(df) to split into (X/y)train/(X/y)test sets
+    
+    Runs data through 
+    - Random Forest Regressor
+    - Linear Regression
+    - Bagging Regressor
+    - AdaBoost Regressor
+   
+    ==Prints==
+    MSE scores for each 
+    '''
+    X_train, y_train, X_test, y_test = train_test_xy(df)
+    rf_trend = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
+    print('Random Forest Regressor MSE  ', mean_squared_error(y_test, rf_trend))
+    lr_trend = LinearRegression().fit(X_train, y_train).predict(X_test)
+    print('Linear Regression MSE        ', mean_squared_error(y_test, lr_trend))
+    br_trend = BaggingRegressor().fit(X_train, y_train).predict(X_test)
+    print('Bagging Regressor MSE        ', mean_squared_error(y_test, br_trend))
+    abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
+    print('AdaBoost Regressor MSE       ', mean_squared_error(y_test, abr_trend))
     
 # === LAGGED OLS =========================================    
 # need to add constant 
@@ -152,46 +191,7 @@ def linear_ols_model(df):
     
     linear_model = sm.OLS(y, X_train).fit()
     linear_trend = linear_model.predict(X_train)
-    return linear_model ,linear_trend
-
-    
-# === RANDOM FOREST =========================================    
-
-def random_forest_model(df):
-
-    '''
-    ==Function==
-    Uses simple Random Forest Regressor to forecast
-   
-    ==Returns==
-    |rf_trend| : fitted values
-    
-    ==Prints== 
-    MSE score
-    '''
-    count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
-    for i in range(len(df)):
-        count_cons.append((count, 1))
-        count +=1
-    X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
-    rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
-    rf_trend = rf_model.predict(X_test)
-    print('MSE =', mean_squared_error(y_test, rf_trend) )
-    return rf_trend
-
-
-
-def multiple_regressors(df):
-    X_train, y_train, X_test, y_test = train_test_xy(df)
-    rf_trend = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
-    print('Random Forest Regressor MSE  ', mean_squared_error(y_test, rf_trend))
-    lr_trend = LinearRegression().fit(X_train, y_train).predict(X_test)
-    print('Linear Regression MSE        ', mean_squared_error(y_test, lr_trend))
-    br_trend = BaggingRegressor().fit(X_train, y_train).predict(X_test)
-    print('Bagging Regressor MSE        ', mean_squared_error(y_test, br_trend))
-    abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
-    print('AdaBoost Regressor MSE       ', mean_squared_error(y_test, abr_trend))
-
+    return linear_model ,linear_trend  
 
 
 # =============================================================================
