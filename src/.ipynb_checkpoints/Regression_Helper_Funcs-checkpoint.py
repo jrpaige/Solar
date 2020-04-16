@@ -77,27 +77,6 @@ def train_test_xy(df):
     return X_train, y_train, X_test, y_test
 
 
-# def reg_test_train(df, train_size=.8):
-#     '''
-#     ==Function==
-#     Basic manual 80/20 split
-    
-#      ==Parameters==
-#     |train_size| : can input specific % of data to use for training set
-#                     default set to 80%
-    
-#     ==Returns==
-#     |train| : % of data from beginning 
-#     |test| : remaining % of data until end
-#     '''
-#     idx = round(len(df)*train_size)
-#     train, test = df[:idx], df[idx:]
-#     return train, test
-
-
-
-
-
 # === TIME SERIES SPLIT =========================================
 def time_train_test_split(df):
     '''
@@ -141,13 +120,15 @@ def multiple_regressors(df):
     '''
     X_train, y_train, X_test, y_test = train_test_xy(df)
     rf_trend = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
-    print('Random Forest Regressor MSE  ', mean_squared_error(y_test, rf_trend))
+    print(' ---- MSE Scores ----'.center(25))
+    print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf_trend),5))
     lr_trend = LinearRegression().fit(X_train, y_train).predict(X_test)
-    print('Linear Regression MSE        ', mean_squared_error(y_test, lr_trend))
+    print('Linear Regression        ', round(mean_squared_error(y_test, lr_trend),5))
     br_trend = BaggingRegressor().fit(X_train, y_train).predict(X_test)
-    print('Bagging Regressor MSE        ', mean_squared_error(y_test, br_trend))
+    print('Bagging Regressor        ', round(mean_squared_error(y_test, br_trend),5))
     abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
-    print('AdaBoost Regressor MSE       ', mean_squared_error(y_test, abr_trend))
+    print('AdaBoost Regressor       ', round(mean_squared_error(y_test, abr_trend),5))
+    
     
     
         
@@ -162,16 +143,10 @@ def smf_ols(df):
     '''
     lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()    
     idx = round(len(lag_df)* .8)
-    ols_train= lag_df[:idx]
-    ols_test = lag_df[idx:]
-    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=ols_train).fit()
-    ols_predict = ols_model.predict(ols_test)
-    plt.plot(ols_predict, label='OLS preds')
-    plt.plot(ols_test.y, label='actual')
-    plt.legend(loc='best')
-    ols_mse = round(mean_squared_error(ols_test.y,ols_predict),5)
-    plt.title('MSE = {}'.format(ols_mse))
-    plt.show()
+    ols_train, ols_test= lag_df[:idx], lag_df[idx:]
+    ols_predict = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=ols_train).fit().predict(ols_test)
+    print('smf ols                  ', round(mean_squared_error(ols_test.y,ols_predict),5))
+    
     
 # === NEW LAG LINEAR OLS ========================================= 
 def sm_OLS(df):
@@ -189,15 +164,14 @@ def sm_OLS(df):
     idx = round(len(lag_df)* .8)
     lag_y,lag_X = list(lag_df.values), list(lag_df.index)
     lag_y_train, lag_y_test,lag_X_train, lag_X_test  = lag_y[:idx], lag_y[idx:], lag_X[:idx], lag_X[idx:]
-    model = sm.OLS(lag_y_train, lag_X_train).fit()
-    y_predict = model.predict(lag_X_test)
-    plt.plot(pd.DataFrame(y_predict)[0], label= 'OLS preds')
-    plt.plot(pd.DataFrame(lag_y_test)[0], label= 'actual')
-    plt.legend(loc='best')
-    ols_mse = round(mean_squared_error(lag_y_test, y_predict),5)
-    plt.title('MSE = {}'.format(ols_mse))
-    plt.show()
+    predict = sm.OLS(lag_y_train, lag_X_train).fit().predict(lag_X_test)  
+    print('sm OLS Linear            ', round(mean_squared_error(lag_y_test, predict),5))
 
+
+    
+    
+    
+    
 # =============================================================================
 # SCORING/ TESTING/ PLOTTING
 # =============================================================================   

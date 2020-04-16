@@ -885,7 +885,7 @@ def model_plot(test_data,train_data,forecasts,method, order=None):
 
 
 
- 
+# CREATED NEW OLS MODELS
     
 # === LAGGED OLS =========================================    
 # need to add constant 
@@ -930,3 +930,42 @@ def linear_ols_model(df):
     linear_model = sm.OLS(y, X_train).fit()
     linear_trend = linear_model.predict(X_train)
     return linear_model ,linear_trend  
+
+
+
+# === OLD TT SPLIT =========================================
+def reg_test_train(df, train_size=.8):
+    '''
+    ==Function==
+    Basic manual 80/20 split
+    
+     ==Parameters==
+    |train_size| : can input specific % of data to use for training set
+                    default set to 80%
+    
+    ==Returns==
+    |train| : % of data from beginning 
+    |test| : remaining % of data until end
+    '''
+    idx = round(len(df)*train_size)
+    train, test = df[:idx], df[idx:]
+    return train, test
+
+
+
+# === NEW LAG OLS PLOT ========================================= 
+def smf_ols_plot():
+    plt.plot(ols_predict, label='OLS preds')
+    plt.plot(ols_test.y, label='actual')
+    plt.legend(loc='best')
+    plt.title('MSE = {}'.format(round(mean_squared_error(ols_test.y,ols_predict),5)))
+    plt.show()
+
+
+ # === NEW LAG LINEAR OLS PLOT =========================================    
+def sm_OLS_plot():
+    plt.plot(pd.DataFrame(predict)[0], label= 'OLS preds')
+    plt.plot(pd.DataFrame(lag_y_test)[0], label= 'actual')
+    plt.legend(loc='best')
+    plt.title('MSE = {}'.format(round(mean_squared_error(lag_y_test, predict),5)))
+    plt.show()
