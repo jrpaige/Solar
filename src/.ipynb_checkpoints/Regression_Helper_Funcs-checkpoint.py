@@ -149,6 +149,49 @@ def multiple_regressors(df):
     abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
     print('AdaBoost Regressor MSE       ', mean_squared_error(y_test, abr_trend))
     
+    
+        
+# === NEW LAG OLS ========================================= 
+def lag_OLS1(df):
+    '''
+    uses OLS on data split into train test
+    
+    '''
+    lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()    
+    idx = round(len(lags)* .8)
+    ols_diff_test = df[idx:]
+    ols_diff_train= df[:idx]
+    lag_train = lag_df[:idx]
+    lag_test = lag_df[idx:]
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_train).fit() 
+    plt.plot(ols_model.predict(lag_test), label='ols model')
+    plt.plot(ols_diff_test, label='actual')
+    plt.legend(loc='best')
+    ols_mse = round(mean_squared_error(ols_diff_test,ols_model.predict(lag_test)),5)
+    plt.title('MSE = {}'.format(ols_mse))
+    plt.show()
+    
+    
+def lag_OLS2(df):
+    '''
+    uses OLS on data split into X_train, y_train, X_test, y_test
+    
+    '''
+    lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()    
+    idx = round(len(lags)* .8)
+    lag_y,lag_X = list(lag_df.values), list(lag_df.index)
+    lag_y_train, lag_y_test,lag_X_train, lag_X_test  = lag_y[:idx], lag_y[idx:], lag_X[:idx], lag_X[idx:]
+    model = sm.OLS(lag_y_train, lag_X_train).fit()
+    y_predict = model.predict(lag_X_test)
+    plt.plot(pd.DataFrame(y_predict), label= 'preds')
+    plt.plot(pd.DataFrame(lag_y_test), label= 'actual')
+    plt.legend(loc='best')
+    ols_mse = round(mean_squared_error(lag_y_test, y_predict),5)
+    plt.title('MSE = {}'.format(ols_mse))
+    plt.show()
+    
+    
+    
 # === LAGGED OLS =========================================    
 # need to add constant 
 # need to split into train test
