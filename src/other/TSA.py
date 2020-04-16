@@ -969,3 +969,71 @@ def sm_OLS_plot():
     plt.legend(loc='best')
     plt.title('MSE = {}'.format(round(mean_squared_error(lag_y_test, predict),5)))
     plt.show()
+    
+    
+    
+    
+    
+    
+# =============================================================================
+# SCORING/ TESTING/ PLOTTING
+# =============================================================================   
+
+# === MSE OF REGRESSION MODELS =========================================
+def score_table(df, ols_model, linear_model, rf_model):
+    '''
+    ==Returns==
+    Table with MSE scores for each regression model 
+    ''' 
+    rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
+    models = ['OLS', 'LINEAR', 'RF',]
+    reg_scores = pd.DataFrame(models)
+    reg_scores.rename(columns={0:'Models'}, inplace=True)
+    reg_scores.set_index('Models', drop=True, inplace= True)
+    reg_scores['MSE'] = [round(mean_squared_error(df[3:], ols_model.fittedvalues),5), round(mean_absolute_error(df, linear_model.fittedvalues),5), round(mean_squared_error(df,rf_trend),5)]
+    return reg_scores
+ 
+    
+    
+    
+    
+    
+# === MSE OF STATIONARY REGRESSION MODELS =========================================   
+
+def stat_score_table(df, ols_model, linear_model, rf_model, reg_scores):
+    '''
+    ==Function==
+    Specifically for after using regression models on differenced/stationary data
+    
+    ==Parameters==
+    |df| : differenced/stationary data
+    ols, linear, rf models :
+    |reg_scores| :  previous score table from regression models on original data
+    
+    ==Returns==
+    Table with MSE scores for each regression model 
+    '''
+    df = df.dropna()
+    rf_trend = rf_model.predict(add_constant(np.arange(1,len(df)+ 1)))
+    models = ['OLS_DIFF', 'LINEAR_DIFF', 'RF_DIFF',]
+    reg_scores = pd.DataFrame(models)
+    reg_scores.rename(columns={0:'Models'}, inplace=True)
+    reg_scores.set_index('Models', drop=True, inplace= True)
+    tsreg_scores['MSE'] = [mean_squared_error(df[3:], tsols_model.fittedvalues), mean_absolute_error(df, tslinear_model.fittedvalues), mean_squared_error(df,tsrf_trend)]
+    diff_reg_scores = (stat_score_table(diff, ols_model, linear_model, rf_model).T)
+    diff_reg_scores = diff_reg_scores.T
+    scores_for_all = pd.concat([reg_scores, diff_reg_scores])
+    return scores_for_all
+    
+# === TEST ON STATIONARY MODELS =========================================
+def stationary_test_on_models(ols_model, linear_model, rf_trend):
+    ols_df, lin_df, rf_df = pd.DataFrame(ols_model.fittedvalues), pd.DataFrame(linear_model.fittedvalues), pd.DataFrame(rf_trend)
+    model_list = [ols_df, lin_df, rf_df]
+    print('p-value of original data (ols, linear,rf)')
+    [print((adfuller(i, autolag='AIC')[1]))for i in model_list]
+    print('-------')
+    print('p-value of differenced data(ols, linear,rf)')
+    [print(adfuller(i.diff(periods=1).dropna(), autolag='AIC')[1]) for i in model_list]
+#==============================================================   
+
+

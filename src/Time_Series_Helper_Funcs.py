@@ -165,6 +165,32 @@ def test_for_stationarity(df):
         print('Time Series is not stationary. Fail to reject ADF H0')
         
         
+# === TIME SERIES TRAIN TEST SPLIT =========================================
+def time_train_test_split(df):
+    '''
+    ==Function==
+    Completes sklearn's TimeSeriesSplit using kfolds on data
+    
+    ==Returns==
+    |train| : array of values 
+    |test| : array of values
+    '''
+    tss = TimeSeriesSplit()
+    dfn = df.values
+    for strain_index, stest_index in tss.split(dfn):
+        train, test = dfn[strain_index], dfn[stest_index]
+        print('Observations: %d' % (len(train) + len(test)))
+        print('Training Observations: %d' % (len(train)))
+        print('Testing Observations: %d' % (len(test)))
+        plt.plot(train)
+        plt.plot([None for i in train] + [x for x in test])
+        plt.show()
+    return train, test        
+        
+        
+        
+        
+        
 # =============================================================================
 # CORRELATION & COEFFICIENTS
 # =============================================================================        
@@ -746,3 +772,9 @@ def rms_score(df, model_type):
             #'Lag 1 Autocorrelation of Error':acf1, \
             'Correlation between the Actual and the Forecast':corr}) \
             #'Min-Max Error ':minmax})
+
+
+
+
+# UNKNOWN
+#ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
