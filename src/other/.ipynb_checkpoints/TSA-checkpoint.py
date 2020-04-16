@@ -880,3 +880,53 @@ def model_plot(test_data,train_data,forecasts,method, order=None):
 #     rf_model = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
 #     rf_trend = rf_model.predict(X_test)
 #     return rf_model,rf_trend, mean_squared_error(y_test, rf_trend)
+
+
+
+
+
+ 
+    
+# === LAGGED OLS =========================================    
+# need to add constant 
+# need to split into train test
+
+def lag_ols_model(df):    
+    '''
+    ==Function==
+    Creates lag table and processes through OLS
+    
+    ==Returns==
+    |ols_model| : ols of 3 lagged colummns]
+    |ols_trend| : df of fitted values]
+    '''
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
+    lag_cost_train = (pd.concat([X_train.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    lag_cost_test = (pd.concat([X_test.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
+    y = df 
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost_train).fit() 
+    ols_trend = ols_model.fittedvalues
+    return ols_model, ols_trend
+
+
+# === LINEAR OLS =========================================
+# need to split into train test
+def linear_ols_model(df):
+    '''
+    ==Function==
+    Creates X & y
+    
+    ==Returns==
+    |linear_model| : model of ols]
+    |linear_trend| : df of fitted values] 
+    '''
+    train, test = reg_test_train(df)
+    X_train = add_constant(np.arange(1, len(train) + 1))
+    X_test = add_constant(np.arange(1, len(test) + 1))
+    y = df
+    
+    linear_model = sm.OLS(y, X_train).fit()
+    linear_trend = linear_model.predict(X_train)
+    return linear_model ,linear_trend  

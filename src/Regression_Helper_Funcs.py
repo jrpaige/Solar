@@ -152,90 +152,51 @@ def multiple_regressors(df):
     
         
 # === NEW LAG OLS ========================================= 
-def lag_OLS1(df):
+def smf_ols(df):
     '''
-    uses OLS on data split into train test
+    ==Function==
+    uses smf.ols on data split into train test
     
+    ==Returns==
+    plot with MSE
     '''
     lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()    
-    idx = round(len(lags)* .8)
-    ols_diff_test = df[idx:]
-    ols_diff_train= df[:idx]
-    lag_train = lag_df[:idx]
-    lag_test = lag_df[idx:]
-    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_train).fit() 
-    plt.plot(ols_model.predict(lag_test), label='ols model')
-    plt.plot(ols_diff_test, label='actual')
+    idx = round(len(lag_df)* .8)
+    ols_train= lag_df[:idx]
+    ols_test = lag_df[idx:]
+    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=ols_train).fit()
+    ols_predict = ols_model.predict(ols_test)
+    plt.plot(ols_predict, label='OLS preds')
+    plt.plot(ols_test.y, label='actual')
     plt.legend(loc='best')
-    ols_mse = round(mean_squared_error(ols_diff_test,ols_model.predict(lag_test)),5)
+    ols_mse = round(mean_squared_error(ols_test.y,ols_predict),5)
     plt.title('MSE = {}'.format(ols_mse))
     plt.show()
     
-    
-def lag_OLS2(df):
+# === NEW LAG LINEAR OLS ========================================= 
+def sm_OLS(df):
     '''
-    uses OLS on data split into X_train, y_train, X_test, y_test
+    ==Function==
+    linear OLS that uses sm.OLS on data split into X_train, y_train, X_test, y_test
+    X = array [1-len(df)]
+    y = df's values
     
+    ==Returns==
+    plot with MSE
     '''
-    lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()    
-    idx = round(len(lags)* .8)
+    lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna() 
+    lag_df.index = np.arange(1,len(lag_df)+1)
+    idx = round(len(lag_df)* .8)
     lag_y,lag_X = list(lag_df.values), list(lag_df.index)
     lag_y_train, lag_y_test,lag_X_train, lag_X_test  = lag_y[:idx], lag_y[idx:], lag_X[:idx], lag_X[idx:]
     model = sm.OLS(lag_y_train, lag_X_train).fit()
     y_predict = model.predict(lag_X_test)
-    plt.plot(pd.DataFrame(y_predict), label= 'preds')
-    plt.plot(pd.DataFrame(lag_y_test), label= 'actual')
+    plt.plot(pd.DataFrame(y_predict)[0], label= 'OLS preds')
+    plt.plot(pd.DataFrame(lag_y_test)[0], label= 'actual')
     plt.legend(loc='best')
     ols_mse = round(mean_squared_error(lag_y_test, y_predict),5)
     plt.title('MSE = {}'.format(ols_mse))
     plt.show()
-    
-    
-    
-# === LAGGED OLS =========================================    
-# need to add constant 
-# need to split into train test
-
-def lag_ols_model(df):    
-    '''
-    ==Function==
-    Creates lag table and processes through OLS
-    
-    ==Returns==
-    |ols_model| : ols of 3 lagged colummns]
-    |ols_trend| : df of fitted values]
-    '''
-    train, test = reg_test_train(df)
-    X_train = add_constant(np.arange(1, len(train) + 1))
-    X_test = add_constant(np.arange(1, len(test) + 1))
-    lag_cost_train = (pd.concat([X_train.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
-    lag_cost_test = (pd.concat([X_test.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()
-    y = df 
-    ols_model = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=lag_cost_train).fit() 
-    ols_trend = ols_model.fittedvalues
-    return ols_model, ols_trend
-
-
-# === LINEAR OLS =========================================
-# need to split into train test
-def linear_ols_model(df):
-    '''
-    ==Function==
-    Creates X & y
-    
-    ==Returns==
-    |linear_model| : model of ols]
-    |linear_trend| : df of fitted values] 
-    '''
-    train, test = reg_test_train(df)
-    X_train = add_constant(np.arange(1, len(train) + 1))
-    X_test = add_constant(np.arange(1, len(test) + 1))
-    y = df
-    
-    linear_model = sm.OLS(y, X_train).fit()
-    linear_trend = linear_model.predict(X_train)
-    return linear_model ,linear_trend  
-
 
 # =============================================================================
 # SCORING/ TESTING/ PLOTTING
