@@ -50,11 +50,9 @@ from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
 
 
-
 # =============================================================================
-# INITIAL REGRESSION MODELS 
+# REGRESSION PREP
 # =============================================================================
-
 
 # === TRAIN TEST =========================================
 
@@ -75,6 +73,11 @@ def train_test_xy(df):
         count +=1
     X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
     return X_train, y_train, X_test, y_test
+
+
+# =============================================================================
+# PRIMARY REGRESSION MODELS 
+# =============================================================================
 
 # === Multiple Regressions =========================================    
 def multiple_regressors(df):
@@ -102,7 +105,6 @@ def multiple_regressors(df):
     abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
     print('AdaBoost Regressor       ', round(mean_squared_error(y_test, abr_trend),5))
 
-    
         
 # === NEW LAG OLS ========================================= 
 def smf_ols(df):
@@ -138,6 +140,7 @@ def sm_OLS(df):
     lag_y_train, lag_y_test,lag_X_train, lag_X_test  = lag_y[:idx], lag_y[idx:], lag_X[:idx], lag_X[idx:]
     predict = sm.OLS(lag_y_train, lag_X_train).fit().predict(lag_X_test)  
     print('sm OLS Linear            ', round(mean_squared_error(lag_y_test, predict),5))
+    
     
 # =============================================================================
 # OTHER REGRESSION MODELS

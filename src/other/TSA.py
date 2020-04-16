@@ -1037,3 +1037,20 @@ def stationary_test_on_models(ols_model, linear_model, rf_trend):
 #==============================================================   
 
 
+
+
+
+    
+# === ARIMA ON LINEAR MODEL RESIDUALS =========================================    
+def lm_residual_model(lm_residuals):
+    '''
+    ==Function==
+    ARIMA on LM residuals
+    
+    ==Note==
+    for use in other funcs
+    '''
+    lm_residual_model = ARIMA(
+    lm_residuals, order=( )).fit()
+
+    
