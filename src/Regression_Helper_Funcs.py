@@ -40,31 +40,45 @@ rcParams['figure.figsize'] = 10, 6
 
 # === TRAIN TEST =========================================
 
-def train_test_xy(df):
+def train_test_lag(df, lag_len=3, Xy=True):
     '''
     ==Function==
-    Creates 4 values: X_train, y_train, X_test, y_test   
+    Creates a new df with 3 lagged columns
+    Splits data into X_train, y_train, X_test, y_test sets
+        -OR- into train and test sets 
     
+    ==Parameters==
+    |lag_len| : include how many lags to include in data
+                default is 3
+    |xy|      : if True, splits data into X & y sets and again into train & test sets
+                if False, splits data into train & test sets
+                 default = True
+            
     ==Returns==
-    |X_train| = 2d array of [sample#, 1] = length of first 80% of data
-    |y_train| = array of first 80% of data values
-    |X_test|  = 2d array of [sample#, 1] = length of last 20% of data
-    |y_test|  = arrat of last 20% of data values
+    |X_train| = first 80% of df's lagged data 
+    |y_train| = first 80% of y values
+    |X_test|  = last 20% of df's lagged data
+    |y_test|  = last 20% of df's y values
+    -OR-
+    |train| = first 80% of df's data 
+    |test| = last 20% of df's data
     '''
-    count_cons, count, idx, df_vals = [], 1, round(len(df)*.8), df.cost_per_watt.values
-    for i in range(len(df)):
-        count_cons.append((count, 1))
-        count +=1
-    X_train, y_train, X_test, y_test = count_cons[:idx], df_vals[:idx], count_cons[idx:],df_vals[idx:]
-    return X_train, y_train, X_test, y_test
-
-
+    lag_df = (pd.concat([df.shift(i) for i in range(lag_len+1)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, lag_len+1)])).dropna() 
+    idx = round(len(lag_df)*.8)
+    if Xy==False:
+        train, test = lag_df[:idx], lag_df[idx:]
+        return train, test
+    elif Xy==True:
+        lag_y, lag_X  = lag_df.y, lag_df.drop(columns='y')    
+        X_train, y_train, X_test, y_test = lag_X[:idx], lag_y[:idx], lag_X[idx:], lag_y[idx:]
+        return X_train, y_train, X_test, y_test
+    
 # =============================================================================
 # PRIMARY REGRESSION MODELS 
 # =============================================================================
 
 # === Multiple Regressions =========================================    
-def multiple_regressors(df):
+def multiple_regressors(df, lag_len=3, print_mses=True):
     '''
     ==Function==
     Uses train_test_xy(df) to split into (X/y)train/(X/y)test sets
@@ -74,58 +88,42 @@ def multiple_regressors(df):
     - Linear Regression
     - Bagging Regressor
     - AdaBoost Regressor
+    - sm OLS Linear Regression
+    - smf ols Regression
    
-    ==Prints==
-    MSE scores for each 
+   if print_mses==True:
+        ==Prints==
+        MSE scores for each 
+        default=True
+    
+    ==Returns==
+    rf, lr, br, abr, ols_lin, ols models
     '''
-    X_train, y_train, X_test, y_test = train_test_xy(df)
-    rf_trend = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
-    print(' ---- MSE Scores ----'.center(31))
-    print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf_trend),5))
-    lr_trend = LinearRegression().fit(X_train, y_train).predict(X_test)
-    print('Linear Regression        ', round(mean_squared_error(y_test, lr_trend),5))
-    br_trend = BaggingRegressor().fit(X_train, y_train).predict(X_test)
-    print('Bagging Regressor        ', round(mean_squared_error(y_test, br_trend),5))
-    abr_trend = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
-    print('AdaBoost Regressor       ', round(mean_squared_error(y_test, abr_trend),5))
+    X_train, y_train, X_test, y_test = train_test_lag(df, lag_len=lag_len)
+    rf= RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
+    lr = LinearRegression().fit(X_train, y_train).predict(X_test)
+    #br = BaggingRegressor().fit(X_train, y_train).predict(X_test)
+    #abr = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
+    ols_lin = sm.OLS(y_train, X_train).fit().predict(X_test)  
+    ols_train, ols_test= train_test_lag(df, Xy=False)
+    ols = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=ols_train).fit().predict(ols_test)
+    if print_mses == True:
+        print(' ---- MSE Scores ----'.center(31))
+        print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf),5))
+        print('Linear Regression        ', round(mean_squared_error(y_test, lr),5))
 
-        
-# === NEW LAG OLS ========================================= 
-def smf_ols(df):
-    '''
-    ==Function==
-    uses smf.ols on data split into train test
-    
-    ==Returns==
-    plot with MSE
-    '''
-    lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna()    
-    idx = round(len(lag_df)* .8)
-    ols_train, ols_test= lag_df[:idx], lag_df[idx:]
-    ols_predict = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=ols_train).fit().predict(ols_test)
-    print('smf ols                  ', round(mean_squared_error(ols_test.y,ols_predict),5))
-    
-    
-# === NEW LAG LINEAR OLS ========================================= 
-def sm_OLS(df):
-    '''
-    ==Function==
-    linear OLS that uses sm.OLS on data split into X_train, y_train, X_test, y_test
-    X = array [1-len(df)]
-    y = df's values
-    
-    ==Returns==
-    plot with MSE
-    '''
-    lag_df = (pd.concat([df.shift(i) for i in range(4)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, 4)])).dropna() 
-    lag_df.index = np.arange(1,len(lag_df)+1)
-    idx = round(len(lag_df)* .8)
-    lag_y,lag_X = list(lag_df.values), list(lag_df.index)
-    lag_y_train, lag_y_test,lag_X_train, lag_X_test  = lag_y[:idx], lag_y[idx:], lag_X[:idx], lag_X[idx:]
-    predict = sm.OLS(lag_y_train, lag_X_train).fit().predict(lag_X_test)  
-    print('sm OLS Linear            ', round(mean_squared_error(lag_y_test, predict),5))
-    
-    
+       #print('Bagging Regressor        ', round(mean_squared_error(y_test, br),5))
+
+       #print('AdaBoost Regressor       ', round(mean_squared_error(y_test, abr),5))
+
+        print('sm OLS Linear            ', round(mean_squared_error(y_test, ols_lin),5))
+
+        print('smf ols                  ', round(mean_squared_error(ols_test.y,ols),5))
+        return rf, lr, ols_lin, ols
+        # removed br, abr
+    else:
+        return rf, lr, ols_lin, ols 
+
     
     
     

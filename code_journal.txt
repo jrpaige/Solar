@@ -62,3 +62,20 @@ sm OLS Linear             0.01494
 Created Model_Notebook.ipynb to run clean code of the final models 
 TSA.py is a collection of previous code of now un-used code that I wish to save.
 
+
+=====April 17th ======
+try 2-4 lags
+
+
+
+validate 
+
+
+created 6 different regressors
+
+Random Forest, Linear, Bagging, AdaBoost, OLS Linear, OLS
+
+Bagging and Adaboost aren't super 
+
+
+

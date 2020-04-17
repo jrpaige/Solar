@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import datetime
 from datetime import datetime
+from src.Regression_Helper_Funcs import train_test_lag, multiple_regressors
 
 # MATH
 from math import sqrt
@@ -109,23 +110,79 @@ def plot_regres_model(df, model_trend, model_name):
     
 
 
-# === NEW LAG OLS PLOT ========================================= 
-def smf_ols_plot():
-    plt.plot(ols_predict, label='OLS preds')
-    plt.plot(ols_test.y, label='actual')
-    plt.legend(loc='best')
-    plt.title('MSE = {}'.format(round(mean_squared_error(ols_test.y,ols_predict),5)))
-    plt.show()
+# === PLOT REGRESSION MODELS =========================================    
+      
+def regres_dfs(df):
+    '''
+    ==Function==
+    Creates a new df with y_test values and forecasted values for all regression models
+    
+    ==Uses== 
+    |train_test_lag| from Regression_Helper_Funcs
+    |multiple_regressors| from Regression_Helper_Funcs
+    
+    ==Returns==
+    |y_preds| : new df
+    '''
+    
+    y_preds = train_test_lag(df, Xy=True)[3]
+    rf, lr, ols_lin, ols_smf = multiple_regressors(df, print_mses=False)
+    y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
+    y_preds['randomforest'] = rf
+    y_preds['linear'] = lr
+#     y_preds['bagging'] = br
+#     y_preds['adaboost'] = abr
+    y_preds['olslinear'] = ols_lin
+    y_preds['olssmf'] = ols_smf
+    return y_preds
 
+def plot_regs(df):
+    '''
+    ==Function==
+    plots 6 regression models' forecasted values with the actual values
+    
+    ==Uses==
+    regres_dfs
+    
+    ==Returns==
+    6 subplots with MSE scores in each table's title
+    '''
+    y_preds = regres_dfs(df)
+    fig, axs = plt.subplots(2, 2, figsize= (30,20))
+    axs[0,0].plot(y_preds.actual, label= 'actual')
+    axs[0,0].plot(y_preds.randomforest, label= 'Random Forest')
+    axs[0,0].set_title('Random Forest \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)))
+    axs[0,0].legend(loc='best')
 
- # === NEW LAG LINEAR OLS PLOT =========================================    
-def sm_OLS_plot():
-    plt.plot(pd.DataFrame(predict)[0], label= 'OLS preds')
-    plt.plot(pd.DataFrame(lag_y_test)[0], label= 'actual')
-    plt.legend(loc='best')
-    plt.title('MSE = {}'.format(round(mean_squared_error(lag_y_test, predict),5)))
+    axs[0,1].plot(y_preds.actual , label= 'actual')
+    axs[0,1].plot(y_preds.linear, label= 'Linear')
+    axs[0,1].set_title('Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.linear),5)))
+    axs[0,1].legend(loc='best')
+            
+    axs[1,0].plot(y_preds.actual, label= 'actual')
+    axs[1,0].plot(y_preds.olssmf, label= 'OLS')
+    axs[1,0].set_title('OLS smf \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)))
+    axs[1,0].legend(loc='best')    
+    
+    
+    axs[1,1].plot(y_preds.actual, label= 'actual')
+    axs[1,1].plot(y_preds.olslinear, label= 'OLS Linear')
+    axs[1,1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)))
+    axs[1,1].legend(loc='best')
+    
+
+    
+    
+#     axs[1,0].plot(y_preds.actual, label= 'actual')
+#     axs[1,0].plot(y_preds.bagging, label= 'Bagging')
+#     axs[1,0].set_title('Bagging \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.bagging),5)))
+#     axs[1,0].legend(loc='best')
+    
+#     axs[1,1].plot(y_preds.actual, label= 'actual')
+#     axs[1,1].plot(y_preds.adaboost, label= 'AdaBoost')
+#     axs[1,1].set_title('AdaBoost \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.adaboost),5)))
+#     axs[1,1].legend(loc='best')   
+        
+        
+        
     plt.show()
-    
-    
-    
-    
