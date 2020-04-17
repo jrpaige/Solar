@@ -5,7 +5,7 @@ import datetime
 from datetime import datetime
 from src.Plot import * 
 
-# MATH
+# REGRESSION
 from math import sqrt
 from scipy import signal
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -16,9 +16,6 @@ from sklearn.model_selection import train_test_split, cross_val_score, KFold, Gr
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
-
-#TIME
-from sklearn.model_selection import TimeSeriesSplit
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.formula.api import ols
@@ -27,21 +24,8 @@ from statsmodels.regression.rolling import RollingOLS
 from statsmodels.regression import *
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tools.tools import add_constant
-from statsmodels.tsa import stattools
-from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
-from statsmodels.tsa.arima_model import *
-from statsmodels.tsa.arima_process import ArmaProcess
-from statsmodels.tsa.holtwinters import *
-from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
-import pyramid
-from pmdarima.arima import auto_arima
-from sktime.forecasters import ARIMAForecaster
-from sktime.highlevel.tasks import ForecastingTask
-from sktime.highlevel.strategies import ForecastingStrategy
-from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
-from sktime.pipeline import Pipeline
-from sktime.transformers.compose import Tabulariser
+from statsmodels.tsa.holtwinters import *
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -96,7 +80,7 @@ def multiple_regressors(df):
     '''
     X_train, y_train, X_test, y_test = train_test_xy(df)
     rf_trend = RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
-    print(' ---- MSE Scores ----'.center(25))
+    print(' ---- MSE Scores ----'.center(31))
     print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf_trend),5))
     lr_trend = LinearRegression().fit(X_train, y_train).predict(X_test)
     print('Linear Regression        ', round(mean_squared_error(y_test, lr_trend),5))
@@ -142,18 +126,12 @@ def sm_OLS(df):
     print('sm OLS Linear            ', round(mean_squared_error(lag_y_test, predict),5))
     
     
+    
+    
+    
 # =============================================================================
 # OTHER REGRESSION MODELS
 # =============================================================================    
-
-# === ROLLING OLS =========================================
-def rolling_ols(df):  #not helpful
-    X = add_constant(np.arange(1, len(df) + 1))
-    y = df
-    rolols_model = RollingOLS(y, X, window=3).fit()
-    #rolols_trend = rolols_model.predict(X)
-    return rolols_model
-   
     
 # === ROBUST LINEAR  =========================================
 
@@ -211,19 +189,6 @@ def lm_resids(df, linear_trend):
     axs[0].plot(lm_residuals.index, lm_residuals)
     plot_acf_and_pacf(lm_residuals, axs[1:])
     plt.tight_layout()
-
-    
-# === ARIMA ON LINEAR MODEL RESIDUALS =========================================    
-def lm_residual_model(lm_residuals):
-    '''
-    ==Function==
-    ARIMA on LM residuals
-    
-    ==Note==
-    for use in other funcs
-    '''
-    lm_residual_model = ARIMA(
-    lm_residuals, order=( )).fit()
 
     
 # === HOLT LINEAR REGRESSION =========================================    

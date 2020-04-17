@@ -42,3 +42,23 @@ Within the Regression Helper Functions python file see:
 OLS Lag
 The OLS lag model is also called a koyck distributed lag. 
 A distributed lag model is a model for time series data in which a regression equation is used to predict current values of a dependent variable based on both the current values of an explanatory variable and the lagged values of this explanatory variable.
+
+
+=====April 16th ======
+
+Completed smf.ols model and sm.OLS linear model 
+
+current outputs
+
+   ---- MSE Scores ----  
+Random Forest Regressor   0.03131
+Linear Regression         0.01594
+Bagging Regressor         0.03347
+AdaBoost Regressor        0.01464
+smf ols                   0.01356
+sm OLS Linear             0.01494
+
+
+Created Model_Notebook.ipynb to run clean code of the final models 
+TSA.py is a collection of previous code of now un-used code that I wish to save.
+

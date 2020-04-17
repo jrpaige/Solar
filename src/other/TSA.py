@@ -950,28 +950,6 @@ def reg_test_train(df, train_size=.8):
     idx = round(len(df)*train_size)
     train, test = df[:idx], df[idx:]
     return train, test
-
-
-
-# === NEW LAG OLS PLOT ========================================= 
-def smf_ols_plot():
-    plt.plot(ols_predict, label='OLS preds')
-    plt.plot(ols_test.y, label='actual')
-    plt.legend(loc='best')
-    plt.title('MSE = {}'.format(round(mean_squared_error(ols_test.y,ols_predict),5)))
-    plt.show()
-
-
- # === NEW LAG LINEAR OLS PLOT =========================================    
-def sm_OLS_plot():
-    plt.plot(pd.DataFrame(predict)[0], label= 'OLS preds')
-    plt.plot(pd.DataFrame(lag_y_test)[0], label= 'actual')
-    plt.legend(loc='best')
-    plt.title('MSE = {}'.format(round(mean_squared_error(lag_y_test, predict),5)))
-    plt.show()
-    
-    
-    
     
     
     
@@ -1052,5 +1030,80 @@ def lm_residual_model(lm_residuals):
     '''
     lm_residual_model = ARIMA(
     lm_residuals, order=( )).fit()
+    
+    
+    
+    
+    
+    
+    
+    # === MAPE, ME, MAE, MPE, RMSE, CORRELATION ===============================================  
+def forecast_accuracy(forecast, actual):
+    '''
+    ==Returns==
+    MAPE, ME, MAE, MPE, RMSE, and Corr(Actual,Forecast)
+    '''
+    mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
+    me = np.mean(forecast - actual)             # ME
+    mae = np.mean(np.abs(forecast - actual))    # MAE
+    mpe = np.mean((forecast - actual)/actual)   # MPE
+    rmse = np.mean((forecast - actual)**2)**.5  # RMSE
+    corr = np.corrcoef(forecast, actual)[0,1]   # corr
+    print('Mean Absolute Percentage Error:  ', mape, '\nMean Error:                      ',me, '\nMean Absolute Error :            ', mae, 
+            '\nMean Percentage Error:           ', mpe, '\nRoot Mean Squared Error :        ',rmse, 
+            '\nCorrelation between the \nActual and the Forecast:         ',corr)    
+
+# === MAPE ===============================================  
+def mean_average_percentage_error(y_true, y_pred):
+    return np.mean(np.abs((y_true-y_pred)/ y_true)) * 100
+
+# === RMSE ===============================================            
+def rmse(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))                                   
+
+# === RMS ===============================================            
+def rms_score(df, model_type):
+    '''
+    ==Function==
+    Calculates RMSE to check accuracy of model on data set
+    
+    ==Parameters==
+    |model_type| = [moving_avg_forecast, Holt_linear, ARIMA, 
+        OLS, RF, Linear Regression]
+    
+    ==Returns==
+    MAPE, ME, MAE, MPE, RMSE, Correlation(Actual, Forecast)
+    '''
+    #rms = sqrt(mean_squared_error(len(df), y_hat.model_type))
+    #return rms                     
+    # actual = w_diff.cost_per_watt
+    forecast = pd.DataFrame(df[1:])
+    forecastt =  forecast.loc[forecast.index < '2019-01-07']
+    mins = np.amin(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
+    maxs = np.amax(np.hstack([forecast[:,None], actual[:,None]]), axis=1)
+    minmax = 1 - np.mean(mins/maxs)             #minmax
+    acf1 = acf(fc-test)[1]                      #ACF1
+    return({'Mean Absolute Percentage Error':mape, 'Mean Error':me, \
+            'Mean Absolute Error ': mae, 'Mean Percentage Error': mpe,\
+            'Root Mean Squared Error ':rmse, \
+            #'Lag 1 Autocorrelation of Error':acf1, \
+            'Correlation between the Actual and the Forecast':corr}) \
+            #'Min-Max Error ':minmax})
+
+
+
+
+# UNKNOWN
+#ARMA(train,order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
 
     
+
+
+
+# === ROLLING OLS =========================================
+def rolling_ols(df):  #not helpful
+    X = add_constant(np.arange(1, len(df) + 1))
+    y = df
+    rolols_model = RollingOLS(y, X, window=3).fit()
+    #rolols_trend = rolols_model.predict(X)
+    return rolols_model

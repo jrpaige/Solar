@@ -104,3 +104,28 @@ def plot_regres_model(df, model_trend, model_name):
     plt.legend(loc='best')
     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
     plt.show()
+
+    
+    
+
+
+# === NEW LAG OLS PLOT ========================================= 
+def smf_ols_plot():
+    plt.plot(ols_predict, label='OLS preds')
+    plt.plot(ols_test.y, label='actual')
+    plt.legend(loc='best')
+    plt.title('MSE = {}'.format(round(mean_squared_error(ols_test.y,ols_predict),5)))
+    plt.show()
+
+
+ # === NEW LAG LINEAR OLS PLOT =========================================    
+def sm_OLS_plot():
+    plt.plot(pd.DataFrame(predict)[0], label= 'OLS preds')
+    plt.plot(pd.DataFrame(lag_y_test)[0], label= 'actual')
+    plt.legend(loc='best')
+    plt.title('MSE = {}'.format(round(mean_squared_error(lag_y_test, predict),5)))
+    plt.show()
+    
+    
+    
+    
