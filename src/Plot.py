@@ -163,9 +163,6 @@ def plot_regs(df):
     ==Function==
     plots 6 regression models' forecasted values with the actual values
     
-    ==Uses==
-    regres_dfs
-    
     ==Returns==
     6 subplots with MSE scores in each table's title
     '''

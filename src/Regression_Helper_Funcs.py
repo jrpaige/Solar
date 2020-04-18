@@ -105,8 +105,12 @@ def multiple_regressors(df, lag_len=3, print_mses=True):
     #br = BaggingRegressor().fit(X_train, y_train).predict(X_test)
     #abr = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
     ols_lin = sm.OLS(y_train, X_train).fit().predict(X_test)  
-    ols_train, ols_test= train_test_lag(df, Xy=False)
-    ols = smf.ols('y ~ Lag1 + Lag2 + Lag3', data=ols_train).fit().predict(ols_test)
+    ols_train, ols_test= train_test_lag(df, lag_len=lag_len, Xy=False)
+    ols_str = 'y ~ '
+    for i in range(1, lag_len+1):
+        ols_str+= ' Lag{} +'.format(i)
+    ols_str = ols_str.rstrip(' +')
+    ols = smf.ols(ols_str, data=ols_train).fit().predict(ols_test)
     if print_mses == True:
         print(' ---- MSE Scores ----'.center(31))
         print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf),5))

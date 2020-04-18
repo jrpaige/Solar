@@ -64,7 +64,7 @@ TSA.py is a collection of previous code of now un-used code that I wish to save.
 
 
 =====April 17th ======
-try 2-4 lags
+
 
 Created 6 different regressors
 Random Forest, Linear, Bagging, AdaBoost, OLS Linear, OLS
@@ -73,3 +73,33 @@ Between Linear and OLS Linear, OLS Linear performs better, so pulling Linear fro
 The original 3 will remain
 
 
+try different lags:
+
+rf, ols_lin, ols = multiple_regressors(diff, lag_len=#)
+
+      ---- MSE Scores ----     
+[2 LAGS] 
+Random Forest Regressor   0.02131
+sm OLS Linear             0.01342
+smf ols                   0.01348
+
+[3 LAGS]
+Random Forest Regressor   0.01708
+sm OLS Linear             0.01281
+smf ols                   0.01348
+
+[4 LAGS]
+Random Forest Regressor   0.01554
+sm OLS Linear             0.01245
+smf ols                   0.01348
+
+[5 LAGS]
+Random Forest Regressor   0.01485
+sm OLS Linear             0.01327
+smf ols                   0.01348
+
+results
+smf ols mse score stays the same regardless of # of lags
+
+fixed smf ols to ensure formula was updating with number of lags.
+smf ols mse score now updates
