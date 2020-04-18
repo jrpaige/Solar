@@ -66,16 +66,10 @@ TSA.py is a collection of previous code of now un-used code that I wish to save.
 =====April 17th ======
 try 2-4 lags
 
-
-
-validate 
-
-
-created 6 different regressors
-
+Created 6 different regressors
 Random Forest, Linear, Bagging, AdaBoost, OLS Linear, OLS
-
-Bagging and Adaboost aren't super 
-
+Bagging and Adaboost aren't super helpful, so pulling those. 
+Between Linear and OLS Linear, OLS Linear performs better, so pulling Linear from the group as well.
+The original 3 will remain
 
 

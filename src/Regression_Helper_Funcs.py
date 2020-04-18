@@ -101,7 +101,7 @@ def multiple_regressors(df, lag_len=3, print_mses=True):
     '''
     X_train, y_train, X_test, y_test = train_test_lag(df, lag_len=lag_len)
     rf= RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
-    lr = LinearRegression().fit(X_train, y_train).predict(X_test)
+    #lr = LinearRegression().fit(X_train, y_train).predict(X_test)
     #br = BaggingRegressor().fit(X_train, y_train).predict(X_test)
     #abr = AdaBoostRegressor().fit(X_train, y_train).predict(X_test)
     ols_lin = sm.OLS(y_train, X_train).fit().predict(X_test)  
@@ -110,7 +110,7 @@ def multiple_regressors(df, lag_len=3, print_mses=True):
     if print_mses == True:
         print(' ---- MSE Scores ----'.center(31))
         print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf),5))
-        print('Linear Regression        ', round(mean_squared_error(y_test, lr),5))
+        # print('Linear Regression        ', round(mean_squared_error(y_test, lr),5))
 
        #print('Bagging Regressor        ', round(mean_squared_error(y_test, br),5))
 
@@ -119,10 +119,10 @@ def multiple_regressors(df, lag_len=3, print_mses=True):
         print('sm OLS Linear            ', round(mean_squared_error(y_test, ols_lin),5))
 
         print('smf ols                  ', round(mean_squared_error(ols_test.y,ols),5))
-        return rf, lr, ols_lin, ols
+        return rf, ols_lin, ols
         # removed br, abr
     else:
-        return rf, lr, ols_lin, ols 
+        return rf, ols_lin, ols 
 
     
     

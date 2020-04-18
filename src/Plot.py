@@ -126,15 +126,37 @@ def regres_dfs(df):
     '''
     
     y_preds = train_test_lag(df, Xy=True)[3]
-    rf, lr, ols_lin, ols_smf = multiple_regressors(df, print_mses=False)
+    rf, ols_lin, ols_smf = multiple_regressors(df, print_mses=False)
     y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
     y_preds['randomforest'] = rf
-    y_preds['linear'] = lr
+#     y_preds['linear'] = lr
 #     y_preds['bagging'] = br
 #     y_preds['adaboost'] = abr
     y_preds['olslinear'] = ols_lin
     y_preds['olssmf'] = ols_smf
     return y_preds
+
+def plot_regression(df):    
+    y_preds = regres_dfs(df)
+    fig, axs = plt.subplots(3, figsize= (20,15))
+    
+    axs[0].plot(y_preds.actual, label= 'actual')
+    axs[0].plot(y_preds.randomforest, label= 'Random Forest')
+    axs[0].set_title('Random Forest \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)))
+    axs[0].legend(loc='best')
+    
+    axs[1].plot(y_preds.actual, label= 'actual')
+    axs[1].plot(y_preds.olslinear, label= 'OLS Linear')
+    axs[1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)))
+    axs[1].legend(loc='best')
+    
+    axs[2].plot(y_preds.actual, label= 'actual')
+    axs[2].plot(y_preds.olssmf, label= 'OLS')
+    axs[2].set_title('OLS smf \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)))
+    axs[2].legend(loc='best')
+                                
+    plt.show()
+
 
 def plot_regs(df):
     '''
@@ -148,7 +170,7 @@ def plot_regs(df):
     6 subplots with MSE scores in each table's title
     '''
     y_preds = regres_dfs(df)
-    fig, axs = plt.subplots(2, 2, figsize= (30,20))
+    fig, axs = plt.subplots(3, 2, figsize= (40,20))
     axs[0,0].plot(y_preds.actual, label= 'actual')
     axs[0,0].plot(y_preds.randomforest, label= 'Random Forest')
     axs[0,0].set_title('Random Forest \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)))
@@ -158,31 +180,27 @@ def plot_regs(df):
     axs[0,1].plot(y_preds.linear, label= 'Linear')
     axs[0,1].set_title('Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.linear),5)))
     axs[0,1].legend(loc='best')
-            
-    axs[1,0].plot(y_preds.actual, label= 'actual')
-    axs[1,0].plot(y_preds.olssmf, label= 'OLS')
-    axs[1,0].set_title('OLS smf \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)))
-    axs[1,0].legend(loc='best')    
     
+    axs[1,0].plot(y_preds.actual, label= 'actual')
+    axs[1,0].plot(y_preds.bagging, label= 'Bagging')
+    axs[1,0].set_title('Bagging \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.bagging),5)))
+    axs[1,0].legend(loc='best')
     
     axs[1,1].plot(y_preds.actual, label= 'actual')
-    axs[1,1].plot(y_preds.olslinear, label= 'OLS Linear')
-    axs[1,1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)))
-    axs[1,1].legend(loc='best')
+    axs[1,1].plot(y_preds.adaboost, label= 'AdaBoost')
+    axs[1,1].set_title('AdaBoost \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.adaboost),5)))
+    axs[1,1].legend(loc='best')               
     
-
+    axs[2,0].plot(y_preds.actual, label= 'actual')
+    axs[2,0].plot(y_preds.olslinear, label= 'OLS Linear')
+    axs[2,0].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)))
+    axs[2,0].legend(loc='best')
     
-    
-#     axs[1,0].plot(y_preds.actual, label= 'actual')
-#     axs[1,0].plot(y_preds.bagging, label= 'Bagging')
-#     axs[1,0].set_title('Bagging \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.bagging),5)))
-#     axs[1,0].legend(loc='best')
-    
-#     axs[1,1].plot(y_preds.actual, label= 'actual')
-#     axs[1,1].plot(y_preds.adaboost, label= 'AdaBoost')
-#     axs[1,1].set_title('AdaBoost \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.adaboost),5)))
-#     axs[1,1].legend(loc='best')   
-        
-        
-        
+    axs[2,1].plot(y_preds.actual, label= 'actual')
+    axs[2,1].plot(y_preds.olssmf, label= 'OLS')
+    axs[2,1].set_title('OLS smf \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)))
+    axs[2,1].legend(loc='best')                  
     plt.show()
+    
+  
+
