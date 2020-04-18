@@ -98,8 +98,33 @@ Random Forest Regressor   0.01485
 sm OLS Linear             0.01327
 smf ols                   0.01348
 
-results
+[RESULTS]
 smf ols mse score stays the same regardless of # of lags
 
 fixed smf ols to ensure formula was updating with number of lags.
 smf ols mse score now updates
+
+[UPDATED]
+2 lags doesn't perform well
+
+[3 LAGS] avg = 0.0145
+Random Forest Regressor   0.01728
+sm OLS Linear             0.01281
+smf ols                   0.01348
+
+[4 LAGS] avg = 0.0138
+Random Forest Regressor   0.01546
+sm OLS Linear             0.01245
+smf ols                   0.01354
+
+[5 LAGS] avg = 0.0141
+Random Forest Regressor   0.01473
+sm OLS Linear             0.01327
+smf ols                   0.01419
+
+RF performs best w/ 5 
+OLS linear performs best w/ 4
+smf ols performs best w/ 3
+
+based on averages, 4 lags scores best 
+will change defaults to 4 lags
