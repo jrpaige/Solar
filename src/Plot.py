@@ -86,28 +86,7 @@ def model_plot(test_data,train_data,forecasts,method, order=None):
                                     round(mean_squared_error(test_data, forecasts),5)))
     plt.legend(loc='best')
     plt.show()    
-    
-    
-# === REGRESSION MODEL PLOT WITH TRENDLINE =========================================
-def plot_regres_model(df, model_trend, model_name):  
-    '''
-    ==Function==
-    Plots the regression model entered
-    
-    ==Parameters==
-    |model_name| : should be entered as a string
-    '''
-    fig, ax = plt.subplots(1, figsize=(16, 3))
-    ax.plot(df.index, df, label= 'cost_per_watt')
-    ax.plot(df.index, model_trend, label= model_name)
-    plt.ylabel('Cost Per Watt ($)')
-    plt.xlabel('Year')
-    plt.legend(loc='best')
-    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
-    plt.show()
-
-    
-    
+     
 
 
 # === PLOT REGRESSION MODELS =========================================    
@@ -156,48 +135,5 @@ def plot_regression(df):
     axs[2].legend(loc='best')
                                 
     plt.show()
-
-
-def plot_regs(df):
-    '''
-    ==Function==
-    plots 6 regression models' forecasted values with the actual values
-    
-    ==Returns==
-    6 subplots with MSE scores in each table's title
-    '''
-    y_preds = regres_dfs(df)
-    fig, axs = plt.subplots(3, 2, figsize= (40,20))
-    axs[0,0].plot(y_preds.actual, label= 'actual')
-    axs[0,0].plot(y_preds.randomforest, label= 'Random Forest')
-    axs[0,0].set_title('Random Forest \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)))
-    axs[0,0].legend(loc='best')
-
-    axs[0,1].plot(y_preds.actual , label= 'actual')
-    axs[0,1].plot(y_preds.linear, label= 'Linear')
-    axs[0,1].set_title('Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.linear),5)))
-    axs[0,1].legend(loc='best')
-    
-    axs[1,0].plot(y_preds.actual, label= 'actual')
-    axs[1,0].plot(y_preds.bagging, label= 'Bagging')
-    axs[1,0].set_title('Bagging \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.bagging),5)))
-    axs[1,0].legend(loc='best')
-    
-    axs[1,1].plot(y_preds.actual, label= 'actual')
-    axs[1,1].plot(y_preds.adaboost, label= 'AdaBoost')
-    axs[1,1].set_title('AdaBoost \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.adaboost),5)))
-    axs[1,1].legend(loc='best')               
-    
-    axs[2,0].plot(y_preds.actual, label= 'actual')
-    axs[2,0].plot(y_preds.olslinear, label= 'OLS Linear')
-    axs[2,0].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)))
-    axs[2,0].legend(loc='best')
-    
-    axs[2,1].plot(y_preds.actual, label= 'actual')
-    axs[2,1].plot(y_preds.olssmf, label= 'OLS')
-    axs[2,1].set_title('OLS smf \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)))
-    axs[2,1].legend(loc='best')                  
-    plt.show()
-    
   
 

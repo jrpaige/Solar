@@ -40,7 +40,7 @@ rcParams['figure.figsize'] = 10, 6
 
 # === TRAIN TEST =========================================
 
-def train_test_lag(df, lag_len=3, Xy=True):
+def train_test_lag(df, lag_len=4, Xy=True):
     '''
     ==Function==
     Creates a new df with 3 lagged columns
@@ -49,7 +49,7 @@ def train_test_lag(df, lag_len=3, Xy=True):
     
     ==Parameters==
     |lag_len| : include how many lags to include in data
-                default is 3
+                default is 4
     |xy|      : if True, splits data into X & y sets and again into train & test sets
                 if False, splits data into train & test sets
                  default = True
@@ -78,7 +78,7 @@ def train_test_lag(df, lag_len=3, Xy=True):
 # =============================================================================
 
 # === Multiple Regressions =========================================    
-def multiple_regressors(df, lag_len=3, print_mses=True):
+def multiple_regressors(df, lag_len=4, print_mses=True):
     '''
     ==Function==
     Uses train_test_xy(df) to split into (X/y)train/(X/y)test sets

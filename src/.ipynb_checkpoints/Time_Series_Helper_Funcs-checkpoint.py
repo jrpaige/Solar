@@ -462,7 +462,7 @@ def arima_order_mses(df):
     df = df.dropna().values
     #p_values = [0, 1, 2, 4, 6, 8, 10]
     p_values = [0, 1, 2, 4, 5, 7]
-    d_values = range(0, 4)
+    d_values = range(0, 3)
     q_values = range(0, 4)
     best_score, best_cfg = float("inf"), None
     for p in p_values:
@@ -473,10 +473,10 @@ def arima_order_mses(df):
                     mse = evaluate_arima_model(df, order)
                     if mse < best_score:
                         best_score, best_cfg = mse, order
-                    print('ARIMA%s MSE=%.3f' % (order,mse))
+                    print('ARIMA%s MSE=%.4f' % (order,mse))
                 except:
                     continue
-    print('Best ARIMA %s MSE=%.3f' % (best_cfg, best_score))
+    print('Best ARIMA %s MSE=%.4f' % (best_cfg, best_score))
     
           
 
