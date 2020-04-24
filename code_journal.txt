@@ -128,3 +128,21 @@ smf ols performs best w/ 3
 
 based on averages, 4 lags scores best 
 will change defaults to 4 lags
+
+
+
+
+To Do:
+
+- Add some training data to plots
+- Add info into plot titles
+- Go through annomoloy detection 
+    - think about the 2016 increase due to Trump
+- Look into the beta coefs for ols 
+    - how the previous time frames affect future time frames
+
+for ARIMA(p,d,q):
+    p = AR
+    d = MA = number of lags
+    q = I
+    
