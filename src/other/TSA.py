@@ -1,21 +1,70 @@
 # UNUSED OF PREVIOUS VERSIONS OF CODE
 
-
 import pandas as pd
 import numpy as np
 import datetime
-import matplotlib.pyplot as plt
-import seaborn as sns
 import sys
-import statsmodels.api as sm
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-
-from statsmodels.tsa.stattools import adfuller
 import gc
 gc.collect()
 import sys, os
 import warnings
 warnings.filterwarnings('ignore')
+from datetime import datetime
+
+# MATH
+from math import sqrt
+from scipy import signal
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
+from sklearn.model_selection import TimeSeriesSplit, cross_val_score, KFold, GridSearchCV
+from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+
+#TIME
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.formula.api import ols
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.regression.rolling import RollingOLS
+from statsmodels.regression import *
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.tools.tools import add_constant
+from statsmodels.tsa import stattools
+from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
+from statsmodels.tsa.arima_model import *
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.holtwinters import *
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
+import pyramid
+from pmdarima.arima import auto_arima
+from sktime.forecasters import ARIMAForecaster
+from sktime.highlevel.tasks import ForecastingTask
+from sktime.highlevel.strategies import ForecastingStrategy
+from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
+from sktime.pipeline import Pipeline
+from sktime.transformers.compose import Tabulariser
+
+#VISUALIZATION 
+import matplotlib.pyplot as plt
+from matplotlib.pylab import rcParams
+rcParams['figure.figsize'] = 10, 6
+plt.style.use('ggplot')
+import seaborn as sns
+
+
+
+from pandas.plotting import lag_plot
+import statsmodels.api as sm
+from sklearn.metrics import mean_squared_error
+import math
+from multiprocessing import cpu_count
+from joblib import Parallel,delayed
+from warnings import catch_warnings,filterwarnings
+from sklearn.metrics import make_scorer, r2_score, mean_absolute_error, mean_squared_error, mean_squared_log_error
+
 
 
 def station_plots(df):
@@ -55,7 +104,7 @@ def get_differences(df):
     return weekly_differences
 
 
-from pandas.plotting import lag_plot
+
 
 def lag_plots(df):
     plt.rcParams.update({'ytick.left' : False, 'axes.titlepad':10})
@@ -66,8 +115,6 @@ def lag_plots(df):
 
     fig.suptitle('Lag Plot', y=1.15)    
 
-
-from sklearn.metrics import make_scorer, r2_score, mean_absolute_error, mean_squared_error, mean_squared_log_error
 
 
 def precision(data,predict,origin):
@@ -82,12 +129,7 @@ def precision(data,predict,origin):
     print(predict,'[Rsquared:', Rsquared, '\n MAE:',MAE, '\n MSE:',MSE, '\n RMSE:',RMSE,\
                      '\n MAPE:',MAPE,'\n MAPE_adjust:',MAPE_adjust,'\n sMAPE:',sMAPE,']')
 
-import statsmodels.api as sm
-from sklearn.metrics import mean_squared_error
-import math
-from multiprocessing import cpu_count
-from joblib import Parallel,delayed
-from warnings import catch_warnings,filterwarnings
+
 
 
 def measure_rmse(actual, predicted):
@@ -1170,3 +1212,96 @@ def plot_regres_model(df, model_trend, model_name):
     plt.legend(loc='best')
     ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
     plt.show()
+
+    
+    
+# =============================================================================
+# ARMA MODELS
+# =============================================================================         
+ 
+    
+       
+# === GET PD FOR ARMA VIA AUTO ARIMA =========================================
+def auto_arma_pd(df,trace_list=False):
+    '''
+    ==Function==
+    Uses Auto ARIMA to obtain best parameters for data
+    ==Parameters==
+    |trace_list| : bool
+        if True, function will return list of all searched pairs
+        default=False
+    ==Returns==
+    printed pd variable
+    arma_pd variable to use in other functions
+    '''
+    arma_pd = auto_arima(df, trace=trace_list, stepwise=False, max_p=6, max_P =6, max_order=6).order[:2]
+    print('P, D parameters to use in ARMA model =', arma_pd)
+    return arma_pd
+
+    
+# === ARMA MODEL  =========================================
+def arma_model(df, order, years_off, plot, use_years):
+    '''   
+    ==Parameters==
+    |use_years| - bool
+        if use_years =True, function will use years_off parameter
+        if use_years = False, function will use a simple train/test 80/20 split                     
+    |years_off| - integer
+        if use_years=True, years_off = number of years to set aside as test set 
+        if use_years=False, feel free to enter 0 or 'NA'
+    |order| - tuple
+        should be entered in as a tuple ex. "order=(1,1)"
+    |plot| - bool
+        if plot=True, function will return a plot with data in the title
+        if plot=False, function will print out ARMA order used and resulting MSE 
+    ==Returns==
+    plot and/or MSE score
+    '''
+    df = df.dropna()
+    if use_years == True:
+        train = df[:len(df) - (52*years_off)]
+        test = df[len(df) - (52*years_off):]
+        m = ARMA(train, order=order).fit(train)
+        pred = ARMA(train, order=order).fit().predict(start=test.index.date[0], end=test.index.date[-1])
+    else:
+        df = df.dropna()
+        idx = round(len(df) * .8)
+        train= df[:idx]
+        test = df[idx:]
+        order=order
+        pred = ARMA(train, order).fit().predict(start=test.index.date[0],end=test.index.date[-1])
+    
+    if plot==True:
+        arma_plot(test, train,pred, order)
+    else:
+        print('ARMA Order Used: {}'.format(order))
+        #print('MSE:',round(.red_error(test, pred),5))
+    
+# === PLOT ARMA =========================================    
+def plot_arma(test_data, ARMA_preds,train_data, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    plt.plot(test_data, label='Actual', alpha=0.5)
+    plt.plot(ARMA_preds, label= 'Forecast', color='black')
+    plt.legend(loc='best')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARMA_preds),5)))
+    plt.show()
+    
+    
+def arma_plot(test_data,train_data,ARMA_preds, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    fig, ax = plt.subplots(1, figsize=(10,6))
+    train_data.plot(ax=ax, label='Train', linewidth=1)
+    test_data.plot(ax=ax, label='Test', linewidth=1)
+    ARMA_preds.plot(ax=ax, label='Forecast', color='black', alpha=0.7,linewidth=2)
+    ax.set(ylabel='cost_per_watt')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARMA_preds),5)))
+    plt.legend(loc='best')
+    plt.show()    
