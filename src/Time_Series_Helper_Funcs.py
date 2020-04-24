@@ -185,12 +185,23 @@ def time_train_test_split(df):
         plt.plot(train)
         plt.plot([None for i in train] + [x for x in test])
         plt.show()
-    return train, test        
-        
-        
-        
-        
-        
+    return train, test       
+
+
+# === REGULAR TRAIN TEST SPLIT =========================================       
+def train_test(df):
+    '''
+    ==Function==
+    Splits data into train and test sets 
+    
+     ==Returns==   
+    |train| = first 80% of df's data 
+    |test| = last 20% of df's data
+    '''
+    idx = round(len(df)*.8)
+    train, test = df[:idx], df[idx:]
+    return train, test
+
 # =============================================================================
 # CORRELATION & COEFFICIENTS
 # =============================================================================        
@@ -306,7 +317,21 @@ def simple_move(df):
 
 # =============================================================================
 # ARIMA PARAMETERS
-# ============================================================================= 
+# =============================================================================         
+        
+def ARIMA_predict(df, order):
+    
+    
+    
+    train, test = train_test(df)
+    res = ARIMA(train, order=order).fit()
+    fig, ax = plt.subplots(1, figsize=(14, 4))
+    ax.plot(test.index, test)
+    ax.plot(train.index[-20:], train[-20:])
+    fig = res.plot_predict('2015-06-07','2019-01-06', ax=ax, plot_insample=True)
+    plt.title('MSE {}'.format(round(mean_squared_error(test,res.predict('2015-06-14','2019-1-6')),5)))
+    plt.show()
+
 
 # === GET PDQ VIA AUTO ARIMA =========================================
 def auto_arima_pdq(df,trace_list=False):
