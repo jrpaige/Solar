@@ -148,3 +148,12 @@ To Do:
     q = I
     
 try passing 1 into d 
+
+
+
+
+evaluate arima model is only testing first prediction against test data to provide mse score. 
+
+not helpful. 
+prefer auto_arima_pdq(train, trace_list=True)
+although it does not print out mse score 

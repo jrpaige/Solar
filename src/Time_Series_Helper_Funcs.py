@@ -321,17 +321,26 @@ def simple_move(df):
         
 def ARIMA_predict(df, order):
     
-    
-    
     train, test = train_test(df)
+    test_s, test_e = test.index.date[0], test.index.date[-1]
+    train_s, train_e = train.index.date[0], train.index.date[-1]
     res = ARIMA(train, order=order).fit()
     fig, ax = plt.subplots(1, figsize=(14, 4))
     ax.plot(test.index, test)
     ax.plot(train.index[-20:], train[-20:])
-    fig = res.plot_predict('2015-06-07','2019-01-06', ax=ax, plot_insample=True)
-    plt.title('MSE {}'.format(round(mean_squared_error(test,res.predict('2015-06-14','2019-1-6')),5)))
+    fig = res.plot_predict(test_s,test_e, ax=ax, plot_insample=True)
+    
+    # plt.title('MSE {}'.format(round(mean_squared_error(test,res.predict('2015-06-14','2019-1-6')),5)))
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
+                                test_s, test_e, 
+                                train_s, train_e,order,
+                                round(mean_squared_error(test,res.predict(test_s, test_e)),5)))
     plt.show()
 
+    
+    
+    
+    
 
 # === GET PDQ VIA AUTO ARIMA =========================================
 def auto_arima_pdq(df,trace_list=False):
