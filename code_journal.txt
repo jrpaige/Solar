@@ -142,12 +142,6 @@ To Do:
 - Look into the beta coefs for ols 
     - how the previous time frames affect future time frames
 - Remove ARMA from TimeSeriesHelper Funcs, no need
-- for ARIMA(p,d,q):
-    p = AR
-    d = MA = number of lags
-    q = I
-    
-try passing 1 into d 
 
 
 
@@ -157,3 +151,55 @@ evaluate arima model is only testing first prediction against test data to provi
 not helpful. 
 prefer auto_arima_pdq(train, trace_list=True)
 although it does not print out mse score 
+
+
+AR in ARIMA means autoregressive ; linear regression uses its own lags as predictors
+
+p = AR number of lags to be used as predictors 
+q = order of the moving average (MA) term = 
+    number of lagged forecast errors  
+d=  minimum number of differencing to make stationary
+    number of lags 
+
+If time series is already stationary, d=0
+
+!!!try passing 1 into d on basic un-differenced data
+
+Y{t-1} : is the lag1 of the series
+beta1  : is the coefficient of lag1 that the model estimates 
+alpha  : is the intercept term, also estimated by the model
+
+pure MA model only depends on lagged forcast errors  
+error terms are the errors of the autoregressive models of the respective lags 
+Errors Et and A(t-1) are the errors from 
+
+AR: Y{t} = β{1}Y{t-1} + β{2}T{t-2} +... β{0}Y{0} + ∈{t}
+MA: Y{t-1} = β{1}Y{t-2} + β{2}T{t-3} +... β{0}Y{0} + ∈{t-1}
+
+beta coefficients are the lags? 
+
+ARIMA ==
+Y{t} = α + β{1}Y{t-1} + β{2}Y{t-2} + .. β{p}Y{t-p}∈{t} + Φ{1}∈{t-1} + Φ{2}∈{t-2}+ .. Φ{q}∈{t-q}
+
+Predicted Yt = Constant + Linear combination Lags of Y (upto p lags) + Linear Combination of Lagged forecast errors (upto q lags) 
+                            
+                            
+Predicted Yt                   Y{t}
+=                              = 
+Constant                       α
++                              + 
+Linear combination Lags of Y   β{1}Y{t-1} + β{2}Y{t-2}
+(upto p lags)                  β{p}Y{t-p}∈{t}
++                              + 
+Linear combination of 
+    Lagged forecast errors     Φ{1}∈{t-1} + Φ{2}∈{t-2}
+(upto q lags)                  Φ{q}∈{t-q}                        
+
+
+
+Partial autocoreelation of lag k of a series is the cofficient of that lag in the autoregressive equation of Y
+
+Yt = alpha0 + alpha1 Y{t-1} + alpha2 Y{t-2} + alpha3 Y{t-3}
+Y_t = current series 
+Y_t-1 is the lag 1 of Y 
+partial autocorrelation of lag 3 (Y_t-3) is the coefficient alpha_3 of Y_t-3

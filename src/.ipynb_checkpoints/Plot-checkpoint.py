@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 import datetime
 from datetime import datetime
-from src.Regression_Helper_Funcs import train_test_lag, multiple_regressors
+from src import Regression_Helper_Funcs
 
 # MATH
 from math import sqrt
@@ -44,6 +44,7 @@ from sktime.transformers.compose import Tabulariser
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 plt.style.use('ggplot')
 from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
@@ -122,11 +123,13 @@ def plot_regression(df):
     pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
     train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
     
+    
     axs[0].plot(y_preds.actual, label= 'Actual')
     axs[0].plot(y_preds.randomforest, label= 'Random Forest', linewidth=2)
     axs[0].plot(y_train[-30:], label='Train', color='gray')
     axs[0].set_title('Random Forest \n  MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)), fontsize=18)
     axs[0].legend(loc='best')
+    axs[0].set_xlim(left= y_train.index.date[-31])
     fig.suptitle(' Regression Models \n Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n '.format(pred_s, pred_e, train_s, train_e), fontsize=20)
     
     axs[1].plot(y_preds.actual, label= 'Actual')
@@ -134,10 +137,12 @@ def plot_regression(df):
     axs[1].plot(y_train[-30:], label='Train',color='gray')
     axs[1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)), fontsize=18)
     axs[1].legend(loc='best')
+    axs[1].set_xlim(left= y_train.index.date[-31])
     
     axs[2].plot(y_preds.actual, label= 'Actual', alpha=.75)
     axs[2].plot(y_preds.olssmf, label= 'OLS', linewidth=2)
     axs[2].plot(y_train[-30:], label='Train',color='gray')
     axs[2].set_title('OLS smf \n MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)), fontsize=18)
-    axs[2].legend(loc='best')                      
+    axs[2].legend(loc='best')  
+    axs[2].set_xlim(left= y_train.index.date[-31])
     plt.show()
