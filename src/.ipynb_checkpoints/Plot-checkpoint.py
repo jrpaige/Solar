@@ -86,28 +86,7 @@ def model_plot(test_data,train_data,forecasts,method, order=None):
                                     round(mean_squared_error(test_data, forecasts),5)))
     plt.legend(loc='best')
     plt.show()    
-    
-    
-# === REGRESSION MODEL PLOT WITH TRENDLINE =========================================
-def plot_regres_model(df, model_trend, model_name):  
-    '''
-    ==Function==
-    Plots the regression model entered
-    
-    ==Parameters==
-    |model_name| : should be entered as a string
-    '''
-    fig, ax = plt.subplots(1, figsize=(16, 3))
-    ax.plot(df.index, df, label= 'cost_per_watt')
-    ax.plot(df.index, model_trend, label= model_name)
-    plt.ylabel('Cost Per Watt ($)')
-    plt.xlabel('Year')
-    plt.legend(loc='best')
-    ax.set_title("Weekly Median Cost Per Watt Over Time with Trendline via {}".format(model_name))
-    plt.show()
-
-    
-    
+     
 
 
 # === PLOT REGRESSION MODELS =========================================    
@@ -138,23 +117,27 @@ def regres_dfs(df):
 
 def plot_regression(df):    
     y_preds = regres_dfs(df)
-    fig, axs = plt.subplots(3, figsize= (20,15))
+    y_train = train_test_lag(df, Xy=True)[1]
+    fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
+    pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
+    train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
     
-    axs[0].plot(y_preds.actual, label= 'actual')
-    axs[0].plot(y_preds.randomforest, label= 'Random Forest')
-    axs[0].set_title('Random Forest \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)))
+    axs[0].plot(y_preds.actual, label= 'Actual')
+    axs[0].plot(y_preds.randomforest, label= 'Random Forest', linewidth=2)
+    axs[0].plot(y_train[-30:], label='Train', color='gray')
+    axs[0].set_title('Random Forest \n  MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)), fontsize=18)
     axs[0].legend(loc='best')
+    fig.suptitle(' Regression Models \n Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n '.format(pred_s, pred_e, train_s, train_e), fontsize=20)
     
-    axs[1].plot(y_preds.actual, label= 'actual')
-    axs[1].plot(y_preds.olslinear, label= 'OLS Linear')
-    axs[1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)))
+    axs[1].plot(y_preds.actual, label= 'Actual')
+    axs[1].plot(y_preds.olslinear, label= 'OLS Linear', linewidth=2)
+    axs[1].plot(y_train[-30:], label='Train',color='gray')
+    axs[1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)), fontsize=18)
     axs[1].legend(loc='best')
     
-    axs[2].plot(y_preds.actual, label= 'actual')
-    axs[2].plot(y_preds.olssmf, label= 'OLS')
-    axs[2].set_title('OLS smf \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)))
-    axs[2].legend(loc='best')
-                                
+    axs[2].plot(y_preds.actual, label= 'Actual', alpha=.75)
+    axs[2].plot(y_preds.olssmf, label= 'OLS', linewidth=2)
+    axs[2].plot(y_train[-30:], label='Train',color='gray')
+    axs[2].set_title('OLS smf \n MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)), fontsize=18)
+    axs[2].legend(loc='best')                      
     plt.show()
-  
-
