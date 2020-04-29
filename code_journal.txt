@@ -203,3 +203,7 @@ Yt = alpha0 + alpha1 Y{t-1} + alpha2 Y{t-2} + alpha3 Y{t-3}
 Y_t = current series 
 Y_t-1 is the lag 1 of Y 
 partial autocorrelation of lag 3 (Y_t-3) is the coefficient alpha_3 of Y_t-3
+
+
+## Created Time_Series_Dilligence to go through basic steps of ARIMA so this is separate from the Model_Notebook. 
+
