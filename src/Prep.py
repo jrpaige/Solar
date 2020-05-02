@@ -4,6 +4,8 @@ import cpi
 import sys
 import matplotlib.pyplot as plt
 from pytictoc import TicToc
+from statsmodels.tsa.stattools import adfuller
+
 # t = TicToc()
 
 # t.tic()
@@ -15,7 +17,7 @@ file_path_2 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p2.csv'
 # =============================================================================
 # DF PREP
 # =============================================================================
-def prep():
+def prep(stationary_only= True):
     
     '''
     ==Columns==
@@ -46,10 +48,26 @@ def prep():
     
     ==Outliers==
     Removes > 1600 outlier observations which reflect >$25/watt
+    
+    ==Resample into Weekly medians==
+    Resamples data into the weekly medians into continuous non-null df
 
+    == Stationarity==
+    Uses ADFuller method to test for stationarity.
+    Prints ADF results. 
+    If data is not stationary, uses differencing to achieve stationarity.
+    Completes ADF testing again...
+    
+    == Parameters==
+    |stationary_only|:     
+        if stationary_only == True:
+            will only return df that is stationary
+        else: 
+            will return both final-non-stationary and final-stationary dfs
+            
     '''
     
-    print("1 of 11 |    Reading in first dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
+    print("1 of 14 |    Reading in first dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
     dfMod1 = pd.read_csv(file_path_1,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
@@ -57,52 +75,81 @@ def prep():
                     na_values=(-9999, '-9999'))
    
 
-    print("2 of 11 |    Reading in second dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
+    print("2 of 14 |    Reading in second dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
     
     dfMod2 = pd.read_csv(file_path_2,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
                     usecols=['Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment'], 
                     na_values=(-9999, '-9999'))
-    print('3 of 11 |    Concatenating datasets together')  
+    print('3 of 14 |    Concatenating datasets together')  
     dfMod = pd.concat([dfMod1,dfMod2], ignore_index=True)
     df = dfMod.copy()
 
-    print('4 of 11 |    Refining to only RES Customer Segment')
+    print('4 of 14 |    Refining to only RES Customer Segment')
  
     df = df.loc[df['Customer Segment']=='RES']
     
-    print('5 of 11 |    Cleaning up column names')
+    print('5 of 14 |    Cleaning up column names')
     
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
     
-    print('6 of 11 |    Sorting values by installation_date')
+    print('6 of 14 |    Sorting values by installation_date')
     df.sort_values('installation_date', inplace=True)
     
-    print('7 of 11 |    Assigning installation_date as index')
+    print('7 of 14 |    Assigning installation_date as index')
     df.set_index('installation_date', drop=True, inplace=True)
     
 
-    print('8 of 11 |    Replacing all null values with median values from same year')
+    print('8 of 14 |    Replacing all null values with median values from same year')
     [df['total_installed_price'].replace(np.nan, 
                                          round(df.loc[(df['total_installed_price'] != np.nan) & 
                                         (df.index.year == i)]['total_installed_price'].median(),2), 
                                         inplace=True) for i in range(1998,2019)] 
     
-    print('9 of 11 |    Adusting prices for inflation')
+    print('9 of 14 |    Adusting prices for inflation')
     df['date'] = df.index.date
     df['adj_installed_price'] = round(df.apply(lambda x: cpi.inflate(x.total_installed_price, x.date), axis=1),2)
 
-    print('10 of 11|    Creating target variable: cost_per_watt')
+    print('10 of 14|    Creating target variable: cost_per_watt')
     df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
     
     
-    print("11 of 11|    Removing > 1600 outliers above $25 per watt") 
+    print("11 of 14|    Removing > 1600 outliers above $25 per watt") 
     df = df.loc[df.cost_per_watt < 25]
 
-    
+    print("12 of 14|    Resampling data into weekly medians and cropping dataframe so only continuous non-null data remains")
+    null_list = []
+    for i in range(len(df.cost_per_watt.resample('W').median())):
+        if df.cost_per_watt.resample('W').median()[i] >0:
+            pass
+        else:
+            null_list.append(i)
+    df = df.cost_per_watt.resample('W').median()[null_list[-1]+1:]
+    print("13 of 14|    Testing for stationarity") 
+    if round(stattools.adfuller(df)[1],4) < 0.51:
+        print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(stattools.adfuller(df)[1],4)))
+        print("14 of 14|    Prep complete \n -----------------------------------------------")
+        if stationary_only == True:
+            return df
+        elif stationary_only==False:
+            return df, df
+    else:
+        print('ADF P-value: {} \n Time Series is not stationary. \n Fail to reject ADF H0'.format(round(stattools.adfuller(df)[1],4)))
+        print("14 of 14|    Creating differenced data to achieve stationarity") 
+        weekly_differences = df.diff(periods=1)
+        print("Testing for stationarity on differenced data.")
+        if round(stattools.adfuller(weekly_differences)[1],4) < 0.51:
+            print("ADF P-value: {} \n Differenced data achieved stationarity! Reject ADF H0.".format(round(stattools.adfuller(weekly_differences)[1],4)))
+        if stationary_only== True:
+              return weekly_differences
+        elif stationary_only== False:
+              return df, weekly_differences
+            
     print('Prep complete \n ------------------------------------------------------------')
-    return df
+
+    
+    
     
 # =============================================================================
 # MAX, MEAN, MEDIAN, MODE, & MIN EDA ON PRICE 
