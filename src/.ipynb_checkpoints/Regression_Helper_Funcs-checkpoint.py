@@ -152,14 +152,14 @@ def regres_dfs(df):
 def regression():    
     '''
     completes all prep and outputs regression results
+    returns df and stationary df
     '''
-    df, diff = prep(stationary_only=False)
+    df, diff = prep()
     y_preds = regres_dfs(diff)
     y_train = train_test_lag(diff, Xy=True)[1]
     fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
     pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
     train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
-    
     
     axs[0].plot(y_preds.actual, label= 'Actual')
     axs[0].plot(y_preds.randomforest, label= 'Random Forest', linewidth=2)
@@ -182,7 +182,8 @@ def regression():
     axs[2].set_title('OLS smf \n MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)), fontsize=18)
     axs[2].legend(loc='best')  
     axs[2].set_xlim(left= y_train.index.date[-31])
-    plt.show()   
+    plt.show() 
+    return df, diff
     
     
     

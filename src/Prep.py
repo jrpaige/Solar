@@ -5,6 +5,7 @@ import sys
 import matplotlib.pyplot as plt
 from pytictoc import TicToc
 from statsmodels.tsa.stattools import adfuller
+from src.Time_Series_Helper_Funcs import rolling_plot
 # t = TicToc()
 
 # t.tic()
@@ -16,9 +17,12 @@ file_path_2 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p2.csv'
 # =============================================================================
 # DF PREP
 # =============================================================================
-def prep(stationary_only= True):
+def prep(eda=False, show_rolling_plot=False):
     
     '''
+    ==Function==
+    Returns orginal dataframe and stationary dataframe
+    
     ==Columns==
     Installation Date, System Size, Total Installed Price, Customer Segment
     Lowercases and replaces all spaces with underscores
@@ -48,9 +52,6 @@ def prep(stationary_only= True):
     ==Outliers==
     Removes > 1600 outlier observations which reflect >$25/watt
     
-    ==EDA==
-    Provides Max, Min, Mean, Mode, Median Prices within data set
-    
     ==Resample into Weekly medians==
     Resamples data into the weekly medians into continuous non-null df
 
@@ -60,72 +61,73 @@ def prep(stationary_only= True):
     If data is not stationary, uses differencing to achieve stationarity.
     Completes ADF testing again
     
-    == Parameters==
+    ==Parameters==
+    |eda| :
+        if eda == True:
+            will print table of Max, Min, Mean, Mode, Median Prices within data.
+        default = False
+        
+    |show_rolling_plot| 
+        if show_rolling_plot==True:
+            will show plot of weekly rolling mean, median, and std. dev with 3 windows 
+        default = False
+     
+    REMOVED-----
     |stationary_only|:     
         if stationary_only == True:
             will only return df that is stationary
         else: 
             will return both final-non-stationary and final-stationary pandas dfs
+            default = False
             
     '''
+    print('PREP'.center(76,' '))
     
-    print("1 of 14 |    Reading in first dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
+    print(" 1 of 12 |    Reading in data \n         |    Filtering to 4 features: Date, System Size, Total Cost, Customer Segment \n         |    Changing -9999 values to null")
     dfMod1 = pd.read_csv(file_path_1,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
-                    usecols=['Installation Date', 'System Size','Total Installed Price' , 'Customer Segment'], 
-                    na_values=(-9999, '-9999'))
-   
-
-    print("2 of 14 |    Reading in second dataset. \n             Using 4/60 features/columns: 'Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment' \n             Changing -9999 values to null")
-    
+                    usecols=['Installation Date', 'System Size','Total Installed Price', 
+                    'Customer Segment'], na_values=(-9999, '-9999'))
     dfMod2 = pd.read_csv(file_path_2,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
-                    usecols=['Installation Date', 'System Size', 'Total Installed Price' , 'Customer Segment'], 
-                    na_values=(-9999, '-9999'))
-    print('3 of 14 |    Concatenating datasets together')  
-    dfMod = pd.concat([dfMod1,dfMod2], ignore_index=True)
-    df = dfMod.copy()
+                    usecols=['Installation Date', 'System Size', 'Total Installed Price' ,
+                    'Customer Segment'],na_values=(-9999, '-9999'))
+    df = pd.concat([dfMod1,dfMod2], ignore_index=True)
 
-    print('4 of 14 |    Refining to only RES Customer Segment')
- 
-    df = df.loc[df['Customer Segment']=='RES']
     
-    print('5 of 14 |    Cleaning up column names')
-    
+    print(' 2 of 12 |    Cleaning up column names')
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
     
-    print('6 of 14 |    Sorting values by installation_date')
-    df.sort_values('installation_date', inplace=True)
     
-    print('7 of 14 |    Assigning installation_date as index')
+    print(' 3 of 12 |    Refining to only RES Customer Segment')
+    df = df.loc[df['customer_segment']=='RES']
+    
+
+    print(' 4 of 12 |    Sorting values by installation_date\n         |    Assigning installation_date as index')
+    df.sort_values('installation_date', inplace=True)
     df.set_index('installation_date', drop=True, inplace=True)
     
-
-    print('8 of 14 |    Replacing all null values with median values from same year')
-    [df['total_installed_price'].replace(np.nan, 
-                                         round(df.loc[(df['total_installed_price'] != np.nan) & 
-                                        (df.index.year == i)]['total_installed_price'].median(),2), 
-                                        inplace=True) for i in range(1998,2019)] 
     
-    print('9 of 14 |    Adusting prices for inflation')
+    print(' 5 of 12 |    Replacing all null values with median values from same year')
+    [df['total_installed_price'].replace(np.nan,round(df.loc[(df['total_installed_price'] != np.nan) & (df.index.year == i)]['total_installed_price'].median(),2),inplace=True) for i in range(1998,2019)] 
+    
+    
+    print(' 6 of 12 |    Adusting prices for inflation')
     df['date'] = df.index.date
-    df['adj_installed_price'] = round(df.apply(lambda x: cpi.inflate(x.total_installed_price, x.date), axis=1),2)
+    df['adj_installed_price'] = round(df.apply(lambda x:cpi.inflate(x.total_installed_price, x.date), axis=1),2)
 
-    print('10 of 14|    Creating target variable: cost_per_watt')
+    
+    print(' 7 of 12 |    Creating target variable: cost_per_watt')
     df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
     
-    
-    print("11 of 14|    Removing outliers above $25 per watt") 
+
+    print(' 8 of 12 |    Removing outliers above $25 per watt') 
     df = df.loc[df.cost_per_watt < 25]
     
-    print('EDA ------------------------------------------------------------------------')
-    
-    print(eda_price(df))
-    print('----------------------------------------------------------------------------')
 
-    print("12 of 14|    Resampling data into weekly medians and cropping dataframe so only continuous non-null data remains")
+    print(' 9 of 12 |    Resampling data into weekly medians\n         |    Cropping dataframe to keep only continuous non-null data')
     null_list = []
     for i in range(len(df.cost_per_watt.resample('W').median())):
         if df.cost_per_watt.resample('W').median()[i] >0:
@@ -134,25 +136,34 @@ def prep(stationary_only= True):
             null_list.append(i)
     y = df.cost_per_watt.resample('W').median()[null_list[-1]+1:]
     
-    print("13 of 14|    Testing for stationarity") 
+    print('10 of 12 |    Testing for stationarity')
     if round(adfuller(y)[1],4) < 0.51:
-        print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(adfuller(y)[1],4)))
-        print("14 of 14|    Prep complete \n -----------------------------------------------")
-        return df, y, rolling_plot(y)
-    else:
-        print('             ADF P-value: {} \n             Time Series is not stationary. \n             Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
-        print("14 of 14|    Creating differenced data to achieve stationarity") 
-        weekly_differences = y.diff(periods=1).dropna()
-        print("             Testing for stationarity on differenced data.")
-        if round(adfuller(weekly_differences)[1],4) < 0.51: 
-            print("             ADF P-value: {} \n             Differenced data achieved stationarity! Reject ADF H0.".format(round(adfuller(weekly_differences)[1],4)))
-        if stationary_only== True:
-            return weekly_differences
-        elif stationary_only== False:
-            return pd.DataFrame(df), pd.DataFrame(weekly_differences)
-            
-    print('Prep complete \n ------------------------------------------------------------')
+        print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF".format(round(adfuller(y)[1],4)))
+        print('prep complete'.upper().center(76,' '))
+#         if eda==True:
+#             print('EDA '.upper().center(76,' '))
+#             print(eda_price(df))        
+        return df, y
 
+    else:
+        print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
+        print('11 of 12 |    Creating differenced data to achieve stationarity')
+
+        weekly_differences = y.diff(periods=1).dropna()
+        
+        print('12 of 12 |    Testing for stationarity on differenced data') 
+        
+        if round(adfuller(weekly_differences)[1],4) < 0.51: 
+            print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(weekly_differences)[1],4)))
+        print('prep complete'.upper().center(76,' '))
+        print("".center(76, '-'))
+        if show_rolling_plot==True:
+            print(rolling_plot(weekly_differences))
+            print("".center(76, '-'))
+        if eda==True:
+            print('EDA '.upper().center(76,' '))
+            print(eda_price(df)) 
+        return pd.DataFrame(df), pd.DataFrame(weekly_differences)
     
     
     
@@ -174,10 +185,10 @@ def price_eda(df):
 
 def eda_price(df):
     price = pd.DataFrame()
-    price['Max Price'] = "${:,.2f}".format(df['adj_installed_price'].max()), "${:,.2f}".format(df['cost_per_watt'].max())
-    price['Mean Price']= "${:,.2f}".format(df['adj_installed_price'].mean()) , "${:,.2f}".format(df['cost_per_watt'].mean())
-    price['Median Price']= "${:,.2f}".format(df['adj_installed_price'].median()), "${:,.2f}".format(df['cost_per_watt'].median())
-    price['Mode Price']= "${:,.2f}".format(df['adj_installed_price'].mode()[0]), "${:,.2f}".format(df['cost_per_watt'].mode()[0])
-    price['Min Price']= "${:,.2f}".format(df['adj_installed_price'].min()), "${:,.2f}".format(df['cost_per_watt'].min())
+    price['Max'] = "${:,.2f}".format(df['adj_installed_price'].max()), "${:,.2f}".format(df['cost_per_watt'].max())
+    price['Mean']= "${:,.2f}".format(df['adj_installed_price'].mean()) , "${:,.2f}".format(df['cost_per_watt'].mean())
+    price['Median']= "${:,.2f}".format(df['adj_installed_price'].median()), "${:,.2f}".format(df['cost_per_watt'].median())
+    price['Mode']= "${:,.2f}".format(df['adj_installed_price'].mode()[0]), "${:,.2f}".format(df['cost_per_watt'].mode()[0])
+    price['Min']= "${:,.2f}".format(df['adj_installed_price'].min()), "${:,.2f}".format(df['cost_per_watt'].min())
     price.index = 'Total Cost', 'Cost Per Watt'
     return price
