@@ -124,27 +124,24 @@ def prep(stationary_only= True):
             pass
         else:
             null_list.append(i)
-    df = df.cost_per_watt.resample('W').median()[null_list[-1]+1:]
+    y = df.cost_per_watt.resample('W').median()[null_list[-1]+1:]
     
     print("13 of 14|    Testing for stationarity") 
-    if round(adfuller(df)[1],4) < 0.51:
-        print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(adfuller(df)[1],4)))
+    if round(adfuller(y)[1],4) < 0.51:
+        print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(adfuller(y)[1],4)))
         print("14 of 14|    Prep complete \n -----------------------------------------------")
-        if stationary_only == True:
-            return df
-        elif stationary_only==False:
-            return df, df
+            return df, y
     else:
-        print('             ADF P-value: {} \n Time Series is not stationary. \n              Fail to reject ADF H0'.format(round(adfuller(df)[1],4)))
+        print('             ADF P-value: {} \n             Time Series is not stationary. \n             Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
         print("14 of 14|    Creating differenced data to achieve stationarity") 
-        weekly_differences = df.diff(periods=1).dropna()
+        weekly_differences = y.diff(periods=1).dropna()
         print("             Testing for stationarity on differenced data.")
         if round(adfuller(weekly_differences)[1],4) < 0.51: 
             print("             ADF P-value: {} \n             Differenced data achieved stationarity! Reject ADF H0.".format(round(adfuller(weekly_differences)[1],4)))
         if stationary_only== True:
               return weekly_differences
         elif stationary_only== False:
-              return df, weekly_differences
+              return pd.DataFrame(df), pd.DataFrame(weekly_differences)
             
     print('Prep complete \n ------------------------------------------------------------')
 

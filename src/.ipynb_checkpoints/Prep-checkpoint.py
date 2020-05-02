@@ -135,7 +135,7 @@ def prep(stationary_only= True):
         elif stationary_only==False:
             return df, df
     else:
-        print('             ADF P-value: {} \n Time Series is not stationary. \n              Fail to reject ADF H0'.format(round(adfuller(df)[1],4)))
+        print('             ADF P-value: {} \n             Time Series is not stationary. \n             Fail to reject ADF H0'.format(round(adfuller(df)[1],4)))
         print("14 of 14|    Creating differenced data to achieve stationarity") 
         weekly_differences = df.diff(periods=1).dropna()
         print("             Testing for stationarity on differenced data.")
@@ -144,7 +144,7 @@ def prep(stationary_only= True):
         if stationary_only== True:
               return weekly_differences
         elif stationary_only== False:
-              return df, weekly_differences
+              return pd.DataFrame(df), pd.DataFrame(weekly_differences)
             
     print('Prep complete \n ------------------------------------------------------------')
 
