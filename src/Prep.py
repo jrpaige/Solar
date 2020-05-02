@@ -5,7 +5,6 @@ import sys
 import matplotlib.pyplot as plt
 from pytictoc import TicToc
 from statsmodels.tsa.stattools import adfuller
-
 # t = TicToc()
 
 # t.tic()
@@ -56,7 +55,7 @@ def prep(stationary_only= True):
     Uses ADFuller method to test for stationarity.
     Prints ADF results. 
     If data is not stationary, uses differencing to achieve stationarity.
-    Completes ADF testing again...
+    Completes ADF testing again
     
     == Parameters==
     |stationary_only|:     
@@ -115,7 +114,7 @@ def prep(stationary_only= True):
     df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
     
     
-    print("11 of 14|    Removing > 1600 outliers above $25 per watt") 
+    print("11 of 14|    Removing outliers above $25 per watt") 
     df = df.loc[df.cost_per_watt < 25]
 
     print("12 of 14|    Resampling data into weekly medians and cropping dataframe so only continuous non-null data remains")
@@ -126,21 +125,22 @@ def prep(stationary_only= True):
         else:
             null_list.append(i)
     df = df.cost_per_watt.resample('W').median()[null_list[-1]+1:]
+    
     print("13 of 14|    Testing for stationarity") 
-    if round(stattools.adfuller(df)[1],4) < 0.51:
-        print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(stattools.adfuller(df)[1],4)))
+    if round(adfuller(df)[1],4) < 0.51:
+        print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(adfuller(df)[1],4)))
         print("14 of 14|    Prep complete \n -----------------------------------------------")
         if stationary_only == True:
             return df
         elif stationary_only==False:
             return df, df
     else:
-        print('ADF P-value: {} \n Time Series is not stationary. \n Fail to reject ADF H0'.format(round(stattools.adfuller(df)[1],4)))
+        print('             ADF P-value: {} \n Time Series is not stationary. \n              Fail to reject ADF H0'.format(round(adfuller(df)[1],4)))
         print("14 of 14|    Creating differenced data to achieve stationarity") 
-        weekly_differences = df.diff(periods=1)
-        print("Testing for stationarity on differenced data.")
-        if round(stattools.adfuller(weekly_differences)[1],4) < 0.51:
-            print("ADF P-value: {} \n Differenced data achieved stationarity! Reject ADF H0.".format(round(stattools.adfuller(weekly_differences)[1],4)))
+        weekly_differences = df.diff(periods=1).dropna()
+        print("             Testing for stationarity on differenced data.")
+        if round(adfuller(weekly_differences)[1],4) < 0.51: 
+            print("             ADF P-value: {} \n             Differenced data achieved stationarity! Reject ADF H0.".format(round(adfuller(weekly_differences)[1],4)))
         if stationary_only== True:
               return weekly_differences
         elif stationary_only== False:
