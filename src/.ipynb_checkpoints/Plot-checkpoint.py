@@ -4,6 +4,8 @@ import sys
 import datetime
 from datetime import datetime
 from src import Regression_Helper_Funcs
+from src.Prep import * 
+from src.Regression_Helper_Funcs import *
 
 # MATH
 from math import sqrt
@@ -116,9 +118,13 @@ def regres_dfs(df):
     y_preds['olssmf'] = ols_smf
     return y_preds
 
-def plot_regression(df):    
-    y_preds = regres_dfs(df)
-    y_train = train_test_lag(df, Xy=True)[1]
+def plot_regression():    
+    '''
+    completes all prep and outputs regression results
+    '''
+    df, diff = prep(stationary_only=False)
+    y_preds = regres_dfs(diff)
+    y_train = train_test_lag(diff, Xy=True)[1]
     fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
     pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
     train_s, train_e = y_train.index.date[0], y_train.index.date[-1]

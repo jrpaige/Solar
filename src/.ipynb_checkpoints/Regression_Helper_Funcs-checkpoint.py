@@ -4,6 +4,7 @@ import sys
 import datetime
 from datetime import datetime
 from src.Plot import * 
+from src.Prep import * 
 
 # REGRESSION
 from math import sqrt
@@ -119,6 +120,84 @@ def multiple_regressors(df, lag_len=4, print_mses=True):
     else:
         return rf, ols_lin, ols 
 
+# =============================================================================
+# MODEL REGRESSION PLOTS AND PREP 
+# =============================================================================
+    
+    
+def regres_dfs(df):
+    '''
+    ==Function==
+    Creates a new df with y_test values and forecasted values for all regression models
+    
+    ==Uses== 
+    |train_test_lag| from Regression_Helper_Funcs
+    |multiple_regressors| from Regression_Helper_Funcs
+    
+    ==Returns==
+    |y_preds| : new df
+    '''
+    
+    y_preds = train_test_lag(df, Xy=True)[3]
+    rf, ols_lin, ols_smf = multiple_regressors(df, print_mses=False)
+    y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
+    y_preds['randomforest'] = rf
+#     y_preds['linear'] = lr
+#     y_preds['bagging'] = br
+#     y_preds['adaboost'] = abr
+    y_preds['olslinear'] = ols_lin
+    y_preds['olssmf'] = ols_smf
+    return y_preds
+
+def regression():    
+    '''
+    completes all prep and outputs regression results
+    '''
+    df, diff = prep(stationary_only=False)
+    y_preds = regres_dfs(diff)
+    y_train = train_test_lag(diff, Xy=True)[1]
+    fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
+    pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
+    train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
+    
+    
+    axs[0].plot(y_preds.actual, label= 'Actual')
+    axs[0].plot(y_preds.randomforest, label= 'Random Forest', linewidth=2)
+    axs[0].plot(y_train[-30:], label='Train', color='gray')
+    axs[0].set_title('Random Forest \n  MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)), fontsize=18)
+    axs[0].legend(loc='best')
+    axs[0].set_xlim(left= y_train.index.date[-31])
+    fig.suptitle(' Regression Models \n Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n '.format(pred_s, pred_e, train_s, train_e), fontsize=20)
+    
+    axs[1].plot(y_preds.actual, label= 'Actual')
+    axs[1].plot(y_preds.olslinear, label= 'OLS Linear', linewidth=2)
+    axs[1].plot(y_train[-30:], label='Train',color='gray')
+    axs[1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)), fontsize=18)
+    axs[1].legend(loc='best')
+    axs[1].set_xlim(left= y_train.index.date[-31])
+    
+    axs[2].plot(y_preds.actual, label= 'Actual', alpha=.75)
+    axs[2].plot(y_preds.olssmf, label= 'OLS', linewidth=2)
+    axs[2].plot(y_train[-30:], label='Train',color='gray')
+    axs[2].set_title('OLS smf \n MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)), fontsize=18)
+    axs[2].legend(loc='best')  
+    axs[2].set_xlim(left= y_train.index.date[-31])
+    plt.show()   
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

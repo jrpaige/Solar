@@ -48,6 +48,9 @@ def prep(stationary_only= True):
     ==Outliers==
     Removes > 1600 outlier observations which reflect >$25/watt
     
+    ==EDA==
+    Provides Max, Min, Mean, Mode, Median Prices within data set
+    
     ==Resample into Weekly medians==
     Resamples data into the weekly medians into continuous non-null df
 
@@ -62,7 +65,7 @@ def prep(stationary_only= True):
         if stationary_only == True:
             will only return df that is stationary
         else: 
-            will return both final-non-stationary and final-stationary dfs
+            will return both final-non-stationary and final-stationary pandas dfs
             
     '''
     
@@ -116,6 +119,11 @@ def prep(stationary_only= True):
     
     print("11 of 14|    Removing outliers above $25 per watt") 
     df = df.loc[df.cost_per_watt < 25]
+    
+    print('EDA ------------------------------------------------------------------------')
+    
+    print(eda_price(df))
+    print('----------------------------------------------------------------------------')
 
     print("12 of 14|    Resampling data into weekly medians and cropping dataframe so only continuous non-null data remains")
     null_list = []
@@ -130,7 +138,7 @@ def prep(stationary_only= True):
     if round(adfuller(y)[1],4) < 0.51:
         print("ADF P-value: {} \n Time Series achieved stationarity! Reject ADF H0.".format(round(adfuller(y)[1],4)))
         print("14 of 14|    Prep complete \n -----------------------------------------------")
-            return df, y
+        return df, y, rolling_plot(y)
     else:
         print('             ADF P-value: {} \n             Time Series is not stationary. \n             Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
         print("14 of 14|    Creating differenced data to achieve stationarity") 
@@ -139,9 +147,9 @@ def prep(stationary_only= True):
         if round(adfuller(weekly_differences)[1],4) < 0.51: 
             print("             ADF P-value: {} \n             Differenced data achieved stationarity! Reject ADF H0.".format(round(adfuller(weekly_differences)[1],4)))
         if stationary_only== True:
-              return weekly_differences
+            return weekly_differences
         elif stationary_only== False:
-              return pd.DataFrame(df), pd.DataFrame(weekly_differences)
+            return pd.DataFrame(df), pd.DataFrame(weekly_differences)
             
     print('Prep complete \n ------------------------------------------------------------')
 
@@ -157,9 +165,19 @@ def price_eda(df):
     print('MEDIAN PRICE \n total            $',  df['adj_installed_price'].median(), '\n cost per watt    $',  df['cost_per_watt'].median())
     print('MODE PRICE \n total            $',  df['adj_installed_price'].mode()[0], '\n cost per watt    $',  df['cost_per_watt'].mode()[0])
     print('MIN PRICE \n total            $',  df['adj_installed_price'].min(), '\n cost per watt    $',  df['cost_per_watt'].min())
-    df.cost_per_watt.plot(title=('Cost per Watt'))
-    plt.show()
-    df.adj_installed_price.plot(title=('Total Installed Price (Adjusted for Inflation)'))
+#     df.cost_per_watt.plot(title=('Cost per Watt'))
+#     plt.show()
+#     df.adj_installed_price.plot(title=('Total Installed Price (Adjusted for Inflation)'))
 
 
 
+
+def eda_price(df):
+    price = pd.DataFrame()
+    price['Max Price'] = "${:,.2f}".format(df['adj_installed_price'].max()), "${:,.2f}".format(df['cost_per_watt'].max())
+    price['Mean Price']= "${:,.2f}".format(df['adj_installed_price'].mean()) , "${:,.2f}".format(df['cost_per_watt'].mean())
+    price['Median Price']= "${:,.2f}".format(df['adj_installed_price'].median()), "${:,.2f}".format(df['cost_per_watt'].median())
+    price['Mode Price']= "${:,.2f}".format(df['adj_installed_price'].mode()[0]), "${:,.2f}".format(df['cost_per_watt'].mode()[0])
+    price['Min Price']= "${:,.2f}".format(df['adj_installed_price'].min()), "${:,.2f}".format(df['cost_per_watt'].min())
+    price.index = 'Total Cost', 'Cost Per Watt'
+    return price

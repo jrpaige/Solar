@@ -61,17 +61,16 @@ def rolling_plot(df):
     - Data with a rolling median window of 3
     - Data with a rolling standard deviation window of 3
     '''
-    ywn = pd.DataFrame(df.cost_per_watt).dropna()
-    rollingmedian = ywn.rolling(window=3).median()
-    rollingmean = ywn.rolling(window=3).mean()
-    rollingstd = ywn.rolling(window=3).std() 
+    #ywn = pd.DataFrame(df.cost_per_watt)
+    rollingmedian = df.rolling(window=3).median()
+    rollingmean = df.rolling(window=3).mean()
+    rollingstd = df.rolling(window=3).std() 
     orig = plt.plot(df, color='blue',label='Original')
     mean = plt.plot(rollingmean, color='green', label='Rolling Mean')
     med = plt.plot(rollingmedian, color='red', label='Rolling Median')
     std = plt.plot(rollingstd, color='black', label = 'Rolling Std')
     plt.legend(loc='best')
-    plt.title('Weekly Rolling Mean, Median, \
-              & Standard Deviation with Window 3')
+    plt.title('Weekly Rolling Mean, Median & Standard Deviation with Window 3')
     plt.ylabel('Cost Per Watt $')
     plt.show()
         
