@@ -156,7 +156,6 @@ def prep(eda=False, show_rolling_plot=False):
         if round(adfuller(weekly_differences)[1],4) < 0.51: 
             print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(weekly_differences)[1],4)))
         print('prep complete'.upper().center(76,'-'))
-        print("".center(76, '-'))
         if show_rolling_plot==True:
             print(rolling_plot(weekly_differences))
             print("".center(76, '-'))
