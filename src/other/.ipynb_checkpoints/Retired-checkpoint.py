@@ -10,17 +10,19 @@ import sys, os
 import warnings
 warnings.filterwarnings('ignore')
 from datetime import datetime
+import itertools
 
 # MATH
 from math import sqrt
 from scipy import signal
-from sklearn.base import BaseEstimator, TransformerMixin
+#from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
+from sklearn.metrics import make_scorer, r2_score, mean_absolute_error, mean_squared_error, mean_squared_log_error
+
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+# DEPRECIATED from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
 #TIME
 import statsmodels.api as sm
@@ -58,12 +60,10 @@ import seaborn as sns
 
 from pandas.plotting import lag_plot
 import statsmodels.api as sm
-from sklearn.metrics import mean_squared_error
 import math
 from multiprocessing import cpu_count
 from joblib import Parallel,delayed
 from warnings import catch_warnings,filterwarnings
-from sklearn.metrics import make_scorer, r2_score, mean_absolute_error, mean_squared_error, mean_squared_log_error
 
 
 
@@ -812,7 +812,7 @@ def plot_regres_model(df, model_trend, model_name):
     
     
 # === CREATE MATRIX OF PAIRED P & Q  =========================================            
-import itertools
+
 
 def pdq_matrix(df)
 p_min = 0

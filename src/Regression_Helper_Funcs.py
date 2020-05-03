@@ -8,7 +8,7 @@ from src.Prep import *
 # REGRESSION
 from math import sqrt
 from scipy import signal
-from sklearn.base import BaseEstimator, TransformerMixin
+#from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor, BaggingRegressor, AdaBoostRegressor
 from sklearn.linear_model import LinearRegression, Ridge, LassoLars
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error

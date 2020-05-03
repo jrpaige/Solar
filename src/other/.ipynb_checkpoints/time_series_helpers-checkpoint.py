@@ -1,4 +1,4 @@
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+#DEPRECIATED - from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.pipeline import Pipeline
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 import pandas as pd

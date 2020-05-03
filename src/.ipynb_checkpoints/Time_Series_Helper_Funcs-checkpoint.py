@@ -7,7 +7,7 @@ from datetime import datetime
 # MATH
 from math import sqrt
 from scipy import signal
-from sklearn.base import BaseEstimator, TransformerMixin
+#from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
