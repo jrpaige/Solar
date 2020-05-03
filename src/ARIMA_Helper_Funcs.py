@@ -3,13 +3,12 @@ import pandas as pd
 import sys
 import datetime
 from datetime import datetime
+from src.Time_Series_Helper_Funcs import *
 
 # MATH
 from math import sqrt
 from scipy import signal
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
@@ -49,8 +48,9 @@ plt.style.use('ggplot')
 
 # =============================================================================
 # ARIMA PARAMETERS
-# =============================================================================         
-        
+# ============================================================================= 
+
+
 def ARIMA_predict(df, order):
     
     train, test = train_test(df)

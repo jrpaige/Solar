@@ -81,7 +81,7 @@ def prep(eda=False, show_rolling_plot=False):
             default = False
             
     '''
-    print('PREP'.center(76,' '))
+    print('PREP'.center(76,'-'))
     
     print(" 1 of 12 |    Reading in data \n         |    Filtering to 4 features: Date, System Size, Total Cost, Customer Segment \n         |    Changing -9999 values to null")
     dfMod1 = pd.read_csv(file_path_1,
@@ -139,7 +139,7 @@ def prep(eda=False, show_rolling_plot=False):
     print('10 of 12 |    Testing for stationarity')
     if round(adfuller(y)[1],4) < 0.51:
         print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF".format(round(adfuller(y)[1],4)))
-        print('prep complete'.upper().center(76,' '))
+        print('prep complete'.upper().center(76,'-'))
 #         if eda==True:
 #             print('EDA '.upper().center(76,' '))
 #             print(eda_price(df))        
@@ -155,7 +155,7 @@ def prep(eda=False, show_rolling_plot=False):
         
         if round(adfuller(weekly_differences)[1],4) < 0.51: 
             print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(weekly_differences)[1],4)))
-        print('prep complete'.upper().center(76,' '))
+        print('prep complete'.upper().center(76,'-'))
         print("".center(76, '-'))
         if show_rolling_plot==True:
             print(rolling_plot(weekly_differences))

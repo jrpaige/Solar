@@ -149,14 +149,14 @@ def regres_dfs(df):
     y_preds['olssmf'] = ols_smf
     return y_preds
 
-def regression():    
+def regression(df):    
     '''
     completes all prep and outputs regression results
     returns df and stationary df
     '''
-    df, diff = prep()
-    y_preds = regres_dfs(diff)
-    y_train = train_test_lag(diff, Xy=True)[1]
+    #df, diff = prep()
+    y_preds = regres_dfs(df)
+    y_train = train_test_lag(df, Xy=True)[1]
     fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
     pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
     train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
@@ -183,7 +183,7 @@ def regression():
     axs[2].legend(loc='best')  
     axs[2].set_xlim(left= y_train.index.date[-31])
     plt.show() 
-    return df, diff
+    #return df, diff
     
     
     
@@ -204,10 +204,8 @@ def regression():
     
 # =============================================================================
 # OTHER REGRESSION MODELS
-# =============================================================================    
-    
+# =============================================================================     
 # === ROBUST LINEAR  =========================================
-
 def rob_lin(df):
     '''
     ==Function==
@@ -398,3 +396,40 @@ def cov_table(df):
     plt.plot(np.cov(df))
     plt.show()
     return np.cov(df)
+
+
+
+#POTENTIALLY REMOVE
+# === GENERAL MODEL PLOT FUNCTION =========================================
+def model_plot(test_data,train_data,forecasts,method, order=None):
+    '''
+     ==Function==
+    Plots the regression model entered
+    
+    ==Parameters==
+    |method| : string
+            name of regression or time series model used
+            ex: 'Random Forest Regressor', 'ARIMA'
+    |order| : tuple or None (default is set to None)
+            if time series method is being used, enter in order used 
+    '''
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train_data.plot(ax=ax, label='Train')
+    test_data.plot(ax=ax, label='Test')
+    forecasts.plot(ax=ax, label='{} Forecast'.format(method))
+    ax.set(ylabel='cost_per_watt')
+    if order==None:
+        plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n {} Method  MSE= {}'.format(
+                                    test_start, test_end, 
+                                    forcst_start, forcst_end,method,
+                                    round(mean_squared_error(test_data, forecasts),5)))
+        
+    else:
+        plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n {} {} MSE= {}'.format(
+                                    test_start, test_end, 
+                                    forcst_start, forcst_end,method,order,
+                                    round(mean_squared_error(test_data, forecasts),5)))
+    plt.legend(loc='best')
+    plt.show() 

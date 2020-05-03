@@ -51,6 +51,20 @@ plt.style.use('ggplot')
 # TIME SERIES PREP
 # =============================================================================
 
+# === REGULAR TRAIN TEST SPLIT =========================================     
+def train_test(df):
+    '''
+    ==Function==
+    Splits data into train and test sets 
+    
+     ==Returns==   
+    |train| = first 80% of df's data 
+    |test| = last 20% of df's data
+    '''
+    idx = round(len(df)*.8)
+    train, test = df[:idx], df[idx:]
+    return train, test
+        
 # === ROLLING PLOTS =========================================
 def rolling_plot(df):
     '''
@@ -61,16 +75,17 @@ def rolling_plot(df):
     - Data with a rolling median window of 3
     - Data with a rolling standard deviation window of 3
     '''
-    #ywn = pd.DataFrame(df.cost_per_watt)
-    rollingmedian = df.rolling(window=3).median()
-    rollingmean = df.rolling(window=3).mean()
-    rollingstd = df.rolling(window=3).std() 
+    ywn = pd.DataFrame(df.cost_per_watt).dropna()
+    rollingmedian = ywn.rolling(window=3).median()
+    rollingmean = ywn.rolling(window=3).mean()
+    rollingstd = ywn.rolling(window=3).std() 
     orig = plt.plot(df, color='blue',label='Original')
     mean = plt.plot(rollingmean, color='green', label='Rolling Mean')
     med = plt.plot(rollingmedian, color='red', label='Rolling Median')
     std = plt.plot(rollingstd, color='black', label = 'Rolling Std')
     plt.legend(loc='best')
-    plt.title('Weekly Rolling Mean, Median & Standard Deviation with Window 3')
+    plt.title('Weekly Rolling Mean, Median, \
+              & Standard Deviation with Window 3')
     plt.ylabel('Cost Per Watt $')
     plt.show()
         
@@ -170,19 +185,7 @@ def time_train_test_split(df):
     return train, test       
 
 
-# === REGULAR TRAIN TEST SPLIT =========================================       
-def train_test(df):
-    '''
-    ==Function==
-    Splits data into train and test sets 
-    
-     ==Returns==   
-    |train| = first 80% of df's data 
-    |test| = last 20% of df's data
-    '''
-    idx = round(len(df)*.8)
-    train, test = df[:idx], df[idx:]
-    return train, test
+
 
 # =============================================================================
 # CORRELATION & COEFFICIENTS
@@ -281,19 +284,19 @@ def plotcoefficients(model):
     
 # =============================================================================
 # SIMPLE TIME SEIRES
-# =============================================================================        
-    
-# === SIMPLE TIME SERIES MODELS =========================================
-def simple_move(df): 
-    '''
-    ==Returns== 
-    Simple forecast based on shifted data of 1 week and 3 week lags
-    '''
-    forcst = pd.DataFrame(df.loc[df.index.year>2017])
-    forcst['cost_1weekago'] = df['cost_per_watt'].shift(1)
-    forcst['cost_3weeksago'] = df['cost_per_watt'].shift(3)
-    print('MSE for cost_1weekago =', mean_squared_error(forcst['cost_1weekago'],forcst['cost_per_watt']).round(4))
-    print('MSE for cost_3weeksago =', mean_squared_error(forcst['cost_3weeksago'],forcst['cost_per_watt']).round(4))
+# =============================================================================    
+    def train_test(df):
+        """    
+        ==Function==
+        Splits data into train and test sets 
+
+         ==Returns==   
+        |train| = first 80% of df's data 
+        |test| = last 20% of df's data
+        """
+        idx = round(len(df)*.8)
+        train, test = df[:idx], df[idx:]
+        return train, test
 
     
 # =============================================================================

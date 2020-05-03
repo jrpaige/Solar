@@ -1305,3 +1305,17 @@ def arma_plot(test_data,train_data,ARMA_preds, order):
                                 round(mean_squared_error(test_data, ARMA_preds),5)))
     plt.legend(loc='best')
     plt.show()    
+
+    
+    
+    
+    
+# === SIMPLE LAG  =========================================
+def simple_use_lag(df):
+    lag_len=3
+    lag_df = (pd.concat([df.shift(i) for i in range(lag_len+1)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, lag_len+1)])).dropna() 
+    y = lag_df.pop('y')
+    X = lag_df
+    print('Lag of 1 Week MSE: ', round(mean_squared_error(X.Lag1, y),4))
+    print('Lag of 2 Weeks MSE:', round(mean_squared_error(X.Lag2, y),4))
+    print('Lag of 3 Weeks MSE:', round(mean_squared_error(X.Lag3, y),4)) 
