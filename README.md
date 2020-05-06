@@ -5,7 +5,7 @@
 The relationship between technology, climate change, and awareness relative to renewable energy creates interesting nuances for the future of the energy sector. Over 1.6 million observations collected from 1998 - 2018 of solar panel installations were used in the project, of which 95% consisted of residential installations. The project’s model employs univariate ARIMA time series analysis to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
 
 Tech Stack Used: 
-Python, Numpy, Pandas, Scikit-Learn, Matplotlib, Math, SciPy, StatsModels, Pyramid,  CPI, 
+Python, Numpy, Pandas, Scikit-Learn, Matplotlib, Math, SciPy, StatsModels, Pyramid,  CPI, Seaborn,
 
  
 Fun Fact about:
@@ -19,24 +19,28 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
   - SEASONALITY + TREND
   - STATIONARITY
 - REGRESSION MODELS
+  - MODEL BUILDING
 - TIME SERIES MODELS
   - ARIMA
+  - MODEL BUILDING
 - PERFORMANCE
 - RESULTS + SCORES
 - INSIGHTS
 - NEXT STEPS
 
 
-### <center><u>DATA</u></center>
-#### DATA ENGINEERING
-- Total adjusted installed  cost = 
-total installed cost with adjustments made for inflation
-- cost per watt =  $\frac {total\ adjusted\ installed\ cost}{system\ size} $
-- Resampled data into weekly medians
-- Nulls were replaced with median values from same year
-  
-  
+### <center><u>DATA</u></center>  
 #### EDA
+
+- 20 Years  
+ - [1998-2018]
+- 28 States
+ - [AR,AZ,CA,CO,CT,DC,DE,FL,KS,MA,MD,MN,MO,NH,NJ,NM,NY,OH,OR,PA,RI,TX,UT,VT,WI]
+- 6 Customer Segments
+ - [Residential, Commercial, Non-Residential, Government, Non-Profit, School] 
+
+
+
 <center> <b><u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS <br> GIVEN SIZE OF SYSTEM AND YEAR</u></b></center>
 
 |   year |   (0.0, 2.5] |   (2.5, 5.0] |   (5.0, 7.5] |   (7.5, 10.0] |   (10.0, 12.5] |   (12.5, 17.5] |   (17.5, 42.5] |   (42.5, 18000.0] |
@@ -63,9 +67,13 @@ total installed cost with adjustments made for inflation
 |   2017 |      5.7474  |      4.41521 |      3.97419 |       3.59832 |        3.36909 |        3.06048 |        2.51272 |          0.474576 |
 |   2018 |      5.69595 |      4.23095 |      3.86835 |       3.43824 |        3.2137  |        2.94957 |        2.42031 |          0.47925  |
 
-
-  
-
+#### DATA ENGINEERING
+- Total adjusted installed  cost = 
+total installed cost with adjustments made for inflation
+- cost per watt =  $\frac {total\ adjusted\ installed\ cost}{system\ size} $
+- Resampled data into weekly medians
+- Nulls were replaced with median values from same year
+- Created groupings for cost per watt, system size and total adjusted installed cost 
   
 ### <center><u>TIME SERIES PREPARATION</u></center>
 
@@ -91,11 +99,6 @@ After multiple tests, Bagging, AdaBoost, and Linear Regressors did not perform.<
 
 ### <u><center>TIME SERIES MODEL</center></u>
 AR forecasts are essentially linear regression models which utilize lags much in the way OLS Linear Regression does. 
-
-ARMA, ARIMA, ARIMAR
-
-
-
  
  #### ARIMA<br> 
 
@@ -121,5 +124,20 @@ Given that the autoregressive and integrated lag aspect of an ARIMA model, it wa
 
 ### <center><u>INSIGHTS</u></center>
 
+Annomoloy Detection 
+- There is a seemingly random jump in cost_per_watt around 2016. This can likely be attributed to the political lanscape, as politics have a major influence in the US on renewable energy progress. 
+- Studies have shown that, historically, renewable energy progress slows when there is a larger Republican influence in both congress and the executive branch. [include citation]
+- I hypothesize that residential customers were likely trying to take advantage of any renewable energy incentives programs available before they were gone. The increased demand likely drove the costs up. 
+
+*** Beta coefficients for OLS and how the previous time frames affect future time frames ***
 
 ### <center><u>NEXT STEPS</u></center>
+
+Use Reinforcement learning of a LSTM RNN Model to utilize multiple variables.<br>
+Potential significant variables:
+- income
+- political landscape
+- global energy trends
+- temperature/climate change
+- national generation and useage
+- innovations
