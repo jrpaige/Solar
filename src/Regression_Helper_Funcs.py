@@ -11,10 +11,10 @@ from fireTS.models import NARX
 from math import sqrt
 from scipy import signal
 #from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.ensemble import RandomForestRegressor, BaggingRegressor, AdaBoostRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge, LassoLars
 from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_absolute_error
-from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
+from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
