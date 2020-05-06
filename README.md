@@ -1,33 +1,42 @@
 # Time Series Forecasting of Residential Solar Panel Costs 
 
-## ABSTRACT
+## <center>ABSTRACT</center>
 
 The relationship between technology, climate change, and awareness relative to renewable energy creates interesting nuances for the future of the energy sector. Over 1.6 million observations collected from 1998 - 2018 of solar panel installations were used in the project, of which 95% consisted of residential installations. The project’s model employs univariate ARIMA time series analysis to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
 
 Tech Stack Used: 
-Python, Numpy, Pandas, Scikit-Learn, Matplotlib, Math, SciPy, StatsModels, Pyramid,  CPI
+Python, Numpy, Pandas, Scikit-Learn, Matplotlib, Math, SciPy, StatsModels, Pyramid,  CPI, 
 
  
-Fun Fact about you or your project:
-The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, install specs etc.
+Fun Fact about:
+The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
 
-## RESULTS
-
-## WORKFLOW:
-- DATA + EDA
-- DATA ENGINEERING
+## <center>WORKFLOW</center>
+- DATA
+    - DATA ENGINEERING
+    - EDA
 - TIME SERIES PREPARATION
+  - SEASONALITY + TREND
   - STATIONARITY
-- MODELS
+- REGRESSION MODELS
+- TIME SERIES MODELS
+  - ARIMA
 - PERFORMANCE
 - RESULTS + SCORES
+- INSIGHTS
 - NEXT STEPS
 
 
-
-### DATA + EDA
-
-
+### <center><u>DATA</u></center>
+#### DATA ENGINEERING
+- Total adjusted installed  cost = 
+total installed cost with adjustments made for inflation
+- cost per watt =  $\frac {total\ adjusted\ installed\ cost}{system\ size} $
+- Resampled data into weekly medians
+- Nulls were replaced with median values from same year
+  
+  
+#### EDA
 <center> <b><u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS <br> GIVEN SIZE OF SYSTEM AND YEAR</u></b></center>
 
 |   year |   (0.0, 2.5] |   (2.5, 5.0] |   (5.0, 7.5] |   (7.5, 10.0] |   (10.0, 12.5] |   (12.5, 17.5] |   (17.5, 42.5] |   (42.5, 18000.0] |
@@ -55,23 +64,22 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 |   2018 |      5.69595 |      4.23095 |      3.86835 |       3.43824 |        3.2137  |        2.94957 |        2.42031 |          0.47925  |
 
 
-### DATA ENGINEERING
+  
 
+  
+### <center><u>TIME SERIES PREPARATION</u></center>
 
-- Total adjusted installed  cost = 
-total installed cost with adjustments made for inflation
-   
-- cost per watt =  $\frac {total\ adjusted\ installed\ cost}{system\ size} $
-  
-- Resampled data into weekly medians
-  
-- Nulls were replaced with median values from same year
-  
-  
-  
-### REGRESSION MODELS
+Data is best when X variables(predictors) are independent and un-correlated.
+#### SEASONALITY & TREND
+Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
+However, data was not initially <u>stationary</u>. 
 
-Regression was used as a means to reference how ARIMA was performing on the data. 6 types of regression were initially used:
+ #### STATIONARITY
+Ensuring a series is stationary makes the forecasts more reliable.
+Within this data, <u>stationarity</u> had to be achieved by taking the difference in change from one week to the next, aka <u>differencing</u> the data. <u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
+
+### <center><u>REGRESSION MODELS</u></center>
+Regression was used as a means to reference how ARIMA was performing on the data when compared to basic regressors. Inititially, six types of regressors were used:
 - Random Forest Regressor
 - Bagging Regressor
 - Linear Regression
@@ -79,43 +87,48 @@ Regression was used as a means to reference how ARIMA was performing on the data
 - OLS Linear 
 - OLS 
 
-Bagging, AdaBoost, and Linear Regressors did not perform as well. Random Forest, OLS Linear, and OLS were kept in the model. 
+After multiple tests, Bagging, AdaBoost, and Linear Regressors did not perform.<br> <u>Random Forest</u>, <u>OLS Linear</u>, and <u>OLS</u> produced the most promising results and were kept in the model for comparison. 
 
-  #### OLS
-  #### RANDOM FOREST REGRESSOR
-  #### LINEAR REGRESSION 
-Linear regression uses its own lags as predictors
-  
-### TIME SERIES PREPARATION
+### <u><center>TIME SERIES MODEL</center></u>
+AR forecasts are essentially linear regression models which utilize lags much in the way OLS Linear Regression does. 
 
-Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
-However, data was not initially <u>stationary</u>. 
-<u>Stationarity</u> had to be achieved by taking the difference in change from one week to the next, aka <u>differencing</u> the data. <br> 
-<u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
+ARMA, ARIMA, ARIMAR, SARIMAX, SARIMA 
 
-### TIME SERIES MODEL
- #### STATIONARITY
-Ensuring a series is stationary make the forecasts more reliable.
-     
-AR forecasts are essentially linear regression models which utilize lags much in the way OLS Linear Regression does. Data is best when X variables(predictors) are independent and un-correlated
+
+
  
  #### ARIMA<br> 
 
-|  ARIMA |     Meaning     |    Parameter   |   Notes     |
+|  ARIMA |     Meaning     |    Parameters [p,d,q]   |   Notes     |
 |-------:|----------------:|---------------:|---------------:|
 |   AR |      AutoRegressive  |      [p]| number of lags pf Y to be used as predictors|
 |   I |      Integrated  |      [d]| minimum number of differencing to make stationary number of lags|
 |   MA |      Moving Average  |      [q] | order of the moving average term <br> number of lagged forecast errors |
+
+|  SARIMA(X) |     Meaning     |    Parameters[p,d,q]x[P,D,Q]   |   Notes     |
+|-------:|----------------:|---------------:|---------------:|
+|   SAR |     Seasonal   |      [P]| |
+|    |        |      [D]| order of seasonal differencing|
+|   SMA |        |      [Q]| number of lags pf Y to be used as predictors|
+|   x |        |      x | frequency of the time series
+|   X |      Exogenous Variable  |      [X]| |
+
  
- If time series is already stationary, d=0
- 
+ Notes:<br>
+ If time series is already stationary, d=0. <br>
  Used ARIMA given that the lags that would likely help 
 
 
-### PERFORMANCE
+### <center><u>PERFORMANCE</u></center>
+Out of the eight or so applicable error metrics (Mean Absolute Percentage Error, Mean Error, Mean Absolute Error, Mean Percentage Error,Root Mean Squared Error, Autocorrelation of Error,Correlation between the Actual and the Forecast,Min-Max Error), I chose to use Mean Squared Error as the metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
+
+Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 
 
 
-### RESULTS + SCORES
+### <center><u>RESULTS + SCORES</u></center>
 
 
-### NEXT STEPS
+### <center><u>INSIGHTS</u></center>
+
+
+### <center><u>NEXT STEPS</u></center>
