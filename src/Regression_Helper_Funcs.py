@@ -6,6 +6,8 @@ from datetime import datetime
 from src.Prep import * 
 
 # REGRESSION
+
+from fireTS.models import NARX
 from math import sqrt
 from scipy import signal
 #from sklearn.base import BaseEstimator, TransformerMixin

@@ -5,7 +5,7 @@
 The relationship between technology, climate change, and awareness relative to renewable energy creates interesting nuances for the future of the energy sector. Over 1.6 million observations collected from 1998 - 2018 of solar panel installations were used in the project, of which 95% consisted of residential installations. The project’s model employs univariate ARIMA time series analysis to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
 
 Tech Stack Used: 
-Python, Numpy, Pandas, Scikit-Learn, Matplotlib, Math, SciPy, StatsModels, Pyramid,  CPI, Seaborn,
+Python, Numpy, Pandas, Scikit-Learn, Matplotlib, Math, SciPy, StatsModels, Pyramid,  CPI, Seaborn, pmdarima, sktime, fireTS, 
 
  
 Fun Fact about:
@@ -33,13 +33,8 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 #### EDA
 
 - 20 Years  
- - [1998-2018]
 - 28 States
- - [AR,AZ,CA,CO,CT,DC,DE,FL,KS,MA,MD,MN,MO,NH,NJ,NM,NY,OH,OR,PA,RI,TX,UT,VT,WI]
 - 6 Customer Segments
- - [Residential, Commercial, Non-Residential, Government, Non-Profit, School] 
-
-
 
 <center> <b><u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS <br> GIVEN SIZE OF SYSTEM AND YEAR</u></b></center>
 
@@ -77,14 +72,17 @@ total installed cost with adjustments made for inflation
   
 ### <center><u>TIME SERIES PREPARATION</u></center>
 
-Data is best when X variables(predictors) are independent and un-correlated.
+X-variables(predictors) should be independent and un-correlated.
+
 #### SEASONALITY & TREND
 Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
 However, data was not initially <u>stationary</u>. 
 
  #### STATIONARITY
 Ensuring a series is stationary makes the forecasts more reliable.
-Within this data, <u>stationarity</u> had to be achieved by taking the difference in change from one week to the next, aka <u>differencing</u> the data. <u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
+Within this data, <u>stationarity</u> had to be achieved by taking the change in cost_per_watt from one week to the next, aka <u>differencing</u> the data. <u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
+
+Tests for stationarity: Adf Test, KPSS test, PP test
 
 ### <center><u>REGRESSION MODELS</u></center>
 Regression was used as a means to reference how ARIMA was performing on the data when compared to basic regressors. Inititially, six types of regressors were used:
@@ -110,7 +108,11 @@ AR forecasts are essentially linear regression models which utilize lags much in
  
  Notes:<br>
  If time series is already stationary, d=0. <br>
- Used ARIMA given that the lags that would likely help 
+ Used ARIMA given that the lags that would likely help
+ 
+ 
+ #### NARX 
+ Nonlinear AutoRegression with eXogenous 
 
 
 ### <center><u>PERFORMANCE</u></center>
@@ -120,6 +122,7 @@ Given that the autoregressive and integrated lag aspect of an ARIMA model, it wa
 
 
 ### <center><u>RESULTS + SCORES</u></center>
+
 
 
 ### <center><u>INSIGHTS</u></center>
@@ -141,3 +144,6 @@ Potential significant variables:
 - temperature/climate change
 - national generation and useage
 - innovations
+
+Integrate other time series tools:
+- https://github.com/alan-turing-institute/pysf
