@@ -400,37 +400,3 @@ def cov_table(df):
 
 
 
-#POTENTIALLY REMOVE
-# === GENERAL MODEL PLOT FUNCTION =========================================
-def model_plot(test_data,train_data,forecasts,method, order=None):
-    '''
-     ==Function==
-    Plots the regression model entered
-    
-    ==Parameters==
-    |method| : string
-            name of regression or time series model used
-            ex: 'Random Forest Regressor', 'ARIMA'
-    |order| : tuple or None (default is set to None)
-            if time series method is being used, enter in order used 
-    '''
-    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
-    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
-    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
-    train_data.plot(ax=ax, label='Train')
-    test_data.plot(ax=ax, label='Test')
-    forecasts.plot(ax=ax, label='{} Forecast'.format(method))
-    ax.set(ylabel='cost_per_watt')
-    if order==None:
-        plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n {} Method  MSE= {}'.format(
-                                    test_start, test_end, 
-                                    forcst_start, forcst_end,method,
-                                    round(mean_squared_error(test_data, forecasts),5)))
-        
-    else:
-        plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n {} {} MSE= {}'.format(
-                                    test_start, test_end, 
-                                    forcst_start, forcst_end,method,order,
-                                    round(mean_squared_error(test_data, forecasts),5)))
-    plt.legend(loc='best')
-    plt.show() 

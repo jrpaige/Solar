@@ -51,20 +51,6 @@ plt.style.use('ggplot')
 # TIME SERIES PREP
 # =============================================================================
 
-# === REGULAR TRAIN TEST SPLIT =========================================     
-def train_test(df):
-    '''
-    ==Function==
-    Splits data into train and test sets 
-    
-     ==Returns==   
-    |train| = first 80% of df's data 
-    |test| = last 20% of df's data
-    '''
-    idx = round(len(df)*.8)
-    train, test = df[:idx], df[idx:]
-    return train, test
-        
 # === ROLLING PLOTS =========================================
 def rolling_plot(df):
     '''
@@ -118,50 +104,8 @@ def autocor_plots(df):
     fig, ax = plt.subplots(2, figsize=(15,7))
     sm.graphics.tsa.plot_acf(df, ax=ax[0])
     sm.graphics.tsa.plot_pacf(df, ax=ax[1])
-    plt.show()   
-
-    
-# === GET DIFFERENCED DATA ========================================= 
-def get_differences(df):
-    '''
-    ==Function ==
-    Differences the data to attempt to achieve stationarity
-    Each data point is representative of the change in value from the previous data point
-    
-    ==Returns==
-    weekly_differences
-    '''
-    weekly_differences = df.diff(periods=1)
-    plt.plot(weekly_differences.index, weekly_differences)
-    # The first entry in the differenced series is NaN.
-    plot_acf(weekly_differences[1:]) #lags=lags)
-    plot_pacf(weekly_differences[1:]) #lags=lags) 
-    plt.tight_layout()
-    plt.show()
-    return weekly_differences
-
-
-# === STATIONARITY TESTING ========================================= 
-def test_for_stationarity(df):  
-    '''
-    ==Function ==
-    Tests data for stationarity 
-    
-    ==Returns==
-    p-value and result
-    
-    ==Input Suggestion==
-    weekly_differences
-    
-    '''
-    test = adfuller(df)
-    print("ADF p-value: {0:2.2f}".format(test[1]))
-    if test[1] < 0.51:
-        print('Achieved stationarity! Reject ADF H0.')
-    else:
-        print('Time Series is not stationary. Fail to reject ADF H0')
-        
-        
+    plt.show()  
+                
 # === TIME SERIES TRAIN TEST SPLIT =========================================
 def time_train_test_split(df):
     '''
@@ -183,6 +127,21 @@ def time_train_test_split(df):
         plt.plot([None for i in train] + [x for x in test])
         plt.show()
     return train, test       
+
+# === SIMPLE SPLIT =============================================== 
+   
+    def train_test(df):
+        """    
+        ==Function==
+        Splits data into train and test sets 
+
+         ==Returns==   
+        |train| = first 80% of df's data 
+        |test| = last 20% of df's data
+        """
+        idx = round(len(df)*.8)
+        train, test = df[:idx], df[idx:]
+        return train, test
 
 
 
@@ -212,34 +171,6 @@ def compute_autocorrelation(series, lag=1):
     autocorr = np.corrcoef(series, lagged)[0, 1]
     return autocorr 
 
-
-# === PLOT AC, PARTIAL AC, HIST, & LINE  =========================================
-def tsplot(y, lags=None, title='', figsize=(14, 8)):
-    '''
-    ==Input Suggestion==
-    tsplot(ts_train, title='', lags=)
-    '''
-    
-    
-    fig = plt.figure(figsize=figsize)
-    layout = (2, 2)
-    ts_ax   = plt.subplot2grid(layout, (0, 0))
-    hist_ax = plt.subplot2grid(layout, (0, 1))
-    acf_ax  = plt.subplot2grid(layout, (1, 0))
-    pacf_ax = plt.subplot2grid(layout, (1, 1))
-    
-    y.plot(ax=ts_ax)
-    ts_ax.set_title(title)
-    y.plot(ax=hist_ax, kind='hist', bins=25)
-    hist_ax.set_title('Histogram')
-    smt.graphics.plot_acf(y, lags=lags, ax=acf_ax)
-    smt.graphics.plot_pacf(y, lags=lags, ax=pacf_ax)
-    [ax.set_xlim(0) for ax in [acf_ax, pacf_ax]]
-    sns.despine()
-    fig.tight_layout()
-    return ts_ax, acf_ax, pacf_ax
-
-
 # === PLOT AUTOCORRELATION ON A SCATTER PLOT =========================================
 def plot_ac_scat(df):
     '''
@@ -262,120 +193,4 @@ def plot_ac_scat(df):
         #ax.set_title("Lag {0} AC: {1:2.2f}".format(i, autocorr))
         plt.tight_layout()
 
-# === PLOT COEFFICIENTS =========================================        
-def plotcoefficients(model):
-    ''' 
-    ==Parameters==
-    |model| = model.fit() variable
     
-    ==Returns==
-    Plot with sorted coefficient values of the model
-    '''
-    coefs = pd.DataFrame(model.coef_, X_train.columns)
-    coefs.columns = ["coef"]
-    coefs["abs"] = coefs.coef.apply(np.abs)
-    coefs = coefs.sort_values(by="abs", ascending=False).drop(["abs"], axis=1)
-    
-    plt.figure(figsize=(15, 7))
-    coefs.coef.plot(kind='bar')
-    plt.grid(True, axis='y')
-    plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
-
-    
-# =============================================================================
-# SIMPLE TIME SEIRES
-# =============================================================================    
-    def train_test(df):
-        """    
-        ==Function==
-        Splits data into train and test sets 
-
-         ==Returns==   
-        |train| = first 80% of df's data 
-        |test| = last 20% of df's data
-        """
-        idx = round(len(df)*.8)
-        train, test = df[:idx], df[idx:]
-        return train, test
-
-    
-# =============================================================================
-# VALIDATE/SCORE
-# =============================================================================           
-
-# === GRID SEARCH EXPONENTIAL SMOOTHING  ===============================================  
-def walk_forward_validation(df, n_test, cfg):
-    '''
-    ==Function==
-    used with score_model function and grid_search function
-    walk-forward validation for univariate data
-    
-    ==Note==
-    # forecst = list() 
-    '''
-    train, test = train_test_split(df, n_test)
-    # seed history with training dataset
-    history = [x for x in train]
-    # step over each time-step in the test set
-    for i in range(len(test)):
-        # fit model and make forecast for history
-        yhat = exp_smoothing_forecast(history, cfg) 
-                      # store forecast in list of predictions        
-        forecst.append(yhat)
-        # add actual observation to history for the next loop
-        history.append(test[i])
-    # estimate forecast error
-    error = measure_rmse(test, forecast)
-    return error
-    
-# === SCORE ===============================================  
-def score_model(df, n_test, cfg, debug=False):
-    '''
-    ==Function==
-    Scores a model
-    
-    ==Returns==
-    cfg key and result
-    or None on failure
-    '''
-    result = None
-    # convert config to a key
-    key = str(cfg)
-    # show all warnings and fail on exception if debugging
-    if debug:
-        result = walk_forward_validation(df, n_test, cfg)
-    else:
-        # one failure during model validation suggests an unstable config
-        try:
-            # never show warnings when grid searching, too noisy
-            with catch_warnings():
-                filterwarnings("ignore")
-                result = walk_forward_validation(df, n_test, cfg)
-        except:
-            error = None
-    # check for an interesting result
-    if result is not None:
-        print(' > Model[%s] %.3f' % (key, result))
-    return (key, result)
-
-# === GRID SEARCH ===============================================  
-def grid_search(df, cfg_list, n_test, parallel=True):
-    '''
-    ==Function==
-    Grid searches for configs
-    '''
-    scores = None
-    if parallel:
-        # execute configs in parallel
-        executor = Parallel(n_jobs=cpu_count(), backend='multiprocessing')
-        tasks = (delayed(score_model)(df, n_test, cfg) for cfg in cfg_list)
-        scores = executor(tasks)
-    else:
-        scores = [score_model(df, n_test, cfg) for cfg in cfg_list]
-    # remove empty results
-    scores = [r for r in scores if r[1] != None]
-    # sort configs by error, asc
-    scores.sort(key=lambda tup: tup[1])
-    return scores   
-        
-#scores = grid_search(data, cfg_list, n_test)

@@ -44,11 +44,9 @@ from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
 plt.style.use('ggplot')
 
-
 # =============================================================================
-# ARIMA PARAMETERS
-# ============================================================================= 
-
+# MAIN FUNCTION
+# =============================================================================
 
 def ARIMA_predict(df, order):
     
@@ -69,7 +67,10 @@ def ARIMA_predict(df, order):
     plt.show()
 
     
-    
+    # =============================================================================
+# ARIMA PARAMETERS
+# ============================================================================= 
+
     
     
 
@@ -199,78 +200,7 @@ def arima_model(df, order, years_off, plot, use_years):
         print('MSE:',round(mean_squared_error(test, pred),5))
 
           
-# === PLOT ARIMA MODEL =========================================    
-def plot_arima(test_data, ARIMA_preds,train_data, order):    
-    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
-    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
-    plt.plot(test_data, label='Actual', alpha=0.5)
-    plt.plot(ARIMA_preds, label= 'Forecast')
-    plt.legend(loc='best')
-    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
-                                test_start, test_end, 
-                                forcst_start, forcst_end,order,
-                                round(mean_squared_error(test_data, ARIMA_preds),5)))
 
-
-def arima_plot(test_data,train_data,ARIMA_preds, order):    
-    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
-    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
-    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
-    train_data.plot(ax=ax, label='Train')
-    test_data.plot(ax=ax, label='Test')
-    ARIMA_preds.plot(ax=ax, label='Forecast')
-    ax.set(ylabel='cost_per_watt')
-    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
-                                test_start, test_end, 
-                                forcst_start, forcst_end,order,
-                                round(mean_squared_error(test_data, ARIMA_preds),5)))
-    plt.legend(loc='best')
-    plt.show()    
-    
-    
-# === SPECIFIC FORECAST =========================================    
-def arima_model_forecast(df):
-    '''
-    ==Function==
-    Forecasts for 2016-2019 using ARIMA
-    
-    ==Returns==
-    model.fit()
-    '''
-    st_date = '2016-01-10'
-    y_hat_avg = df[1:df.index.get_loc(st_date)-1]
-    new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
-    new_dates['cost_per_watt'] = 0
-    new_dates.set_index(0, drop=True, inplace=True)
-    
-    y_hat_avg = pd.concat([y_hat_avg, new_dates])
-    
-    fit1 = ARIMA(y_hat_avg['cost_per_watt'], order=(auto_arima(df.dropna()).order)).fit()
-    fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06"))
-    y_hat_avg['ARIMA'] = fit_preds
-    plt.figure(figsize=(12,8))
-    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
-    plt.plot(y_hat_avg['ARIMA'], label='ARIMA')
-    plt.legend(loc='best')
-    plt.title('ARIMA Model Predictions Beginning 1-10-2016')
-    plt.show()
-    print(' Mean Absolute Error =       {}\n Mean Squared Error =        {}\n Root Mean Squared Error =   {}'.format(round(mean_absolute_error(fit_preds,df[731:]),6), round(mean_squared_error(fit_preds,df[731:]),6), round(np.sqrt(mean_squared_error(fit_preds,df[731:]))),6))
-    return fit1
-
-          
-# === GET ERROR SCORES FROM ARIMA MODEL RESULTS =========================================             
-def arima_scores(res):
-    '''
-    ==Parameters==
-    |res| = variable from model.fit() 
-    '''
-    print('standard errors :',res.bse)
-    print('----------')
-    print('pvalues :',res.pvalues)
-    print('----------')
-    print('residuals :',res.resid)
-    print('----------')
-    print('plot diagnositcs :', res.plot_diagnostics())
 
 
 # === ARIMA MODELS VIA SKTIME =========================================   

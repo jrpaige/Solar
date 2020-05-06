@@ -1319,3 +1319,259 @@ def simple_use_lag(df):
     print('Lag of 1 Week MSE: ', round(mean_squared_error(X.Lag1, y),4))
     print('Lag of 2 Weeks MSE:', round(mean_squared_error(X.Lag2, y),4))
     print('Lag of 3 Weeks MSE:', round(mean_squared_error(X.Lag3, y),4)) 
+    
+    
+              
+# === GET ERROR SCORES FROM ARIMA MODEL RESULTS =========================================             
+def arima_scores(res):
+    '''
+    ==Parameters==
+    |res| = variable from model.fit() 
+    '''
+    print('standard errors :',res.bse)
+    print('----------')
+    print('pvalues :',res.pvalues)
+    print('----------')
+    print('residuals :',res.resid)
+    print('----------')
+    print('plot diagnositcs :', res.plot_diagnostics())
+    
+    
+    
+    # === SPECIFIC FORECAST =========================================    
+def arima_model_forecast(df):
+    '''
+    ==Function==
+    Forecasts for 2016-2019 using ARIMA
+    
+    ==Returns==
+    model.fit()
+    '''
+    st_date = '2016-01-10'
+    y_hat_avg = df[1:df.index.get_loc(st_date)-1]
+    new_dates = pd.DataFrame(pd.date_range(start='2016-01-10', end='2019-01-06', freq='W'))
+    new_dates['cost_per_watt'] = 0
+    new_dates.set_index(0, drop=True, inplace=True)
+    
+    y_hat_avg = pd.concat([y_hat_avg, new_dates])
+    
+    fit1 = ARIMA(y_hat_avg['cost_per_watt'], order=(auto_arima(df.dropna()).order)).fit()
+    fit_preds = pd.DataFrame(fit1.predict(start="2016-01-10", end="2019-01-06"))
+    y_hat_avg['ARIMA'] = fit_preds
+    plt.figure(figsize=(12,8))
+    plt.plot(df['cost_per_watt'], label='Cost Per Watt')
+    plt.plot(y_hat_avg['ARIMA'], label='ARIMA')
+    plt.legend(loc='best')
+    plt.title('ARIMA Model Predictions Beginning 1-10-2016')
+    plt.show()
+    print(' Mean Absolute Error =       {}\n Mean Squared Error =        {}\n Root Mean Squared Error =   {}'.format(round(mean_absolute_error(fit_preds,df[731:]),6), round(mean_squared_error(fit_preds,df[731:]),6), round(np.sqrt(mean_squared_error(fit_preds,df[731:]))),6))
+    return fit1
+    
+    
+    
+    
+# === PLOT ARIMA MODEL =========================================    
+def plot_arima(test_data, ARIMA_preds,train_data, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    plt.plot(test_data, label='Actual', alpha=0.5)
+    plt.plot(ARIMA_preds, label= 'Forecast')
+    plt.legend(loc='best')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARIMA_preds),5)))
+
+
+def arima_plot(test_data,train_data,ARIMA_preds, order):    
+    test_start, test_end = test_data.index.year[0], test_data.index.year[-1]
+    forcst_start, forcst_end = train_data.index.year[0], train_data.index.year[-1]
+    fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
+    train_data.plot(ax=ax, label='Train')
+    test_data.plot(ax=ax, label='Test')
+    ARIMA_preds.plot(ax=ax, label='Forecast')
+    ax.set(ylabel='cost_per_watt')
+    plt.title('Forecasted [{} - {}] Data \n Based On [{} - {}] Data\n ARIMA {} MSE= {}'.format(
+                                test_start, test_end, 
+                                forcst_start, forcst_end,order,
+                                round(mean_squared_error(test_data, ARIMA_preds),5)))
+    plt.legend(loc='best')
+    plt.show()    
+    
+    
+
+
+    
+# =============================================================================
+# VALIDATE/SCORE
+# =============================================================================           
+
+# === GRID SEARCH EXPONENTIAL SMOOTHING  ===============================================  
+def walk_forward_validation(df, n_test, cfg):
+    '''
+    ==Function==
+    used with score_model function and grid_search function
+    walk-forward validation for univariate data
+    
+    ==Note==
+    # forecst = list() 
+    '''
+    train, test = train_test_split(df, n_test)
+    # seed history with training dataset
+    history = [x for x in train]
+    # step over each time-step in the test set
+    for i in range(len(test)):
+        # fit model and make forecast for history
+        yhat = exp_smoothing_forecast(history, cfg) 
+                      # store forecast in list of predictions        
+        forecst.append(yhat)
+        # add actual observation to history for the next loop
+        history.append(test[i])
+    # estimate forecast error
+    error = measure_rmse(test, forecast)
+    return error
+    
+# === SCORE ===============================================  
+def score_model(df, n_test, cfg, debug=False):
+    '''
+    ==Function==
+    Scores a model
+    
+    ==Returns==
+    cfg key and result
+    or None on failure
+    '''
+    result = None
+    # convert config to a key
+    key = str(cfg)
+    # show all warnings and fail on exception if debugging
+    if debug:
+        result = walk_forward_validation(df, n_test, cfg)
+    else:
+        # one failure during model validation suggests an unstable config
+        try:
+            # never show warnings when grid searching, too noisy
+            with catch_warnings():
+                filterwarnings("ignore")
+                result = walk_forward_validation(df, n_test, cfg)
+        except:
+            error = None
+    # check for an interesting result
+    if result is not None:
+        print(' > Model[%s] %.3f' % (key, result))
+    return (key, result)
+
+# === GRID SEARCH ===============================================  
+def grid_search(df, cfg_list, n_test, parallel=True):
+    '''
+    ==Function==
+    Grid searches for configs
+    '''
+    scores = None
+    if parallel:
+        # execute configs in parallel
+        executor = Parallel(n_jobs=cpu_count(), backend='multiprocessing')
+        tasks = (delayed(score_model)(df, n_test, cfg) for cfg in cfg_list)
+        scores = executor(tasks)
+    else:
+        scores = [score_model(df, n_test, cfg) for cfg in cfg_list]
+    # remove empty results
+    scores = [r for r in scores if r[1] != None]
+    # sort configs by error, asc
+    scores.sort(key=lambda tup: tup[1])
+    return scores   
+        
+#scores = grid_search(data, cfg_list, n_test)
+
+
+
+# === PLOT TS COEFFICIENTS =========================================        
+def plotcoefficients(model):
+    ''' 
+    ==Parameters==
+    |model| = model.fit() variable
+    
+    ==Returns==
+    Plot with sorted coefficient values of the model
+    '''
+    coefs = pd.DataFrame(model.coef_, X_train.columns)
+    coefs.columns = ["coef"]
+    coefs["abs"] = coefs.coef.apply(np.abs)
+    coefs = coefs.sort_values(by="abs", ascending=False).drop(["abs"], axis=1)
+    
+    plt.figure(figsize=(15, 7))
+    coefs.coef.plot(kind='bar')
+    plt.grid(True, axis='y')
+    plt.hlines(y=0, xmin=0, xmax=len(coefs), linestyles='dashed');
+
+#
+
+
+
+# === STATIONARITY TESTING ========================================= 
+def test_for_stationarity(df):  
+    '''
+    ==Function ==
+    Tests data for stationarity 
+    
+    ==Returns==
+    p-value and result
+    
+    ==Input Suggestion==
+    weekly_differences
+    
+    '''
+    test = adfuller(df)
+    print("ADF p-value: {0:2.2f}".format(test[1]))
+    if test[1] < 0.51:
+        print('Achieved stationarity! Reject ADF H0.')
+    else:
+        print('Time Series is not stationary. Fail to reject ADF H0')
+        
+        
+# === GET DIFFERENCED DATA ========================================= 
+def get_differences(df):
+    '''
+    ==Function ==
+    Differences the data to attempt to achieve stationarity
+    Each data point is representative of the change in value from the previous data point
+    
+    ==Returns==
+    weekly_differences
+    '''
+    weekly_differences = df.diff(periods=1)
+    plt.plot(weekly_differences.index, weekly_differences)
+    # The first entry in the differenced series is NaN.
+    plot_acf(weekly_differences[1:]) #lags=lags)
+    plot_pacf(weekly_differences[1:]) #lags=lags) 
+    plt.tight_layout()
+    plt.show()
+    return weekly_differences
+
+
+
+# === PLOT AC, PARTIAL AC, HIST, & LINE  =========================================
+def tsplot(y, lags=None, title='', figsize=(14, 8)):
+    '''
+    ==Input Suggestion==
+    tsplot(ts_train, title='', lags=)
+    '''
+    
+    
+    fig = plt.figure(figsize=figsize)
+    layout = (2, 2)
+    ts_ax   = plt.subplot2grid(layout, (0, 0))
+    hist_ax = plt.subplot2grid(layout, (0, 1))
+    acf_ax  = plt.subplot2grid(layout, (1, 0))
+    pacf_ax = plt.subplot2grid(layout, (1, 1))
+    
+    y.plot(ax=ts_ax)
+    ts_ax.set_title(title)
+    y.plot(ax=hist_ax, kind='hist', bins=25)
+    hist_ax.set_title('Histogram')
+    smt.graphics.plot_acf(y, lags=lags, ax=acf_ax)
+    smt.graphics.plot_pacf(y, lags=lags, ax=pacf_ax)
+    [ax.set_xlim(0) for ax in [acf_ax, pacf_ax]]
+    sns.despine()
+    fig.tight_layout()
+    return ts_ax, acf_ax, pacf_ax
