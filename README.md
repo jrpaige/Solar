@@ -27,9 +27,8 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 
 ### DATA + EDA
 
-    
-$$AVERAGE\ COST\ PER WATT FOR RESIDENTIAL CUSTOMERS GIVEN SIZE OF SYSTEM AND YEAR$$ 
 
+<center><b><u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS <br> GIVEN SIZE OF SYSTEM AND YEAR</u></b></center>
 
 |   year |   (0.0, 2.5] |   (2.5, 5.0] |   (5.0, 7.5] |   (7.5, 10.0] |   (10.0, 12.5] |   (12.5, 17.5] |   (17.5, 42.5] |   (42.5, 18000.0] |
 |-------:|-------------:|-------------:|-------------:|--------------:|---------------:|---------------:|---------------:|------------------:|
