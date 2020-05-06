@@ -24,7 +24,7 @@ def prep(eda=False, show_rolling_plot=False):
     Returns orginal dataframe and stationary dataframe
     
     ==Columns==
-    Installation Date, System Size, Total Installed Price, Customer Segment
+    Installation Date, System Size, Total Installed Price, Customer Segment,State
     Lowercases and replaces all spaces with underscores
     
     ==Index==
@@ -83,16 +83,16 @@ def prep(eda=False, show_rolling_plot=False):
     '''
     print('PREP'.center(76,'-'))
     
-    print(" 1 of 12 |    Reading in data \n         |    Filtering to 4 features: Date, System Size, Total Cost, Customer Segment \n         |    Changing -9999 values to null")
+    print(" 1 of 12 |    Reading in data \n         |    Filtering to 5 features:\n         |       Date, System Size, Total Cost, Customer Segment, State \n         |    Changing -9999 values to null")
     dfMod1 = pd.read_csv(file_path_1,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
-                    usecols=['Installation Date', 'System Size','Total Installed Price', 
+                    usecols=['Installation Date', 'System Size','Total Installed Price', 'State',
                     'Customer Segment'], na_values=(-9999, '-9999'))
     dfMod2 = pd.read_csv(file_path_2,
                     encoding='iso-8859-1',
                     parse_dates=['Installation Date'], 
-                    usecols=['Installation Date', 'System Size', 'Total Installed Price' ,
+                    usecols=['Installation Date', 'System Size', 'Total Installed Price' , 'State',
                     'Customer Segment'],na_values=(-9999, '-9999'))
     df = pd.concat([dfMod1,dfMod2], ignore_index=True)
 
