@@ -92,7 +92,7 @@ After multiple tests, Bagging, AdaBoost, and Linear Regressors did not perform.<
 ### <u><center>TIME SERIES MODEL</center></u>
 AR forecasts are essentially linear regression models which utilize lags much in the way OLS Linear Regression does. 
 
-ARMA, ARIMA, ARIMAR, SARIMAX, SARIMA 
+ARMA, ARIMA, ARIMAR
 
 
 
@@ -104,15 +104,6 @@ ARMA, ARIMA, ARIMAR, SARIMAX, SARIMA
 |   AR |      AutoRegressive  |      [p]| number of lags pf Y to be used as predictors|
 |   I |      Integrated  |      [d]| minimum number of differencing to make stationary number of lags|
 |   MA |      Moving Average  |      [q] | order of the moving average term <br> number of lagged forecast errors |
-
-|  SARIMA(X) |     Meaning     |    Parameters[p,d,q]x[P,D,Q]   |   Notes     |
-|-------:|----------------:|---------------:|---------------:|
-|   SAR |     Seasonal   |      [P]| |
-|    |        |      [D]| order of seasonal differencing|
-|   SMA |        |      [Q]| number of lags pf Y to be used as predictors|
-|   x |        |      x | frequency of the time series
-|   X |      Exogenous Variable  |      [X]| |
-
  
  Notes:<br>
  If time series is already stationary, d=0. <br>
