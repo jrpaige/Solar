@@ -28,7 +28,7 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 ### DATA + EDA
 
 
-<center><b><u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS <br> GIVEN SIZE OF SYSTEM AND YEAR</u></b></center>
+<center> <b><u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS <br> GIVEN SIZE OF SYSTEM AND YEAR</u></b></center>
 
 |   year |   (0.0, 2.5] |   (2.5, 5.0] |   (5.0, 7.5] |   (7.5, 10.0] |   (10.0, 12.5] |   (12.5, 17.5] |   (17.5, 42.5] |   (42.5, 18000.0] |
 |-------:|-------------:|-------------:|-------------:|--------------:|---------------:|---------------:|---------------:|------------------:|
@@ -68,16 +68,30 @@ total installed cost with adjustments made for inflation
 - Nulls were replaced with median values from same year
   
   
-### TIME SERIES PREPARATION
-
-Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
-However, stationarity had to be achieved by taking the difference in change from one week to the next, aka <u>differencing</u> the data. <br> <u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any trend and seasonality.
-
+  
 ### REGRESSION MODELS
+
+Regression was used as a means to reference how ARIMA was performing on the data. 6 types of regression were initially used:
+- Random Forest Regressor
+- Bagging Regressor
+- Linear Regression
+- AdaBoost Regression 
+- OLS Linear 
+- OLS 
+
+Bagging, AdaBoost, and Linear Regressors did not perform as well. Random Forest, OLS Linear, and OLS were kept in the model. 
+
   #### OLS
   #### RANDOM FOREST REGRESSOR
   #### LINEAR REGRESSION 
 Linear regression uses its own lags as predictors
+  
+### TIME SERIES PREPARATION
+
+Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
+However, data was not initially <u>stationary</u>. 
+<u>Stationarity</u> had to be achieved by taking the difference in change from one week to the next, aka <u>differencing</u> the data. <br> 
+<u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
 
 ### TIME SERIES MODEL
  #### STATIONARITY
