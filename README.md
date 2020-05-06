@@ -27,7 +27,9 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 
 ### DATA + EDA
 
-#### <u>AVERAGE COST PER WATT FOR RESIDENTIAL CUSTOMERS GIVEN SIZE OF SYSTEM AND YEAR</u>
+    
+$$AVERAGE\ COST\ PER WATT FOR RESIDENTIAL CUSTOMERS GIVEN SIZE OF SYSTEM AND YEAR$$ 
+
 
 |   year |   (0.0, 2.5] |   (2.5, 5.0] |   (5.0, 7.5] |   (7.5, 10.0] |   (10.0, 12.5] |   (12.5, 17.5] |   (17.5, 42.5] |   (42.5, 18000.0] |
 |-------:|-------------:|-------------:|-------------:|--------------:|---------------:|---------------:|---------------:|------------------:|
@@ -55,19 +57,47 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 
 
 ### DATA ENGINEERING
-  inflation
-  cost per watt
-  dealing with NaNs
+
+
+- Total adjusted installed  cost = 
+total installed cost with adjustments made for inflation
+   
+- cost per watt =  $\frac {total\ adjusted\ installed\ cost}{system\ size} $
+  
+- Resampled data into weekly medians
+  
+- Nulls were replaced with median values from same year
+  
+  
 ### TIME SERIES PREPARATION
 
-  - STATIONARITY
-    moved to differences as data set 
+Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
+However, stationarity had to be achieved by taking the difference in change from one week to the next, aka <u>differencing</u> the data. <br> <u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any trend and seasonality.
 
-### MODELS
-  ### ARIMA
-  ### OLS
-  ### RANDOM FOREST REGRESSOR
-  ### LINEAR REGRESSION 
+### REGRESSION MODELS
+  #### OLS
+  #### RANDOM FOREST REGRESSOR
+  #### LINEAR REGRESSION 
+Linear regression uses its own lags as predictors
+
+### TIME SERIES MODEL
+ #### STATIONARITY
+Ensuring a series is stationary make the forecasts more reliable.
+     
+AR forecasts are essentially linear regression models which utilize lags much in the way OLS Linear Regression does. Data is best when X variables(predictors) are independent and un-correlated
+ 
+ #### ARIMA<br> 
+
+|  ARIMA |     Meaning     |    Parameter   |   Notes     |
+|-------:|----------------:|---------------:|---------------:|
+|   AR |      AutoRegressive  |      [p]| number of lags pf Y to be used as predictors|
+|   I |      Integrated  |      [d]| minimum number of differencing to make stationary number of lags|
+|   MA |      Moving Average  |      [q] | order of the moving average term <br> number of lagged forecast errors |
+ 
+ If time series is already stationary, d=0
+ 
+ Used ARIMA given that the lags that would likely help 
+
 
 ### PERFORMANCE
 
