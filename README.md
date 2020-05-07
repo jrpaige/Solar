@@ -84,8 +84,6 @@ Regression was used as a means to reference how ARIMA was performing on the data
 - OLS 
 
 ### <u><center>TIME SERIES MODEL</center></u>
- 
- #### ARIMA<br> 
 
 | ARIMA | Term |Parameter|Notes |Plot Used|
 |:------:|:------:|:------:|:------|:------:|
@@ -101,7 +99,7 @@ Regression was used as a means to reference how ARIMA was performing on the data
 
 |Plot ||Math |Notes|
 |:----------:|:-------------|:--------|:------|
-|**PACF**| Partial Autocorrelation |$Yt = \alpha0 + \alpha1 Y_{t-1} + \alpha2 Y_{t-2} + \alpha3 Y_{t-3}$|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> -  𝑌𝑡  = current series <br> -  𝑌𝑡−1  = lag 1 of  𝑌 <br>- Partial AC of lag 3  𝑌𝑡−3  = the coefficient  𝛼3  of  𝑌𝑡−3|
+|**PACF**| Partial Autocorrelation |$$Yt = \alpha0 + \alpha1 Y_{t-1} + \alpha2 Y_{t-2} + \alpha3 Y_{t-3}$$|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> -  𝑌𝑡  = current series <br> -  𝑌𝑡−1  = lag 1 of  𝑌 <br>- Partial AC of lag 3  𝑌𝑡−3  = the coefficient  𝛼3  of  𝑌𝑡−3|
 |**ACF**| Autocorrelation||- Conveys how many MA terms are required to remove any autocorrelation in the stationarized series.	
     
     
