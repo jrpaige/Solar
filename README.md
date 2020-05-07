@@ -99,10 +99,11 @@ Regression was used as a means to reference how ARIMA was performing on the data
 
 |Plot ||Math |Notes|
 |:----------:|:-------------|:--------|:------|
-|**PACF**| Partial Autocorrelation |<img src="https://latex.codecogs.com/gif.latex?Y_t&space;=&space;\alpha_0&space;&plus;&space;\alpha_1&space;Y_{t-1}&space;&plus;&space;\alpha_2&space;Y_{t-2}&space;&plus;&space;\alpha_3&space;Y_{t-3}" title="Y_t = \alpha_0 + \alpha_1 Y_{t-1} + \alpha_2 Y_{t-2} + \alpha_3 Y_{t-3}" />|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> - <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\small&space;Y_t" title="\small Y_t" />  = current series <br> -  $𝑌_{𝑡−1}$  = lag 1 of  𝑌 <br>- Partial AC of lag 3  <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\small&space;\left&space;[Y_{t-3}&space;\right&space;]" title="\small \left [Y_{t-3} \right ]" />  = the coefficient  𝛼_3  of <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y_{t-3}" title="Y_{t-3}" />|
+|**PACF**| Partial Autocorrelation |<img src="https://latex.codecogs.com/gif.latex?Y_t&space;=&space;\alpha_0&space;&plus;&space;\alpha_1&space;Y_{t-1}&space;&plus;&space;\alpha_2&space;Y_{t-2}&space;&plus;&space;\alpha_3&space;Y_{t-3}"/>|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> - <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\small&space;Y_t" />  = current series <br> - <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y_{t-1}" />  = lag 1 of <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y" />  <br>- Partial AC of lag 3  <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\small&space;\left&space;[Y_{t-3}&space;\right&space;]" />  = the coefficient  <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\alpha_3"/> of <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y_{t-3}" />|
 |**ACF**| Autocorrelation||- Conveys how many MA terms are required to remove any autocorrelation in the stationarized series.	
-    
-    
+  
+<img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y" title="Y" />
+
 ### <u>PERFORMANCE</u>
 I chose to use Mean Squared Error as the metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
 
