@@ -13,7 +13,7 @@ from src.Time_Series_Helper_Funcs import rolling_plot
 
 file_path_1 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p1.csv'
 file_path_2 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p2.csv'
-
+files = [file_path_1, file_path_2]
 # =============================================================================
 # DF PREP
 # =============================================================================
@@ -84,19 +84,18 @@ def prep(eda=False, show_rolling_plot=False):
     print('PREP'.center(76,'-'))
     
     print(" 1 of 12 |    Reading in data \n         |    Filtering to 5 features:\n         |       Date, System Size, Total Cost, Customer Segment, State \n         |    Changing -9999 values to null")
-    dfMod1 = pd.read_csv(file_path_1,
-                    encoding='iso-8859-1',
-                    parse_dates=['Installation Date'], 
-                    usecols=['Installation Date', 'System Size','Total Installed Price', 'State',
-                    'Customer Segment'], na_values=(-9999, '-9999'))
-    dfMod2 = pd.read_csv(file_path_2,
-                    encoding='iso-8859-1',
-                    parse_dates=['Installation Date'], 
-                    usecols=['Installation Date', 'System Size', 'Total Installed Price' , 'State',
-                    'Customer Segment'],na_values=(-9999, '-9999'))
-    df = pd.concat([dfMod1,dfMod2], ignore_index=True)
-
     
+    loaded_files = []
+    count = 0
+    for i in range(1, len(files)+1):
+        exec(f"df{i} = pd.read_csv(files[{count}],encoding='iso-8859-1', parse_dates=['Installation Date'], usecols=['Installation Date','System Size','Total Installed Price','Customer Segment', 'State'],na_values=(-9999, '-9999'))")
+        count+=1
+    [exec("loaded_files.append(df{})".format(i)) for i in range(1, len(files)+1)]
+    if len(loaded_files) > 1:
+        df = pd.concat([i for i in loaded_files],ignore_index=True)
+    else: 
+        df=loaded_files[0]
+
     print(' 2 of 12 |    Cleaning up column names')
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
     
@@ -138,7 +137,7 @@ def prep(eda=False, show_rolling_plot=False):
     
     print('10 of 12 |    Testing for stationarity')
     if round(adfuller(y)[1],4) < 0.51:
-        print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF".format(round(adfuller(y)[1],4)))
+        print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF H0".format(round(adfuller(y)[1],4)))
         print('prep complete'.upper().center(76,'-'))
 #         if eda==True:
 #             print('EDA '.upper().center(76,' '))

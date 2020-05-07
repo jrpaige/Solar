@@ -87,14 +87,25 @@ Regression was used as a means to reference how ARIMA was performing on the data
  
  #### ARIMA<br> 
 
-|  ARIMA |          |    Parameter  |   Notes     |
-|-------:|----------------:|---------------:|---------------:|
-|   AR |      AutoRegressive  |      [p]| number of lags pf Y to be used as predictors|
-|   I |      Integrated  |      [d]| minimum number of differencing to make stationary number of lags|
-|   MA |      Moving Average  |      [q] | order of the moving average term <br> number of lagged forecast errors | 
+| AR \| I \| MA | Term |Parameter|Notes |Plot Used|
+|:------:|:------:|:------:|:------|:------:|
+|AR|AutoRegressive|[p]| Number of lags of Y to be used as predictors| [PACF] <br>Partial Autocorrelation |
+|||||||||
+|I|Integrated|[d]| Minimum number of differencing to make stationary number of lags|
+|||||||||
+|MA|Moving Average|[q] | Order of the moving average term <br> number of lagged forecast errors |[ACF] <br>Autocorrelation |
 
+<br>
+<br>
+<br>
 
-### <center><u>PERFORMANCE</u></center>
+|Plot ||Math |Notes|
+|:----------:|:-------------|:--------|:------|
+|**PACF**| Partial Autocorrelation |$Yt = \alpha0 + \alpha1 Y_{t-1} + \alpha2 Y_{t-2} + \alpha3 Y_{t-3}$|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> -  𝑌𝑡  = current series <br> -  𝑌𝑡−1  = lag 1 of  𝑌 <br>- Partial AC of lag 3  𝑌𝑡−3  = the coefficient  𝛼3  of  𝑌𝑡−3|
+|**ACF**| Autocorrelation||- Conveys how many MA terms are required to remove any autocorrelation in the stationarized series.	
+    
+    
+### <u>PERFORMANCE</u>
 I chose to use Mean Squared Error as the metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
 
 Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 

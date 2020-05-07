@@ -48,6 +48,19 @@ plt.style.use('ggplot')
 # MAIN FUNCTION
 # =============================================================================
 
+def train_test(df):
+    """    
+    ==Function==
+    Splits data into train and test sets 
+
+    ==Returns==   
+    |train| = first 80% of df's data 
+    |test| = last 20% of df's data
+    """
+    idx = round(len(df)*.8)
+    train, test = df[:idx], df[idx:]
+    return train, test
+
 def ARIMA_predict(df, order):
     
     train, test = train_test(df)
