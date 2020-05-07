@@ -42,7 +42,7 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 ###### VARIABLE CREATION
 - Total adjusted installed  cost = 
 total installed cost with adjustments made for inflation
-- cost per watt =  [total adjusted installed cost]/ [system size]
+- <img src="https://latex.codecogs.com/gif.latex?cost\&space;per\&space;watt&space;=&space;\frac&space;{total\&space;adjusted\&space;installed\&space;cost}{system\&space;size}" title="cost\ per\ watt = \frac {total\ adjusted\ installed\ cost}{system\ size}" />
 
 ###### DATA TRANSFORMATION
 - Resampled data into weekly medians
@@ -99,7 +99,7 @@ Regression was used as a means to reference how ARIMA was performing on the data
 
 |Plot ||Math |Notes|
 |:----------:|:-------------|:--------|:------|
-|**PACF**| Partial Autocorrelation |$$Yt = \alpha0 + \alpha1 Y_{t-1} + \alpha2 Y_{t-2} + \alpha3 Y_{t-3}$$|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> -  𝑌𝑡  = current series <br> -  𝑌𝑡−1  = lag 1 of  𝑌 <br>- Partial AC of lag 3  𝑌𝑡−3  = the coefficient  𝛼3  of  𝑌𝑡−3|
+|**PACF**| Partial Autocorrelation |<img src="https://latex.codecogs.com/gif.latex?\inline&space;Y_t&space;=&space;\alpha_0&space;&plus;&space;\alpha_1&space;Y_{t-1}&space;&plus;&space;\alpha_2&space;Y_{t-2}&space;&plus;&space;\alpha_3&space;Y_{t-3}" title="Y_t = \alpha_0 + \alpha_1 Y_{t-1} + \alpha_2 Y_{t-2} + \alpha_3 Y_{t-3}" />|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of Y.<br> - <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{90}&space;\small&space;Y_t" title="\small Y_t" />  = current series <br> -  $𝑌_{𝑡−1}$  = lag 1 of  𝑌 <br>- Partial AC of lag 3  <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{90}&space;\small&space;\left&space;[Y_{t-3}&space;\right&space;]" title="\small \left [Y_{t-3} \right ]" />  = the coefficient  𝛼_3  of   𝑌𝑡−3|
 |**ACF**| Autocorrelation||- Conveys how many MA terms are required to remove any autocorrelation in the stationarized series.	
     
     
