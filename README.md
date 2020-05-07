@@ -87,7 +87,7 @@ Regression was used as a means to reference how ARIMA was performing on the data
  
  #### ARIMA<br> 
 
-| AR I MA | Term |Parameter|Notes |Plot Used|
+| ARIMA | Term |Parameter|Notes |Plot Used|
 |:------:|:------:|:------:|:------|:------:|
 |AR|AutoRegressive|[p]| Number of lags of Y to be used as predictors| [PACF] <br>Partial Autocorrelation |
 |||||||||
