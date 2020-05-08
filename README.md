@@ -1,17 +1,18 @@
-# :clock Time Series Forecasting of Residential Solar Panel Costs 
+# Time Series Forecasting of Residential Solar Panel Costs 
 
 ## <center>ABSTRACT</center>
 
-The relationship between technology, climate change, and awareness relative to renewable energy creates interesting nuances for the future of the energy sector. Over 1.6 million observations collected from 1998 - 2018 of solar panel installations were used in the project, of which 95% consisted of residential installations. The project’s model employs univariate ARIMA time series analysis to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
-
-Tech Stack Used: 
-`Python`, `Numpy`, `Pandas`, `Scikit-Learn`, `Matplotlib`, `Math`, `SciPy`, `StatsModels`, `PMDarima`,  `CPI`, `Seaborn`, `sktime`, `fireTS`
+This model uses data collected through Berkeley Lab's [Tracking the Sun](https://emp.lbl.gov/tracking-the-sun/) initiative. 
+The datasets includes over 1.6 million observations of solar panel installations collected over twenty years. 
+The project’s model employs univariate ARIMA time series analysis and multiple regressors to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
+<img src='https://www.ecmag.com/sites/default/files/solar-energy-city.jpg'>
 
  
 Fun Fact about:
 The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
 
 ## <center>WORKFLOW</center>
+- TECH 
 - SCRIPTS
 - DATA
     - EDA
@@ -29,6 +30,10 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 - INSIGHTS
 - NEXT STEPS 
 
+### <center><u>Tech Stack Used</u></center>
+<center> `Python`, `Numpy`, `Pandas`, `Scikit-Learn`, `Matplotlib`, `Math`, `SciPy`, `StatsModels`, `PMDarima`,  `CPI`, `Seaborn`, `sktime`, `fireTS` </center>
+
+
 ### <center><u>SCRIPTS</u></center>
 `Prep_Class.py`
 - This class incorporates 11 steps to prep the data for the Time Series and Regression models. 
@@ -45,10 +50,11 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 
 ### <center><u>DATA</u></center>  
 #### EDA
-
 - 20 Years  
+    - 1998-2018
 - 28 States
 - 6 Customer Segments
+    - 95% Residential 
 - EDA NOTEBOOK TO BE ADDED 
 
 #### DATA ENGINEERING
