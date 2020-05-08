@@ -69,13 +69,40 @@ total installed cost with adjustments made for inflation
 
 #### SEASONALITY & TREND
 Data did not show any signs of <u>seasonality</u> or <u>trends</u>. <br>
+cyclicality 
+white noise
 However, data was not initially <u>stationary</u>. 
 
  #### STATIONARITY
 Ensuring a series is stationary makes the forecasts more reliable.
-Within this data, <u>stationarity</u> had to be achieved by taking the change in cost_per_watt from one week to the next, aka <u>differencing</u> the data. <u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
+1. has zero trend
+2. variance is constant 
+3. autocorrelation is constant
 
 Tests for stationarity: Adf, KPSS, PP
+
+Results of Dickey-Fuller Test [ADF]:
+Test Statistic          
+- more negative means more likely to be stationary 
+p-value         
+- if p-value is smaller than 0.05, reject H0. Reject non-stationarity
+#Lags Used
+Critical Values
+- if you want p value of 5%, p value needs to be below the critical value shown 
+
+df only tests for trend stationarity 
+
+
+Within this data, <u>stationarity</u> had to be achieved by taking the change in cost_per_watt from one week to the next, aka <u>differencing</u> the data. 
+<u>Differencing</u> can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any <u>trend</u> and <u>seasonality</u>.
+
+Other transformations used for achieving stationarity:
+- log 
+- square root
+- proportional change
+-- (df.shift(1)/df)
+
+
 
 ### <center><u>REGRESSION MODELS</u></center>
 Regression was used as a means to reference how ARIMA was performing on the data when compared to basic regressors. 
@@ -88,9 +115,7 @@ Regression was used as a means to reference how ARIMA was performing on the data
 | ARIMA | Term |Parameter|Notes |Plot Used|
 |:------:|:------:|:------:|:------|:------:|
 |AR|AutoRegressive|[p]| Number of lags of Y to be used as predictors| [PACF] <br>Partial Autocorrelation |
-|||||||||
 |I|Integrated|[d]| Minimum number of differencing to make stationary number of lags|
-|||||||||
 |MA|Moving Average|[q] | Order of the moving average term <br> number of lagged forecast errors |[ACF] <br>Autocorrelation |
 
 <br>
@@ -102,6 +127,34 @@ Regression was used as a means to reference how ARIMA was performing on the data
 |**PACF**| Partial Autocorrelation |<img src="https://latex.codecogs.com/gif.latex?Y_t&space;=&space;\alpha_0&space;&plus;&space;\alpha_1&space;Y_{t-1}&space;&plus;&space;\alpha_2&space;Y_{t-2}&space;&plus;&space;\alpha_3&space;Y_{t-3}"/>|- Know if that lag is needed in the AR term <br> - Partial autocorrelation of lag (k) of a series is the coefficient of that lag in the autoregression equation of <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y"/>.<br> - <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\small&space;Y_t"/>  = current series <br> - <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y_{t-1}"/>  = lag 1 of <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y"/>  <br>- Partial AC of lag 3  <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\small&space;\left&space;[Y_{t-3}&space;\right&space;]"/>  = the coefficient  <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;\alpha_3"/> of <img src="https://latex.codecogs.com/gif.latex?\inline&space;\dpi{100}&space;Y_{t-3}"/>|
 |**ACF**| Autocorrelation||- Conveys how many MA terms are required to remove any autocorrelation in the stationarized series.	
   
+
+### AR
+AR(1) = Y_t = a_1 Y_{t-1} + e_t
+- e = shock term = white noise 
+- a1 is the AR coefficient at lag 1
+
+linear regression
+dependent = yt 
+independent = yt-1
+coef a1 = slope of the line
+shocks are residuals to line
+
+order of the model is the number of time lags used
+AR(2) = Y_t = a_1 Y_{t-1} + a_2 Y_{t-2} + e_t
+
+model has 2 AR coefficients
+
+### MA
+MA 
+regress the values of the ts against the previous shock values of the same ts 
+
+MA(1) = Y_t = m_1 e_{t-1} + e_t
+ = [value of the ts]x [ value of the shock at previous step] + [shock term for current time step]
+ 
+MA(2) = Y_t = m_1 e_{t-1} + m_2 e_{t-2} + e_t
+
+
+ARMA(1,1) = Y_t = a_1 Y_{t-1} + m_1 e_{t-1} + e_t
 
 
 ### <u>PERFORMANCE</u>
