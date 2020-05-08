@@ -1,4 +1,4 @@
-# Time Series Forecasting of Residential Solar Panel Costs 
+# :clock Time Series Forecasting of Residential Solar Panel Costs 
 
 ## <center>ABSTRACT</center>
 
