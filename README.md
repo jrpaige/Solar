@@ -1,40 +1,14 @@
 # Time Series Forecasting of Residential Solar Panel Costs 
 
-## <center>ABSTRACT</center>
-
 This model uses data collected through Berkeley Lab's [Tracking the Sun](https://emp.lbl.gov/tracking-the-sun/) initiative. 
 The datasets includes over 1.6 million observations of solar panel installations collected over twenty years. 
 The project’s model employs univariate ARIMA time series analysis and multiple regressors to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
 <img src='https://www.ecmag.com/sites/default/files/solar-energy-city.jpg'>
 
- 
-Fun Fact about:
-The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
+#  TECH STACK 
+`Python`, `Numpy`, `Pandas`, `Scikit-Learn`, `Matplotlib`, `Math`, `SciPy`, `StatsModels`, `PMDarima`,  `CPI`, `Seaborn`, `sktime`, `fireTS`
 
-## <center>WORKFLOW</center>
-- TECH 
-- SCRIPTS
-- DATA
-    - EDA
-    - DATA ENGINEERING
-- TIME SERIES PREPARATION
-  - DECOMPOSITION
-  - STATIONARITY
-- MODELS
-    - TIME SERIES MODELS
-        - ARIMA
-    - REGRESSION MODELS
-- PERFORMANCE    
-    - MODEL BUILDING
-    - RESULTS + SCORES
-- INSIGHTS
-- NEXT STEPS 
-
-### <center><u>Tech Stack Used</u></center>
-<center> `Python`, `Numpy`, `Pandas`, `Scikit-Learn`, `Matplotlib`, `Math`, `SciPy`, `StatsModels`, `PMDarima`,  `CPI`, `Seaborn`, `sktime`, `fireTS` </center>
-
-
-### <center><u>SCRIPTS</u></center>
+#  SCRIPTS 
 `Prep_Class.py`
 - This class incorporates 11 steps to prep the data for the Time Series and Regression models. 
 
@@ -48,8 +22,9 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 `ARIMA_Helper_Funcs.py`
 - - 
 
-### <center><u>DATA</u></center>  
-#### EDA
+# DATA 
+### EDA
+The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
 - 20 Years  
     - 1998-2018
 - 28 States
@@ -72,7 +47,7 @@ total installed cost with adjustments made for inflation<br>
 
 
   
-### <center><u>TIME SERIES PREPARATION</u></center>
+### TIME SERIES 
 
 #### DECOMPOSITION 
 Data did not show any signs of seasonality, cyclicality, or trends. <br>
@@ -80,7 +55,6 @@ white noise<br>
 However, data was not initially stationary. 
 
  #### STATIONARITY
-
 - ACF and PACF plots 
 - Rolling mean, median, and std
 - Augmented Dickey Fuller Test
@@ -91,7 +65,7 @@ Differencing can help stabilize the mean of a time series by removing changes in
 
 A critical value of .05 or 5% was used to reject or fail to reject ADF's null hypothesis. After differencing, the P-value for the data reached less than 0.000000 and stationarity was decidedly achieved. 
 
-### <u><center>MODELS</center></u>
+###  MODELS 
 
 #### TIME SERIES MODEL
 ##### ARIMA 
@@ -104,7 +78,7 @@ Regression was used as a means to reference how ARIMA was performing on the data
 ##### OLS Linear 
 ##### OLS 
 
-### <center><u>PERFORMANCE</u></center>
+###  PERFORMANCE 
 
 #### EVALUTATION
 I chose to use Mean Squared Error as the evaluation metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
@@ -113,7 +87,7 @@ I chose to use Mean Squared Error as the evaluation metric to score both the reg
 Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 
 
 
-### <center><u>INSIGHTS</u></center>
+###  INSIGHTS 
 
 #### Annomoloy Detection 
 - There is a seemingly random jump in cost_per_watt around 2016. This can likely be attributed to the political lanscape, as politics have a major influence in the US on renewable energy progress. 
@@ -122,7 +96,7 @@ Given that the autoregressive and integrated lag aspect of an ARIMA model, it wa
 
 *** Beta coefficients for OLS and how the previous time frames affect future time frames ***
 
-### <center><u>NEXT STEPS</u></center>
+###  NEXT STEPS 
 
 Use Reinforcement learning of a LSTM RNN Model to utilize multiple variables.<br>
 Potential significant variables:
