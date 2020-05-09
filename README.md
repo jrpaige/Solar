@@ -1,14 +1,17 @@
-# Time Series Forecasting of Residential Solar Panel Costs 
-
+# Time Series Forecasting of Solar Panel Costs 
+--- 
 This model uses data collected through Berkeley Lab's [Tracking the Sun](https://emp.lbl.gov/tracking-the-sun/) initiative. 
 The datasets includes over 1.6 million observations of solar panel installations collected over twenty years. 
 The project’s model employs univariate ARIMA time series analysis and multiple regressors to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
-<img src='https://www.ecmag.com/sites/default/files/solar-energy-city.jpg'>
+<center><img src="https://www.ecmag.com/sites/default/files/solar-energy-city.jpg" width="700"></center>
 
-#  TECH STACK 
+---
+# Tech Stack
+
 `Python`, `Numpy`, `Pandas`, `Scikit-Learn`, `Matplotlib`, `Math`, `SciPy`, `StatsModels`, `PMDarima`,  `CPI`, `Seaborn`, `sktime`, `fireTS`
 
-#  SCRIPTS 
+---
+# Scripts
 `Prep_Class.py`
 - This class incorporates 11 steps to prep the data for the Time Series and Regression models. 
 
@@ -17,37 +20,29 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 - Includes code for Robust Linear, GLS, Holt Linear, NARX, Direct Autoregressor, and Random Forest Grid Search
 
 `Time_Series_Helper_Funcs.py`
-- -
+- code to assist in the decompostion of the data
 
 `ARIMA_Helper_Funcs.py`
-- - 
+- code to employ the ARIMA model 
+--- 
+# Data 
 
-# DATA 
 ### EDA
 The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
-- 20 Years  
-    - 1998-2018
-- 28 States
-- 6 Customer Segments
-    - 95% Residential 
-- EDA NOTEBOOK TO BE ADDED 
 
-#### DATA ENGINEERING
-##### VARIABLE CREATION
-- Total adjusted installed  cost = 
-total installed cost with adjustments made for inflation<br> 
-- cost per watt<img src="https://latex.codecogs.com/gif.latex?=\frac&space;{total\&space;adjusted\&space;installed\&space;cost}{system\&space;size}"/>
-
-##### DATA TRANSFORMATION
+### Data Transformation
 - Resampled data into weekly medians
 
-##### NULL HANDLING
+### Variable Creation
+- Total adjusted installed  cost = 
+total installed cost with adjustments made for inflation<br> 
+- cost per watt<img src="https://latex.codecogs.com/gif.latex?\dpi{100}&space;\fn_phv&space;\small&space;=\frac&space;{\textup{total&space;adjusted&space;installed&space;costs}}{\textup{system&space;size}}" />
+
+### Null Handling
 - Nulls were replaced with median values from same year
   
-
-
-  
-### TIME SERIES 
+---
+# TIME SERIES 
 
 #### DECOMPOSITION 
 Data did not show any signs of seasonality, cyclicality, or trends. <br>
@@ -65,7 +60,7 @@ Differencing can help stabilize the mean of a time series by removing changes in
 
 A critical value of .05 or 5% was used to reject or fail to reject ADF's null hypothesis. After differencing, the P-value for the data reached less than 0.000000 and stationarity was decidedly achieved. 
 
-###  MODELS 
+# MODELS 
 
 #### TIME SERIES MODEL
 ##### ARIMA 
@@ -78,7 +73,7 @@ Regression was used as a means to reference how ARIMA was performing on the data
 ##### OLS Linear 
 ##### OLS 
 
-###  PERFORMANCE 
+#  PERFORMANCE 
 
 #### EVALUTATION
 I chose to use Mean Squared Error as the evaluation metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
@@ -87,7 +82,7 @@ I chose to use Mean Squared Error as the evaluation metric to score both the reg
 Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 
 
 
-###  INSIGHTS 
+#  INSIGHTS 
 
 #### Annomoloy Detection 
 - There is a seemingly random jump in cost_per_watt around 2016. This can likely be attributed to the political lanscape, as politics have a major influence in the US on renewable energy progress. 
@@ -96,7 +91,7 @@ Given that the autoregressive and integrated lag aspect of an ARIMA model, it wa
 
 *** Beta coefficients for OLS and how the previous time frames affect future time frames ***
 
-###  NEXT STEPS 
+#  NEXT STEPS 
 
 Use Reinforcement learning of a LSTM RNN Model to utilize multiple variables.<br>
 Potential significant variables:
