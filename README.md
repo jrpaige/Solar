@@ -24,6 +24,7 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 
 `ARIMA_Helper_Funcs.py`
 - code to employ the ARIMA model 
+
 --- 
 # Data 
 
@@ -32,6 +33,14 @@ The data includes over 60 features/columns related to price, taxes/rebate progra
 
 ### Data Transformation
 - Resampled data into weekly medians
+
+Per [Solar.com](https://www.solar.com/learn/solar-panel-cost/):
+"Most [systems] cost between $3.00 and $4.00 per watt." "As a general rule of thumb, be skeptical of any solar quote[...]more than $5.00 per watt." It should be taken into consideration that these numbers are relative to today's prices. Given the increased technology and innovation, costs used to be much higher. In 1977, "the cost of a solar cell was about $330.28 per watt, in today's dollars." 
+
+Within the data, 604,046 entries totaled more than $5.00 per watt and 59,342 entries totaled more than $10.00 per watt. The data's cost_per_watt variable accounts for the cost all associated costs including installation. Given inflation and decreasing costs over the time series's 20 year span, I excluded the 59342 entries which came in abve 
+
+<img src="imgs/watt_outliers.png">
+
 
 ### Variable Creation
 - Total adjusted installed  cost = 
@@ -42,7 +51,7 @@ total installed cost with adjustments made for inflation<br>
 - Nulls were replaced with median values from same year
   
 ---
-# TIME SERIES 
+# Time Series 
 
 #### DECOMPOSITION 
 Data did not show any signs of seasonality, cyclicality, or trends. <br>
@@ -60,7 +69,8 @@ Differencing can help stabilize the mean of a time series by removing changes in
 
 A critical value of .05 or 5% was used to reject or fail to reject ADF's null hypothesis. After differencing, the P-value for the data reached less than 0.000000 and stationarity was decidedly achieved. 
 
-# MODELS 
+---
+# Models
 
 #### TIME SERIES MODEL
 ##### ARIMA 
@@ -72,8 +82,8 @@ Regression was used as a means to reference how ARIMA was performing on the data
 ##### Random Forest Regressor
 ##### OLS Linear 
 ##### OLS 
-
-#  PERFORMANCE 
+---
+#  Performance 
 
 #### EVALUTATION
 I chose to use Mean Squared Error as the evaluation metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
@@ -81,8 +91,13 @@ I chose to use Mean Squared Error as the evaluation metric to score both the reg
 #### RESULTS
 Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 
 
+Most of the models that employed the use of built out data outperformed traditional statistics for univariate time series.
 
-#  INSIGHTS 
+
+
+
+---
+#  Insights
 
 #### Annomoloy Detection 
 - There is a seemingly random jump in cost_per_watt around 2016. This can likely be attributed to the political lanscape, as politics have a major influence in the US on renewable energy progress. 
@@ -91,7 +106,8 @@ Given that the autoregressive and integrated lag aspect of an ARIMA model, it wa
 
 *** Beta coefficients for OLS and how the previous time frames affect future time frames ***
 
-#  NEXT STEPS 
+---
+#  Next Steps
 
 Use Reinforcement learning of a LSTM RNN Model to utilize multiple variables.<br>
 Potential significant variables:
