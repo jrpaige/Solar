@@ -4,7 +4,7 @@ This model uses data collected through Berkeley Lab's [Tracking the Sun](https:/
 The datasets includes over 1.6 million observations of solar panel installations collected over twenty years. 
 The project’s model employs univariate ARIMA time series analysis and multiple regressors to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
 
-<img  align='center' src="https://www.ecmag.com/sites/default/files/solar-energy-city.jpg" width="700">
+<img  align='center', src="https://www.ecmag.com/sites/default/files/solar-energy-city.jpg" width="700">
 
 ---
 # Tech Stack
