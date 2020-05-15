@@ -9,17 +9,17 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 ---
 # Tech Stack
 
-`Python`
-`Numpy`
-`Pandas`
-`Scikit-Learn`
-`Matplotlib`
-`SciPy`
-`StatsModels`
-`PMDarima`
-`CPI`
-`Seaborn`
-`sktime`
+`Python`<br>
+`Numpy`<br>
+`Pandas`<br>
+`Scikit-Learn`<br>
+`Matplotlib`<br>
+`SciPy`<br>
+`StatsModels`<br>
+`PMDarima`<br>
+`CPI`<br>
+`Seaborn`<br>
+`sktime`<br>
 `fireTS`
 
 ---
