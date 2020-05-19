@@ -1,8 +1,7 @@
 # Time Series Forecasting of Solar Panel Costs 
 --- 
-This model uses data collected through Berkeley Lab's [Tracking the Sun](https://emp.lbl.gov/tracking-the-sun/) initiative. 
-The datasets includes over 1.6 million observations of solar panel installations collected over twenty years. 
-The project’s model employs univariate ARIMA time series analysis and multiple regressors to generate a forecast for a cost_per_watt target variable. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
+
+The project’s model employs univariate ARIMA time series analysis and multiple regressors to generate a forecast for a cost_per_watt target variable of solar panel installations. The exploratory aspect of the project provided an opportunity to understand time series analysis on a granular level.  
 
 <img  src="https://www.ecmag.com/sites/default/files/solar-energy-city.jpg" align="center"  >
 
@@ -41,7 +40,12 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 # Data 
 
 ### EDA
-The data includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
+
+This model uses data collected through Berkeley Lab's [Tracking the Sun](https://emp.lbl.gov/tracking-the-sun/) initiative. 
+
+The data includes over 1.6 million observations of solar panel installations collected over twenty years and includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
+
+Between 1998 and 2018, individual installation observations were provided by 28 different states to 
 
 ### Data Transformation
 - Resampled data into weekly medians
