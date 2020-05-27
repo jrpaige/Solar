@@ -49,13 +49,139 @@ from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
 plt.style.use('ggplot')
 
+
+
+
+class Run_Models():
+    
+    def __init__(self,df)
+        self.self = self
+        self.df = df
+        
+        
+    def train_test(self, df, lag=True, lag_len=4, Xy=True):
+        lag_df = (pd.concat([self.df.shift(i) for i in range(lag_len+1)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, lag_len+1)])).dropna() 
+        idx = round(len(lag_df)*.8)
+        if lag==True:
+            if Xy==False:
+                train, test = lag_df[:idx], lag_df[idx:]
+                return train, test
+            elif Xy==True:
+                lag_y, lag_X  = lag_df.y, lag_df.drop(columns='y')    
+                X_train, y_train, X_test, y_test = lag_X[:idx], lag_y[:idx], lag_X[idx:], lag_y[idx:]
+                return X_train, y_train, X_test, y_test
+        if lag==False:
+            train, test = df[:idx], df[idx:]
+            return train, test
+        
+    def multiple_regressors(df, lag_len=4, print_mses=True):
+        '''
+        ==Function==
+        Uses train_test_xy(df) to split into (X/y)train/(X/y)test sets
+
+        Runs data through 
+        - Random Forest Regressor
+        - sm OLS Linear Regression
+        - smf ols Regression
+
+       if print_mses==True:
+            ==Prints==
+            MSE scores for each 
+            default=True
+
+        ==Returns==
+        rf, ols_lin, ols models
+        '''
+        X_train, y_train, X_test, y_test = train_test(df, lag_len=lag_len)
+        rf= RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
+        ols_lin = sm.OLS(y_train, X_train).fit().predict(X_test)  
+        ols_train, ols_test= train_test(df, lag_len=lag_len, Xy=False)
+        ols_str = 'y ~ '
+        for i in range(1, lag_len+1):
+            ols_str+= ' Lag{} +'.format(i)
+        ols_str = ols_str.rstrip(' +')
+        ols = smf.ols(ols_str, data=ols_train).fit().predict(ols_test)
+        return rf, ols_lin, ols 
+
+    
+    def regres_dfs(df):
+        '''
+        ==Function==
+        Creates a new df with y_test values and forecasted values for all regression models
+
+        ==Uses== 
+        |train_test_lag| from Regression_Helper_Funcs
+        |multiple_regressors| from Regression_Helper_Funcs
+
+        ==Returns==
+        |y_preds| : new df
+        '''
+
+        y_preds = train_test(df, Xy=True)[3]
+        rf, ols_lin, ols_smf = multiple_regressors(df, print_mses=False)
+        y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
+        y_preds['randomforest'] = rf
+        y_preds['olslinear'] = ols_lin
+        y_preds['olssmf'] = ols_smf
+        return y_preds
+
+    def regression(self,df):    
+        '''
+        completes all prep and outputs regression results
+        returns df and stationary df
+        '''
+        y_preds = regres_dfs(self.df)
+        y_train = train_test(self.df, Xy=True)[1]
+        fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
+        pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
+        train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
+
+        axs[0].plot(y_preds.actual, label= 'Actual')
+        axs[0].plot(y_preds.randomforest, label= 'Random Forest', linewidth=2)
+        axs[0].plot(y_train[-30:], label='Train', color='gray')
+        axs[0].set_title('Random Forest \n  MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.randomforest),5)), fontsize=18)
+        axs[0].legend(loc='best')
+        axs[0].set_xlim(left= y_train.index.date[-31])
+        fig.suptitle(' Regression Models \n Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n '.format(pred_s, pred_e, train_s, train_e), fontsize=20)
+
+        axs[1].plot(y_preds.actual, label= 'Actual')
+        axs[1].plot(y_preds.olslinear, label= 'OLS Linear', linewidth=2)
+        axs[1].plot(y_train[-30:], label='Train',color='gray')
+        axs[1].set_title('OLS Linear \n MSE = {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olslinear),5)), fontsize=18)
+        axs[1].legend(loc='best')
+        axs[1].set_xlim(left= y_train.index.date[-31])
+
+        axs[2].plot(y_preds.actual, label= 'Actual', alpha=.75)
+        axs[2].plot(y_preds.olssmf, label= 'OLS', linewidth=2)
+        axs[2].plot(y_train[-30:], label='Train',color='gray')
+        axs[2].set_title('OLS smf \n MSE= {}'.format(round(mean_squared_error(y_preds.actual, y_preds.olssmf),5)), fontsize=18)
+        axs[2].legend(loc='best')  
+        axs[2].set_xlim(left= y_train.index.date[-31])
+        plt.show() 
+        
+        
+        
+    def show_models(self):
+        return self.regression()
+    
+if __name__ == "__main__":   
+    Run_Models(df).show_models()
+
+
+
+
+
+
+
+
+
     
 # =============================================================================
 # TRAIN TEST SPLITS  
 # =============================================================================
 
 
-def train_test_lag(df, lag=True, lag_len=4, Xy=True):
+def train_test(df, lag=True, lag_len=4, Xy=True):
     '''
     ==Function==
     Creates a new df with 3 lagged columns
@@ -85,7 +211,7 @@ def train_test_lag(df, lag=True, lag_len=4, Xy=True):
     '''
     lag_df = (pd.concat([df.shift(i) for i in range(lag_len+1)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, lag_len+1)])).dropna() 
     idx = round(len(lag_df)*.8)
-    if lag=True:
+    if lag==True:
         if Xy==False:
             train, test = lag_df[:idx], lag_df[idx:]
             return train, test
@@ -93,7 +219,7 @@ def train_test_lag(df, lag=True, lag_len=4, Xy=True):
             lag_y, lag_X  = lag_df.y, lag_df.drop(columns='y')    
             X_train, y_train, X_test, y_test = lag_X[:idx], lag_y[:idx], lag_X[idx:], lag_y[idx:]
             return X_train, y_train, X_test, y_test
-    if lag=False:
+    if lag==False:
         train, test = df[:idx], df[idx:]
         return train, test
     
@@ -104,6 +230,48 @@ def train_test_lag(df, lag=True, lag_len=4, Xy=True):
 # MODEL REGRESSION PLOTS AND PREP 
 # =============================================================================
     
+ # === Multiple Regressions =========================================    
+def multiple_regressors(df, lag_len=4, print_mses=True):
+    '''
+    ==Function==
+    Uses train_test_xy(df) to split into (X/y)train/(X/y)test sets
+    
+    Runs data through 
+    - Random Forest Regressor
+    - Linear Regression
+    - Bagging Regressor
+    - AdaBoost Regressor
+    - sm OLS Linear Regression
+    - smf ols Regression
+   
+   if print_mses==True:
+        ==Prints==
+        MSE scores for each 
+        default=True
+    
+    ==Returns==
+    rf, lr, br, abr, ols_lin, ols models
+    '''
+    X_train, y_train, X_test, y_test = train_test(df, lag_len=lag_len)
+    rf= RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
+    ols_lin = sm.OLS(y_train, X_train).fit().predict(X_test)  
+    ols_train, ols_test= train_test(df, lag_len=lag_len, Xy=False)
+    ols_str = 'y ~ '
+    for i in range(1, lag_len+1):
+        ols_str+= ' Lag{} +'.format(i)
+    ols_str = ols_str.rstrip(' +')
+    ols = smf.ols(ols_str, data=ols_train).fit().predict(ols_test)
+    if print_mses == True:
+        print(' ---- MSE Scores ----'.center(31))
+        print('Random Forest Regressor  ', round(mean_squared_error(y_test, rf),5))
+        print('sm OLS Linear            ', round(mean_squared_error(y_test, ols_lin),5))
+
+        print('smf ols                  ', round(mean_squared_error(ols_test.y,ols),5))
+        return rf, ols_lin, ols
+        # removed br, abr
+    else:
+        return rf, ols_lin, ols 
+
     
 def regres_dfs(df):
     '''
@@ -118,7 +286,7 @@ def regres_dfs(df):
     |y_preds| : new df
     '''
     
-    y_preds = train_test_lag(df, Xy=True)[3]
+    y_preds = train_test(df, Xy=True)[3]
     rf, ols_lin, ols_smf = multiple_regressors(df, print_mses=False)
     y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
     y_preds['randomforest'] = rf
@@ -136,7 +304,7 @@ def regression(df):
     '''
     #df, diff = prep()
     y_preds = regres_dfs(df)
-    y_train = train_test_lag(df, Xy=True)[1]
+    y_train = train_test(df, Xy=True)[1]
     fig, axs = plt.subplots(3, figsize= (20,15), constrained_layout=True)
     pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
     train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
@@ -167,8 +335,7 @@ def regression(df):
     
     
     
-    def narx_gs(df):
-    
+def narx_gs(df):    
     x = df
     y = df
 
@@ -181,7 +348,6 @@ def regression(df):
     mdl.fit(x, y)
     ypred = mdl.predict(x, y, step=3)
     return ypred
-
 
 def narx(df):
     x = df
@@ -284,7 +450,7 @@ def arima_order_mses(df):
     df = df.dropna().values
     #p_values = [0, 1, 2, 4, 6, 8, 10]
     p_values = [0, 1, 2, 4, 5, 6, 7]
-    d_values = range(0, 3)
+    d_values = 0
     q_values = range(0, 4)
     best_score, best_cfg = float("inf"), None
     for p in p_values:

@@ -47,6 +47,11 @@ The data includes over 1.6 million observations of solar panel installations col
 
 Between 1998 and 2018, individual installation observations were provided by 28 different states to 
 
+Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of the max of each time table, it became more prudent to use the median instead which points to the exact middle data point. 
+
+<img  src="mean_and_median_resamples.png" align="center"  >
+
+
 ### Data Transformation
 - Resampled data into weekly medians
 
