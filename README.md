@@ -59,7 +59,7 @@ The data includes over 1.6 million observations of solar panel installations col
 
 Between 1998 and 2018, individual installation observations were provided by 28 different states to Berkeley Lab who compliled and published the data. 
 
-[EDA Notebook] (https://github.com/jrpaige/Solar_Forecasts/blob/master/EDA.ipynb)
+[EDA Notebook](https://github.com/jrpaige/Solar_Forecasts/blob/master/EDA.ipynb)
 
 
 ### Data Transformation
