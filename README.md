@@ -57,14 +57,14 @@ This model uses data collected through Berkeley Lab's [Tracking the Sun](https:/
 
 The data includes over 1.6 million observations of solar panel installations collected over twenty years and includes over 60 features/columns related to price, taxes/rebate programs, technology, location, manufacturing, and installation. 
 
-Between 1998 and 2018, individual installation observations were provided by 28 different states to 
+Between 1998 and 2018, individual installation observations were provided by 28 different states to Berkeley Lab who compliled and published the data. 
 
-Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of each time period's max point, it became more prudent to instead use the median, which points to the exact middle data point. 
-
-<img  src="imgs/mean_and_median_resamples.png" align="center"  >
+[EDA Notebook] (https://github.com/jrpaige/Solar_Forecasts/blob/master/EDA.ipynb)
 
 
 ### Data Transformation
+
+Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of each time period's max point, it became more prudent to instead use the median, which points to the exact middle data point. 
 
 Per [Solar.com](https://www.solar.com/learn/solar-panel-cost/):
 "Most [systems] cost between $3.00 and $4.00 per watt." "As a general rule of thumb, be skeptical of any solar quote[...]more than $5.00 per watt." It should be taken into consideration that these numbers are relative to today's prices. Given the increased technology and innovation, costs used to be much higher. In 1977, "the cost of a solar cell was about $330.28 per watt, in today's dollars." 
