@@ -37,6 +37,18 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 - code to employ the ARIMA model 
 
 --- 
+# Notebooks
+
+` EDA `
+- Exploratory Data Analysis on Data focused on Costs, States, System Sizes, and Customer Segments. 
+
+`Model`
+- Implementation of model on data 
+
+`Time_Series_Dilligence`
+- Basic time series progression functions to look at data 
+
+---
 # Data 
 
 ### EDA
