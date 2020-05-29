@@ -71,7 +71,7 @@ Per [Solar.com](https://www.solar.com/learn/solar-panel-cost/):
 
 Within the data, 604,046 entries totaled more than $5.00 per watt and 59,342 entries totaled more than $10.00 per watt. The data's cost_per_watt variable accounts for the cost all associated costs including installation. Given inflation and decreasing costs over the time series's 20 year span, I excluded the 59342 entries which came in abve 
 
-<img src="imgs/watt_outliers.png">
+<img src="imgs/mean_and_median_resamples.png">
 
 
 ### Variable Creation
