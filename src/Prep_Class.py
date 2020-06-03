@@ -20,7 +20,8 @@ class Prep():
     Cronologically Ordered by Installation Date
     
     ==Customer Segment==
-    Residential is 95% of the data 
+    Residential is ~94% of the data 
+    Other Sectors deviate largely from full data
     Focuses on Residential to eliminate any irregularity 
 
     ==Null Values==
@@ -38,7 +39,7 @@ class Prep():
     cost_per_watt = total installed price/system size/1000
     
     ==Outliers==
-    Removes outlier observations which reflect >$25/watt
+    Removes outlier observations which reflect >$15/watt
     
     ==Resample into Weekly medians==
     Resamples into the weekly medians and continuous non-null df
@@ -58,9 +59,6 @@ class Prep():
         """
         self.self = self
         self.files = files
-        #self.df = pd.DataFrame()
-#         self.y = pd.DataFrame()
-#         self.differences = pd.DataFrame()
 
     def load(self):
         """ 
