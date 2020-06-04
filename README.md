@@ -123,9 +123,9 @@ Regression was used as a means to reference how ARIMA was performing on the data
 | Model | No limit | \$ 25  limit | \$ 20 limit | \$ 15 limit | \$10 limit| \$5 limit |
 |-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 || ||MSE      | |    | |
-| Random Forest <b>\|</b> | 0.01571|  0.01738| 0.019 | 0.01681 | 0.01558 | 0.01122|
-| OLS Linear    <b>\|</b>| 0.0114 |  0.01278|  0.01271| 0.01315 | 0.01254 |0.00418 |
-| OLS SMF       <b>\|</b> | 0.01265 |  0.01345| 0.01309 | 0.01327 | 0.01259 | 0.00804|
+| Random Forest | 0.01571|  0.01738| 0.019 | 0.01681 | 0.01558 | 0.01122|
+| OLS Linear | 0.0114 |  0.01278|  0.01271| 0.01315 | 0.01254 |0.00418 |
+| OLS SMF    | 0.01265 |  0.01345| 0.01309 | 0.01327 | 0.01259 | 0.00804|
 
 While the best scores did result from the $5 limit and $10 limit, this is not going to work in the real world, as prices have not and will not always fall within that range. The next best scores occur when the amounts were not limited to a dollar amount. As such, data transformation has been changed to remove the limit. 
 
