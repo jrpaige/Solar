@@ -68,7 +68,7 @@ class Prep():
         loaded_files = []
         count = 0
         print('PREP'.center(76,'-'))
-        print(" 1 of 12 |    Reading in data \n         |    Filtering to 5 features:\n         |       Date, System Size, Total Cost, Customer Segment, State \n         |    Changing -9999 values to null")
+        print(" 1 of 11 |    Reading in data \n         |    Filtering to 5 features:\n         |       Date, System Size, Total Cost, Customer Segment, State \n         |    Changing -9999 values to null")
         for i in range(1, len(self.files)+1):
             exec(f"df{i} = pd.read_csv(self.files[{count}],encoding='iso-8859-1',parse_dates=['Installation Date'], usecols=['Installation Date','System Size', 'Total Installed Price','Customer Segment', 'State'],na_values=(-9999, '-9999'))")
             count+=1
@@ -88,7 +88,7 @@ class Prep():
             - replaces ' ' with '_'
         """
         df = self.load()
-        print(' 2 of 12 |    Cleaning up column names')
+        print(' 2 of 11 |    Cleaning up column names')
         df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
         return df
 
@@ -98,7 +98,7 @@ class Prep():
         Refines to only Residential customer segment    
         """
         df = self.clean()
-        print(' 3 of 12 |    Refining to only RES Customer Segment')
+        print(' 3 of 11 |    Refining to only RES Customer Segment')
         df = df.loc[df['customer_segment']=='RES']
         return df
 
@@ -109,7 +109,7 @@ class Prep():
         Assigns installation date as index
         """
         df = self.refine()
-        print(' 4 of 12 |    Sorting values by installation_date\n         |    Assigning installation_date as index')
+        print(' 4 of 11 |    Sorting values by installation_date\n         |    Assigning installation_date as index')
         df.sort_values('installation_date', inplace=True)
         df.set_index('installation_date', drop=True, inplace=True)
         return df
@@ -120,7 +120,7 @@ class Prep():
         Replaces all null values with median values from same year
         """
         df = self.date_index()
-        print(' 5 of 12 |    Replacing all null values with median values from same year')
+        print(' 5 of 11 |    Replacing all null values with median values from same year')
         [df['total_installed_price'].replace(np.nan,round(df.loc[(df['total_installed_price'] != np.nan) & (df.index.year == i)]['total_installed_price'].median(),2),inplace=True) for i in range(1998,2019)] 
         return df
 
@@ -131,7 +131,7 @@ class Prep():
         """
         
         df = self.null_handler()
-        print(' 6 of 12 |    Adusting prices for inflation')
+        print(' 6 of 11 |    Adusting prices for inflation')
         df['date'] = df.index.date
         df['adj_installed_price'] = round(df.apply(lambda x:cpi.inflate(x.total_installed_price, x.date), axis=1),2)
         return df
@@ -144,7 +144,7 @@ class Prep():
         """
         
         df = self.inflation_assist()
-        print(' 7 of 12 |    Creating target variable: cost_per_watt')
+        print(' 7 of 11 |    Creating target variable: cost_per_watt')
         df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
         return df
 
@@ -155,8 +155,8 @@ class Prep():
         """
         
         df = self.target_variable()
-        print(' 8 of 12 |    Removing outliers above $25 per watt') 
-        df = df.loc[df.cost_per_watt < 25]
+        print(' 8 of 12 |    Removing outliers above $5 per watt') 
+        df = df.loc[df.cost_per_watt < 5]
         return df
 
     def resampler(self):
@@ -169,8 +169,8 @@ class Prep():
         y 
         """
         
-        df = self.outlier_removal()
-        print(' 9 of 12 |    Resampling data into weekly medians\n         |    Cropping dataframe to keep only continuous non-null data')
+        df = self.target_variable()
+        print(' 8 of 11 |    Resampling data into weekly medians\n         |    Cropping dataframe to keep only continuous non-null data')
         null_list = []
         for i in range(len(df.cost_per_watt.resample('W').median())):
             if df.cost_per_watt.resample('W').median()[i] >0:
@@ -189,16 +189,16 @@ class Prep():
         """
         
         y = self.resampler()
-        print('10 of 12 |    Testing for stationarity')
+        print('9 of 11 |    Testing for stationarity')
         if round(adfuller(y)[1],4) < 0.51:
             print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF H0".format(round(adfuller(y)[1],4)))
             print('prep complete'.upper().center(76,'-'))
             return y
         else:
             print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
-            print('11 of 12 |    Creating differenced data to achieve stationarity')
+            print('10 of 11 |    Creating differenced data to achieve stationarity')
             differences = y.diff(periods=1).dropna()
-            print('12 of 12 |    Testing for stationarity on differenced data') 
+            print('11 of 11 |    Testing for stationarity on differenced data') 
             if round(adfuller(differences)[1],4) < 0.51:
                 print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(differences)[1],4)))
                 print('prep complete'.upper().center(76,'-'))

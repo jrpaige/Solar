@@ -61,18 +61,20 @@ Between 1998 and 2018, individual installation observations were provided by 28 
 
 [EDA Notebook](https://github.com/jrpaige/Solar_Forecasts/blob/master/EDA.ipynb)
 
+Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of each time period's max point, it became more prudent to instead use the median, which points to the exact middle data point.
+<img src="imgs/mean_and_median_resamples.png">
+
+##### Decisions made based on EDA:
+ - Only use RES sector data
+- Use median vs mean as average
+
 
 ### Data Transformation
-
-Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of each time period's max point, it became more prudent to instead use the median, which points to the exact middle data point. 
 
 Per [Solar.com](https://www.solar.com/learn/solar-panel-cost/):
 "Most [systems] cost between $3.00 and $4.00 per watt." "As a general rule of thumb, be skeptical of any solar quote[...]more than $5.00 per watt." It should be taken into consideration that these numbers are relative to today's prices. Given the increased technology and innovation, costs used to be much higher. In 1977, "the cost of a solar cell was about $330.28 per watt, in today's dollars." 
 
-Within the data, 604,046 entries totaled more than $5.00 per watt and 59,342 entries totaled more than $10.00 per watt. The data's cost_per_watt variable accounts for the cost all associated costs including installation. Given inflation and decreasing costs over the time series's 20 year span, I excluded the 59342 entries which came in abve 
-
-<img src="imgs/mean_and_median_resamples.png">
-
+Within the data, 604,046 entries totaled more than $5.00 per watt and 59,342 entries totaled more than $10.00 per watt. The data's cost_per_watt variable accounts for the cost all associated costs including installation. Given inflation and decreasing costs over the time series's 20 year span, I excluded the 59,342 entries which came in above.
 
 ### Variable Creation
 - Total adjusted installed  cost = 
@@ -81,7 +83,6 @@ total installed cost with adjustments made for inflation<br>
 
 ### Null Handling
 - Nulls were replaced with median values from same year
-  
 ---
 # Time Series 
 
@@ -117,8 +118,28 @@ Regression was used as a means to reference how ARIMA was performing on the data
 ---
 #  Performance 
 
+#### ANALYSIS
+
+| Model | No limit | \$ 25  limit | \$ 20 limit | \$ 15 limit | \$10 limit| \$5 limit |
+|-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|| ||MSE      | |    | |
+| Random Forest <b>\|</b> | 0.01571|  0.01738| 0.019 | 0.01681 | 0.01558 | 0.01122|
+| OLS Linear    <b>\|</b>| 0.0114 |  0.01278|  0.01271| 0.01315 | 0.01254 |0.00418 |
+| OLS SMF       <b>\|</b> | 0.01265 |  0.01345| 0.01309 | 0.01327 | 0.01259 | 0.00804|
+
+While the best scores did result from the $5 limit and $10 limit, this is not going to work in the real world, as prices have not and will not always fall within that range. The next best scores occur when the amounts were not limited to a dollar amount. As such, data transformation has been changed to remove the limit. 
+
+Moving forward, it could be argued to only use data after the solar panel prices became lower than $10/per watt, given the effect innovation had on the market.
+
+
 #### EVALUTATION
 I chose to use Mean Squared Error as the evaluation metric to score both the regression and the ARIMA models. ACF was also taken into consideration in some initial time series dilligence and trials.
+
+As I trialed out different versions of the data on the regression models, the more I limited the cost per watt, the worse the regression models did.
+
+Initially, I limited the cost per watt to 25 dollars to remove outliers, however when further limiting the cost per watt down to 10, 15, and 20 dollars, the more I limited the variable, the worse all the models did. My final verison of the data does not limit cost per watt and the scores of the regression models improved. 
+
+
 
 #### RESULTS
 Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 
