@@ -50,6 +50,28 @@ rcParams['figure.figsize'] = 10, 6
 plt.style.use('ggplot')
 
 class Models():
+    
+    '''
+    ==Function==
+    Run Regression and Time Series Models
+    
+    ==Parameters==
+    
+    | df | - pass in univariate time series dataframe for 'cost_per_watt'
+    | order | - order to be used for ARIMA and SKT ARIMA models 
+              - default set to (4,0,0)
+    ex: Models(order=(0,0,0)).show_models(df)
+        Models().show_models(df)
+     
+    ===Returns===
+    5 subplots 
+        - Random Forest Regression
+        - OLS Linear Regression
+        - OLS smf Regression
+        - ARIMA 
+        
+   '''
+    
     def __init__(self,order=(4,0,0)):
         self.self = self
         self.order = order

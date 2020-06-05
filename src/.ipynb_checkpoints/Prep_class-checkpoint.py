@@ -50,7 +50,8 @@ class Prep():
     
     compile
     '''
-    
+
+        
     def __init__(self, files):
         """
         ==Parameters==
@@ -58,7 +59,8 @@ class Prep():
         """
         self.self = self
         self.files = files
-
+        cpi.update()
+        
     def load(self):
         """ 
         ==Function==
@@ -80,33 +82,18 @@ class Prep():
         return df
 
     def clean(self):
-        """ 
-        ==Function==
-        Cleans up column names to 
-            - all lower
-            - replaces ' ' with '_'
-        """
         df = self.load()
         print(' 2 of 11 |    Cleaning up column names')
         df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '')
         return df
 
     def refine(self):
-        """ 
-        ==Function==
-        Refines to only Residential customer segment    
-        """
         df = self.clean()
         print(' 3 of 11 |    Refining to only RES Customer Segment')
         df = df.loc[df['customer_segment']=='RES']
         return df
 
     def date_index(self):
-        """ 
-        ==Function==
-        Sorts values by installtion date
-        Assigns installation date as index
-        """
         df = self.refine()
         print(' 4 of 11 |    Sorting values by installation_date\n         |    Assigning installation_date as index')
         df.sort_values('installation_date', inplace=True)
@@ -114,21 +101,12 @@ class Prep():
         return df
     
     def null_handler(self):
-        """ 
-        ==Function==
-        Replaces all null values with median values from same year
-        """
         df = self.date_index()
         print(' 5 of 11 |    Replacing all null values with median values from same year')
         [df['total_installed_price'].replace(np.nan,round(df.loc[(df['total_installed_price'] != np.nan) & (df.index.year == i)]['total_installed_price'].median(),2),inplace=True) for i in range(1998,2019)] 
         return df
 
     def inflation_assist(self):
-        """ 
-        ==Function==
-        Adjusts prices for inflation
-        """
-        
         df = self.null_handler()
         print(' 6 of 11 |    Adusting prices for inflation')
         df['date'] = df.index.date
@@ -136,12 +114,6 @@ class Prep():
         return df
 
     def target_variable(self):
-        """
-        ===Function===
-        Creates target variable `cost_per_watt`
-            = adjusted installed price / system size
-        """
-        
         df = self.inflation_assist()
         print(' 7 of 11 |    Creating target variable: cost_per_watt')
         df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
@@ -159,15 +131,6 @@ class Prep():
 #         return df
 
     def resampler(self):
-        """
-        ===Function===
-        Resamples data into weekly medians
-        Crops dataframe to keep only continuous non-null data
-
-        ===Returns===
-        y 
-        """
-        
         df = self.target_variable()
         print(' 8 of 11 |    Resampling data into weekly medians\n         |    Cropping dataframe to keep only continuous non-null data')
         null_list = []
@@ -180,15 +143,8 @@ class Prep():
         return y
 
     def stationarity(self):
-        """
-        ===Function===
-        Tests for stationarity using ADF 
-        If data is not stationary:
-            uses differencing  and retests
-        """
-        
         y = self.resampler()
-        print('9 of 11 |    Testing for stationarity')
+        print(' 9 of 11 |    Testing for stationarity')
         if round(adfuller(y)[1],4) < 0.51:
             print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF H0".format(round(adfuller(y)[1],4)))
             print('prep complete'.upper().center(76,'-'))
@@ -208,6 +164,8 @@ class Prep():
                 print('prep complete'.upper().center(76,'-'))
                 return differences
     def compile(self):
+        tcnt=0
+        #for tcnt in tqdm(range(12)):
         df = self.stationarity()
         return pd.DataFrame(df)
     

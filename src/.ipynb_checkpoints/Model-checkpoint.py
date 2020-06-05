@@ -50,6 +50,17 @@ rcParams['figure.figsize'] = 10, 6
 plt.style.use('ggplot')
 
 class Models():
+    
+    '''
+    ==Function==
+   
+    ==Parameters==
+    
+    | df | - pass in univariate time series dataframe for 'cost_per_watt'
+    | order | - order to be used for ARIMA and SKT ARIMA models 
+              - default set to (4,0,0)
+   '''
+    
     def __init__(self,order=(4,0,0)):
         self.self = self
         self.order = order
