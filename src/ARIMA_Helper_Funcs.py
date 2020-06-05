@@ -243,15 +243,15 @@ def skt_arima(df, order):
     fh = np.arange(1, (len(tsdf)-idx)+1)
     y_pred = m.predict(fh=fh)
     skt_mse = m.score(test, fh=fh)**2
-    skt_arima_plot(test,train,y_pred, fh, skt_mse)
-
-# === PLOT ARIMA MODELS VIA SKTIME =========================================             
-def skt_arima_plot(test,train,y_pred, skt_mse):    
     fig, ax = plt.subplots(1, figsize=plt.figaspect(.25))
-    train.iloc[0].plot(ax=ax, label='train')
+    train.iloc[0][-30:].plot(ax=ax, label='train')
     test.iloc[0].plot(ax=ax, label='test')
     y_pred.plot(ax=ax, label='forecast')
     ax.set(ylabel='cost_per_watt')
-    plt.title('ARIMA Model MSE ={}'.format(round(skt_mse,5)))
+    plt.title('SKT ARIMA Model MSE ={}'.format(round(skt_mse,5)))
     plt.legend(loc='best')
     plt.show()
+
+# === PLOT ARIMA MODELS VIA SKTIME =========================================             
+def skt_arima_plot(test,train,y_pred,fh,  skt_mse):    
+    

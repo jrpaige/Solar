@@ -4,6 +4,8 @@ import cpi
 import sys
 from statsmodels.tsa.stattools import adfuller
 
+cpi.update()
+
 # =============================================================================
 # DF PREP
 # =============================================================================
@@ -38,9 +40,6 @@ class Prep():
     create target variable, cost_per_watt 
     cost_per_watt = total installed price/system size/1000
     
-    ==Outliers==
-    Removes outlier observations which reflect >$15/watt
-    
     ==Resample into Weekly medians==
     Resamples into the weekly medians and continuous non-null df
 
@@ -51,7 +50,8 @@ class Prep():
     
     compile
     '''
-    
+
+        
     def __init__(self, files):
         """
         ==Parameters==
@@ -148,16 +148,16 @@ class Prep():
         df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
         return df
 
-    def outlier_removal(self):
-        """
-        ===Function===
-        Removes outliers about $25 per watt
-        """
+#     def outlier_removal(self):
+#         """
+#         ===Function===
+#         Removes outliers about $25 per watt
+#         """
         
-        df = self.target_variable()
-        print(' 8 of 12 |    Removing outliers above $5 per watt') 
-        df = df.loc[df.cost_per_watt < 5]
-        return df
+#         df = self.target_variable()
+#         print(' 8 of 12 |    Removing outliers above $5 per watt') 
+#         df = df.loc[df.cost_per_watt < 5]
+#         return df
 
     def resampler(self):
         """
@@ -209,6 +209,9 @@ class Prep():
                 print('prep complete'.upper().center(76,'-'))
                 return differences
     def compile(self):
+        tcnt=0
+        for tcnt in tqdm(range(12)):
+            
         df = self.stationarity()
         return pd.DataFrame(df)
     
