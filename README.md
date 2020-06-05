@@ -144,8 +144,7 @@ Initially, I limited the cost per watt to 25 dollars to remove outliers, however
 #### RESULTS
 
 
-<img src= model_plots.png, align='center'>
-
+<img src='model_plots.png', align='center'>
 
 ---
 #  Insights
