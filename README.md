@@ -143,8 +143,7 @@ Initially, I limited the cost per watt to 25 dollars to remove outliers, however
 
 #### RESULTS
 
-
-<img src=getit/Solar/model_plots.png, align='center'>
+![](model_plots.png)
 
 ---
 #  Insights
@@ -153,8 +152,6 @@ Initially, I limited the cost per watt to 25 dollars to remove outliers, however
 - There is a seemingly random jump in cost_per_watt around 2016. This can likely be attributed to the political lanscape, as politics have a major influence in the US on renewable energy progress. 
 - Studies have shown that, historically, renewable energy progress slows when there is a larger Republican influence in both congress and the executive branch. [include citation]
 - I hypothesize that residential customers were likely trying to take advantage of any renewable energy incentives programs available before they were gone. The increased demand likely drove the costs up. 
-
-*** Beta coefficients for OLS and how the previous time frames affect future time frames ***
 
 ---
 #  Next Steps
