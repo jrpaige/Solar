@@ -23,23 +23,16 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 
 ---
 # Scripts
-`Prep_Class.py`
+`Prep.py`
 - This class incorporates 11 steps to prep the data for the Time Series and Regression models. 
 
-`Regression_Helper_Funcs.py`
-- Model for Random Forest Regressor, OLS Linear , and OLS 
-- Includes code for Robust Linear, GLS, Holt Linear, NARX, Direct Autoregressor, and Random Forest Grid Search
-
-`Time_Series_Helper_Funcs.py`
-- code to assist in the decompostion of the data
-
-`ARIMA_Helper_Funcs.py`
-- code to employ the ARIMA model 
+`Model.py`
+- This class takes the dataframe created from the Prep script and employs three types of regression and two types of ARIMA models. It then outputs five plots representing the outcome of each, notating the resulting MSE score as well. 
 
 --- 
 # Notebooks
 
-` EDA `
+`EDA`
 - Exploratory Data Analysis on Data focused on Costs, States, System Sizes, and Customer Segments. 
 
 `Model`
@@ -51,6 +44,12 @@ The project’s model employs univariate ARIMA time series analysis and multiple
 ---
 # Data 
 
+### Variable Creation
+- Total adjusted installed  cost = 
+total installed cost with adjustments made for inflation<br> 
+- cost per watt<img src="https://latex.codecogs.com/gif.latex?\dpi{100}&space;\fn_phv&space;\small&space;=\frac&space;{\textup{total&space;adjusted&space;installed&space;costs}}{\textup{system&space;size}}" />
+
+
 ### EDA
 
 This model uses data collected through Berkeley Lab's [Tracking the Sun](https://emp.lbl.gov/tracking-the-sun/) initiative. 
@@ -61,25 +60,28 @@ Between 1998 and 2018, individual installation observations were provided by 28 
 
 [EDA Notebook](https://github.com/jrpaige/Solar_Forecasts/blob/master/EDA.ipynb)
 
-Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of each time period's max point, it became more prudent to instead use the median, which points to the exact middle data point.
-<img src="imgs/mean_and_median_resamples.png">
-
 ##### Decisions made based on EDA:
- - Only use RES sector data
+- Only use RES sector data
 - Use median vs mean as average
 
-
 ### Data Transformation
+Using the mean average on the data was too volitile and proved un-useful. Based on the high deviation of each time period's max point, it became more prudent to instead use the median, which points to the exact middle data point.
 
-Per [Solar.com](https://www.solar.com/learn/solar-panel-cost/):
-"Most [systems] cost between $3.00 and $4.00 per watt." "As a general rule of thumb, be skeptical of any solar quote[...]more than $5.00 per watt." It should be taken into consideration that these numbers are relative to today's prices. Given the increased technology and innovation, costs used to be much higher. In 1977, "the cost of a solar cell was about $330.28 per watt, in today's dollars." 
+While determining if any parameters should be in place to limit outliers, I looked into how limiting different amounts on the cost_per_watt variable had on the data.
 
-Within the data, 604,046 entries totaled more than $5.00 per watt and 59,342 entries totaled more than $10.00 per watt. The data's cost_per_watt variable accounts for the cost all associated costs including installation. Given inflation and decreasing costs over the time series's 20 year span, I excluded the 59,342 entries which came in above.
+| Model | No limit | \$ 25  limit | \$ 20 limit | \$ 15 limit | \$10 limit| \$5 limit |
+|-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|| ||MSE      | |    | |
+| Random Forest | 0.01571|  0.01738| 0.019 | 0.01681 | 0.01558 | 0.01122|
+| OLS Linear | 0.0114 |  0.01278|  0.01271| 0.01315 | 0.01254 |0.00418 |
+| OLS SMF    | 0.01265 |  0.01345| 0.01309 | 0.01327 | 0.01259 | 0.00804|
 
-### Variable Creation
-- Total adjusted installed  cost = 
-total installed cost with adjustments made for inflation<br> 
-- cost per watt<img src="https://latex.codecogs.com/gif.latex?\dpi{100}&space;\fn_phv&space;\small&space;=\frac&space;{\textup{total&space;adjusted&space;installed&space;costs}}{\textup{system&space;size}}" />
+While the best scores did result from the $5 limit and $10 limit, this is not going to work in the real world, as prices have not and will not always fall within that range. The next best scores occur when the amounts were not limited to a dollar amount. As such, data transformation has been changed to remove the limit. 
+
+Moving forward, it could be argued to only use data after the solar panel prices became lower than $10/per watt, given the effect innovation had on the market.
+
+For the purposes of this model, I have not added any limits on cost_per_watt. 
+
 
 ### Null Handling
 - Nulls were replaced with median values from same year
@@ -139,14 +141,10 @@ As I trialed out different versions of the data on the regression models, the mo
 
 Initially, I limited the cost per watt to 25 dollars to remove outliers, however when further limiting the cost per watt down to 10, 15, and 20 dollars, the more I limited the variable, the worse all the models did. My final verison of the data does not limit cost per watt and the scores of the regression models improved. 
 
-
-
 #### RESULTS
-Given that the autoregressive and integrated lag aspect of an ARIMA model, it was no surprise that the ARIMA model and the OLS Linear model performed quite similarly. 
-
-Most of the models that employed the use of built out data outperformed traditional statistics for univariate time series.
 
 
+<img src= model_plots.png, align='center'>
 
 
 ---

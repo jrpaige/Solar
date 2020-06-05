@@ -62,10 +62,6 @@ class Prep():
         cpi.update()
         
     def load(self):
-        """ 
-        ==Function==
-        takes in as many csvs as needed, filters to 5 columns and concatenates together
-        """
         loaded_files = []
         count = 0
         print('PREP'.center(76,'-'))

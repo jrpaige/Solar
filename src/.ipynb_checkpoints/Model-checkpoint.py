@@ -53,12 +53,23 @@ class Models():
     
     '''
     ==Function==
-   
+    Run Regression and Time Series Models
+    
     ==Parameters==
     
     | df | - pass in univariate time series dataframe for 'cost_per_watt'
     | order | - order to be used for ARIMA and SKT ARIMA models 
               - default set to (4,0,0)
+    ex: Models(order=(0,0,0)).show_models(df)
+        Models().show_models(df)
+     
+    ===Returns===
+    5 subplots 
+        - Random Forest Regression
+        - OLS Linear Regression
+        - OLS smf Regression
+        - ARIMA 
+        
    '''
     
     def __init__(self,order=(4,0,0)):
@@ -167,6 +178,9 @@ class Models():
         #axs[4].set_ylabel('cost_per_watt')
         fig.suptitle('Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n \n \n'.format(pred_s, pred_e, train_s, train_e), y=1.05 ,verticalalignment='top', fontsize=20)
         
+        
+        
+        plt.savefig('model_plots.png')
         plt.show()
         
         

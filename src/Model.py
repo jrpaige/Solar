@@ -178,6 +178,9 @@ class Models():
         #axs[4].set_ylabel('cost_per_watt')
         fig.suptitle('Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n \n \n'.format(pred_s, pred_e, train_s, train_e), y=1.05 ,verticalalignment='top', fontsize=20)
         
+        
+        
+        plt.savefig('model_plots.png')
         plt.show()
         
         
