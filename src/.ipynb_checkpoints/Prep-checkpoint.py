@@ -15,7 +15,7 @@ class Prep():
     Returns stationary dataframe
     
     ==Columns==
-    Installation Date, System Size, Total Installed Price, Customer Segment,State
+    Installation Date, System Size, Total Installed Price, Customer Segment
     Lowercases and replaces all spaces with underscores
     
     ==Index==
@@ -65,9 +65,9 @@ class Prep():
         loaded_files = []
         count = 0
         print('PREP'.center(76,'-'))
-        print(" 1 of 11 |    Reading in data \n         |    Filtering to 5 features:\n         |       Date, System Size, Total Cost, Customer Segment, State \n         |    Changing -9999 values to null")
+        print(" 1 of 11 |    Reading in data \n         |    Filtering to 4 features:\n         |       Date, System Size, Total Cost, Customer Segment \n         |    Changing -9999 values to null")
         for i in range(1, len(self.files)+1):
-            exec(f"df{i} = pd.read_csv(self.files[{count}],encoding='iso-8859-1',parse_dates=['Installation Date'], usecols=['Installation Date','System Size', 'Total Installed Price','Customer Segment', 'State'],na_values=(-9999, '-9999'))")
+            exec(f"df{i} = pd.read_csv(self.files[{count}],encoding='iso-8859-1',parse_dates=['Installation Date'], usecols=['Installation Date','System Size', 'Total Installed Price','Customer Segment'],na_values=(-9999, '-9999'))")
             count+=1
             exec(f"loaded_files.append(df{i})")
         if len(loaded_files) > 1:
@@ -165,8 +165,8 @@ class Prep():
         df = self.stationarity()
         return pd.DataFrame(df)
     
-file_path_1 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p1.csv'
-file_path_2 = '/Users/jenniferpaige/Desktop/TTS_10-Dec-2019_p2.csv'
+file_path_1 = '/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p1.csv'
+file_path_2 = '/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p2.csv'
 files = [file_path_1, file_path_2]
 if __name__ == "__main__":   
     df = Prep(files).compile()

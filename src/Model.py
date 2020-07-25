@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 import datetime
 from datetime import datetime
-from src.Prep_Class import * 
+from src.Prep import * 
 
 # MATH
 from math import sqrt
@@ -36,12 +36,12 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import adfuller, acf, arma_order_select_ic, pacf_ols, pacf
 import pyramid
 from pmdarima.arima import auto_arima
-from sktime.forecasters import ARIMAForecaster
-from sktime.highlevel.tasks import ForecastingTask
-from sktime.highlevel.strategies import ForecastingStrategy
-from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
-from sktime.pipeline import Pipeline
-from sktime.transformers.compose import Tabulariser
+# from sktime.forecasters import ARIMAForecaster
+# from sktime.highlevel.tasks import ForecastingTask
+# from sktime.highlevel.strategies import ForecastingStrategy
+# from sktime.highlevel.strategies import Forecasting2TSRReductionStrategy
+# from sktime.pipeline import Pipeline
+# from sktime.transformers.compose import Tabulariser
 
 #VISUALIZATION 
 import matplotlib.pyplot as plt
@@ -53,28 +53,42 @@ class Models():
     
     '''
     ==Function==
-    Run Regression and Time Series Models
+    Run ARIMA and Regression Models
     
     ==Parameters==
     
     | df | - pass in univariate time series dataframe for 'cost_per_watt'
-    | order | - order to be used for ARIMA and SKT ARIMA models 
-              - default set to (4,0,0)
-    ex: Models(order=(0,0,0)).show_models(df)
-        Models().show_models(df)
-     
+    
+    |find_order| - [bool]
+        if True: model will look for best p,d,q order
+        user must input Auto or Manual
+            Auto uses auto_arima function
+            Manual uses best_order function
+            CAUTION: MANUAL IS VERY COMPUTATIONALLY EXPENSIVE (~20 minutes)
+        if False: user is asked if they would like to enter their own p,d,q
+            if user enters Y:
+                inputs for p,d, and q will follow
+            if user enters N:
+                model will use ARIMA p,d,q (4,1,1) as order
+        Defaults to True
+                
+    ex: Models(find_order=True).show_models(df)
+            Auto
+            Manual
+        Models(find_order=False).show_models(df)
+            y>4>1>1
+            n
     ===Returns===
-    5 subplots 
+    4 subplots 
+        - ARIMA
         - Random Forest Regression
         - OLS Linear Regression
         - OLS smf Regression
-        - ARIMA 
-        
    '''
     
-    def __init__(self,order=(4,0,0)):
+    def __init__(self, find_order=True):
         self.self = self
-        self.order = order
+        self.find_order= find_order
         
         
     def train_test(self, df):
@@ -117,9 +131,9 @@ class Models():
         y_train = self.lag_train_test(df, Xy=True)[1]
         pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
         train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
-        model_type = ['Random Forest Regression', 'OLS Linear Regression', 'OLS smf Regression']
+        model_type = ['ARIMA','Random Forest Regression', 'OLS Linear Regression', 'OLS smf Regression']
         return  y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type
-    
+    '''    
     def skt_ARIMA(self,df): 
         idx = round(len(df)*.8)
         tsdf = df['cost_per_watt']
@@ -132,25 +146,126 @@ class Models():
         skt_mse = m.score(ts_test, fh=fh)**2
         skt_title = f'SKT ARIMA {self.order}        MSE ={round(skt_mse,5)}'
         return ts_train, ts_test, ts_y_pred, skt_title
+    '''
+    
+    
+    
+    # === TEST VARIOUS PDQ'S MSE =========================================    
+    def evaluate_arima_model(self,X, arima_order):
+        '''
+        ==Function ==
+        Splits data into training/test
+        Pushes through ARIMA models 
 
+        ==Returns==
+        MSE
+
+        ==Note==
+        Only used in arima_order_mses function
+        '''
+        # prepare training dataset
+        train_size = int(len(X) * 0.8)
+        train, test = X[0:train_size], X[train_size:]
+        history = [x for x in train]
+        # make predictions
+        predictions = list()
+        for t in range(len(test)):
+            model = ARIMA(history, order=arima_order, missing='drop')
+            model_fit = model.fit(disp=0)
+            yhat = model_fit.forecast()[0]
+            predictions.append(yhat)
+            history.append(test[t])
+        # calculate error
+        error = mean_squared_error(test, predictions)
+        return error
+
+
+    # === FIND BEST PARAMETERS BY RUNNING THROUGH DIFFERENT PDQ'S =========================================   
+    def best_order(self,df):
+        '''
+        ==Function==
+        Uses various p,d,qs within below range
+        Tests out each combination 
+
+        ==Prints== 
+        Params with the best cfg + best MSE
+
+        ==Returns==
+        best order in format: (p,d,q)
+        
+        ==Input Suggestion==
+        Use [evaluate_models(df.values.dropna(), p_values, d_values, q_values)]
+
+        ==Note==
+        Computationally expensive! 
+        '''
+        df = df.dropna().values
+        p_values = [0, 1, 2, 3, 4]
+        d_values = range(0, 3)
+        q_values = range(0, 3)
+        best_score, best_cfg = float("inf"), None
+        for p in p_values:
+            for d in d_values:
+                for q in q_values:
+                    order = (p,d,q)
+                    try:
+                        mse = self.evaluate_arima_model(df, order)
+                        if mse < best_score:
+                            best_score, best_cfg = mse, order
+                        #print('ARIMA%s MSE=%.4f' % (order,mse))
+                    except:
+                        continue
+        return best_cfg
+
+    def auto_pdq(self, df):
+        '''
+        ==Function==
+        Uses Auto ARIMA to obtain best parameters for data
+        ==Parameters==
+        |trace_list| : bool
+            if True, function will return list of all searched pairs
+            default=False
+        ==Returns==
+        auto_arima variable to use in other functions
+        '''
+        return auto_arima(df, seasonal=False,stationary=True,start_p=0, start_q=0, max_order=8, stepwise=False).order
+    
     def ARIMA_predict(self, df):
+        if self.find_order==True:
+            print('Auto or Manual?:')
+            pdq_type= input()
+            if pdq_type.lower()=='manual':
+                print('Please hold')
+                order = self.best_order(df)
+            elif pdq_type.lower()=='auto':
+                order=self.auto_pdq(df)
+        elif self.find_order==False:
+            print('Would you like to use a specific order? (Y/N)')
+            enter_order= input()
+            if enter_order.lower()=='y':
+                ord_p= int(input('p:'))
+                ord_d= int(input('d:')) 
+                ord_q=int(input('q:'))
+                order = (ord_p,ord_d,ord_q)
+            elif enter_order.lower()=='n':
+                order=(4,1,1)
         atrain, atest = self.train_test(df)
         atest_s, atest_e = atest.index.date[0], atest.index.date[-1]
         atrain_s, atrain_e = atrain.index.date[0], atrain.index.date[-1]
-        res = ARIMA(atrain, order=self.order).fit()
+        res = ARIMA(atrain, order=order).fit()
         a_pred = res.predict(atest_s, atest_e)
-        arima_title = f'ARIMA {self.order}         MSE={round(mean_squared_error(atest,a_pred),5)}'
+        arima_title = f'ARIMA {order}         MSE={round(mean_squared_error(atest,a_pred),5)}'
         return res, atrain, atest, arima_title, a_pred    
     
     def all_models(self,df):
         y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type = self.regression(df)
-        ts_train, ts_test, ts_y_pred, skt_title = self.skt_ARIMA(df)
+        #ts_train, ts_test, ts_y_pred, skt_title = self.skt_ARIMA(df)
         res, atrain, atest, arima_title, a_pred = self.ARIMA_predict(df)
         idx = round(len(df)*.8)
         
-        fig, axs = plt.subplots(5, figsize= (20,20))
+        fig, axs = plt.subplots(4, figsize= (20,20))
         fig.tight_layout(h_pad=5)
-        for i in range(3):
+        for i in range(1,4):
             exec(f"axs[{i}].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
             exec(f"axs[{i}].plot(y_preds.actual, label= 'Actual')")
             exec(f"axs[{i}].plot(y_train[-30:], label='Train', color='gray')")
@@ -160,15 +275,15 @@ class Models():
             exec(f"axs[{i}].set_xlim(left=y_train.index.date[-31])")
 
         
-        axs[3].plot(a_pred, label='ARIMA Forecast')
-        axs[3].plot(atest.index, atest, label='Actual')
-        axs[3].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')
-        axs[3].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)
-        axs[3].set_title(arima_title, fontsize=18)
-        axs[3].legend(loc='best')
-        axs[3].set_xlim(left=atrain.index.date[-31])
+        axs[0].plot(a_pred, label='ARIMA Forecast')
+        axs[0].plot(atest.index, atest, label='Actual')
+        axs[0].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')
+        axs[0].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)
+        axs[0].set_title(arima_title, fontsize=18)
+        axs[0].legend(loc='best')
+        axs[0].set_xlim(left=atrain.index.date[-31])
         
-               
+        '''      
         ts_y_pred.plot(ax=axs[4], label='SKT ARIMA Forecast')
         ts_test.iloc[0].plot(ax=axs[4],label='Actual')
         ts_train.iloc[0][-30:].plot(ax=axs[4],label='Train', color='gray')
@@ -176,9 +291,8 @@ class Models():
         axs[4].set_title(skt_title, fontsize=18)
         axs[4].legend(loc='best')
         #axs[4].set_ylabel('cost_per_watt')
-        fig.suptitle('Forecast For:     [{}] - [{}] \n Trained On:       [{}] - [{}]\n \n \n'.format(pred_s, pred_e, train_s, train_e), y=1.05 ,verticalalignment='top', fontsize=20)
-        
-        
+        '''
+        fig.suptitle('Trained On Data From: \n[{}] to [{}]\n Forecast For Data from:     \n[{}] to [{}] \n \n \n'.format(train_s, train_e, pred_s, pred_e), y=1.05 ,verticalalignment='top', fontsize=20)
         
         plt.savefig('model_plots.png')
         plt.show()

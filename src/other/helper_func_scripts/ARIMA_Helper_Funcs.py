@@ -151,10 +151,9 @@ def arima_order_mses(df):
     Computationally expensive! 
     '''
     df = df.dropna().values
-    #p_values = [0, 1, 2, 4, 6, 8, 10]
-    p_values = [0, 1, 2, 4, 5, 6, 7]
+    p_values = [0, 1, 2, 4,]
     d_values = range(0, 3)
-    q_values = range(0, 4)
+    q_values = range(0, 3)
     best_score, best_cfg = float("inf"), None
     for p in p_values:
         for d in d_values:
