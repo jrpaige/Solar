@@ -17,6 +17,8 @@ from sklearn.metrics import r2_score, mean_squared_error, make_scorer, mean_abso
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score, KFold, GridSearchCV
 from sklearn.pipeline import Pipeline,  make_pipeline, FeatureUnion
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from scipy import stats
+from scipy.stats import normaltest
 
 #TIME
 import statsmodels.api as sm
@@ -44,6 +46,7 @@ from pmdarima.arima import auto_arima
 # from sktime.transformers.compose import Tabulariser
 
 #VISUALIZATION 
+import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
@@ -212,7 +215,7 @@ class Models():
                         mse = self.evaluate_arima_model(df, order)
                         if mse < best_score:
                             best_score, best_cfg = mse, order
-                            #print('ARIMA%s MSE=%.4f' % (order,mse))
+                        #print('ARIMA%s MSE=%.4f' % (order,mse))
                     except:
                         continue
         return best_cfg
@@ -282,17 +285,10 @@ class Models():
         axs[0].set_title(arima_title, fontsize=18)
         axs[0].legend(loc='best')
         axs[0].set_xlim(left=atrain.index.date[-31])
-        
-        '''      
-        ts_y_pred.plot(ax=axs[4], label='SKT ARIMA Forecast')
-        ts_test.iloc[0].plot(ax=axs[4],label='Actual')
-        ts_train.iloc[0][-30:].plot(ax=axs[4],label='Train', color='gray')
-        axs[4].fill_between(ts_y_pred.index, ts_test.iloc[0].values, 0, color='gray', alpha=.3)
-        axs[4].set_title(skt_title, fontsize=18)
-        axs[4].legend(loc='best')
-        #axs[4].set_ylabel('cost_per_watt')
-        '''
-        fig.suptitle('Trained On Data From: \n[{}] to [{}]\n Forecast For Data from:     \n[{}] to [{}] \n \n \n'.format(train_s, train_e, pred_s, pred_e), y=1.05 ,verticalalignment='top', fontsize=20)
+    
+        #fig.suptitle('Trained On Data From: \n[{}] to [{}]\n\n\n Forecast For Data from:     \n[{}] to [{}] \n \n \n \n \n \n'.format(train_s, train_e, pred_s, pred_e), y=1.05 ,verticalalignment='top', fontsize=20)
+        fig.suptitle('Trained On Data From: \n[{}] to [{}]'.format(train_s, train_e), y=1.05 ,verticalalignment='top', fontsize=20)
+        fig.suptitle('Forecast For Data from:     \n[{}] to [{}] \n'.format(pred_s, pred_e), y=1.05 ,verticalalignment='top', fontsize=20)
         
         plt.savefig('model_plots.png')
         plt.show()

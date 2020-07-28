@@ -1611,3 +1611,14 @@ def model_plot(test_data,train_data,forecasts,method, order=None):
                                     round(mean_squared_error(test_data, forecasts),5)))
     plt.legend(loc='best')
     plt.show() 
+    
+    
+            '''      
+        ts_y_pred.plot(ax=axs[4], label='SKT ARIMA Forecast')
+        ts_test.iloc[0].plot(ax=axs[4],label='Actual')
+        ts_train.iloc[0][-30:].plot(ax=axs[4],label='Train', color='gray')
+        axs[4].fill_between(ts_y_pred.index, ts_test.iloc[0].values, 0, color='gray', alpha=.3)
+        axs[4].set_title(skt_title, fontsize=18)
+        axs[4].legend(loc='best')
+        #axs[4].set_ylabel('cost_per_watt')
+        '''
