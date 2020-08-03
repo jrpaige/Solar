@@ -168,6 +168,11 @@ class Prep():
                 print('prep complete'.upper().center(76,'-'))
                 return differences
         
+        
+        
+        
+        
+        
         # Original Series
         fig, axes = plt.subplots(3, 3, constrained_layout=True)
         axes[0, 0].plot(y); axes[0, 0].set_title('Original Series')
