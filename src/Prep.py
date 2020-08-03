@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import cpi
 import sys
-from statsmodels.tsa.stattools import adfuller
 import datetime
 from datetime import datetime
 from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
@@ -146,9 +146,10 @@ class Prep():
         y = df.cost_per_watt.resample('W').median()[null_list[-1]+1:]
         return y
 
-    def stationarity(self, window = 12, cutoff = 0.01):
+    def stationarity(self):
         y = self.resampler()
         print(' 9 of 11 |    Testing for stationarity')
+        self.differ_plots(y)
         if round(adfuller(y)[1],4) < 0.51:
             print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF H0".format(round(adfuller(y)[1],4)))
             print('prep complete'.upper().center(76,'-'))
@@ -157,7 +158,8 @@ class Prep():
             print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
             print('10 of 11 |    Creating differenced data to achieve stationarity')
             differences = y.diff(periods=1).dropna()
-            print('11 of 11 |    Testing for stationarity on differenced data') 
+            print('11 of 11 |    Testing for stationarity on differenced data')
+            self.rolling_plots(differences)
             if round(adfuller(differences)[1],4) < 0.51:
                 print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(differences)[1],4)))
                 print('prep complete'.upper().center(76,'-'))
@@ -168,60 +170,39 @@ class Prep():
                 print('prep complete'.upper().center(76,'-'))
                 return differences
         
-        
-        
-        
-        
-        
+    def differ_plots(self, y):
         # Original Series
-        fig, axes = plt.subplots(3, 3, constrained_layout=True)
+        fig, axes = plt.subplots(3, 3, constrained_layout=True, figsize=(15,10))
         axes[0, 0].plot(y); axes[0, 0].set_title('Original Series')
         plot_acf(y, ax=axes[0, 1])
-        plot_pacf(y, ax=aces[0, 2])
+        plot_pacf(y, ax=axes[0, 2])
         # 1st Differencing
-        axes[1, 0].plot(y.cost_per_watt.diff()); axes[1, 0].set_title('1st Order Differencing')
-        plot_acf(y.cost_per_watt.diff().dropna(), ax=axes[1, 1])
-
+        axes[1, 0].plot(y.diff()); axes[1, 0].set_title('1st Order Differencing')
+        plot_acf(y.diff().dropna(), ax=axes[1, 1])
+        plot_pacf(y.diff().dropna(),ax=axes[1, 2])
         # 2nd Differencing
-        axes[2, 0].plot(y.cost_per_watt.diff().diff()); axes[2, 0].set_title('2nd Order Differencing')
-        plot_acf(y.cost_per_watt.diff().diff().dropna(), ax=axes[2, 1])
-
+        axes[2, 0].plot(y.diff().diff()); axes[2, 0].set_title('2nd Order Differencing')
+        plot_acf(y.diff().diff().dropna(), ax=axes[2, 1])
+        plot_pacf(y.diff().diff().dropna(),ax=axes[2, 2])
         plt.show()
         
-        
+    def rolling_plots(self, differences, window=12):
         #Determing rolling statistics
         rolmean = differences.rolling(window).mean()
+        rolmed = differences.rolling(window).median()
         rolstd = differences.rolling(window).std()
-        
         #Plot rolling statistics:
         fig = plt.figure(figsize=(12, 8))
-        orig = plt.plot(differences, color='blue',label='Original')
+        orig = plt.plot(differences, color='gray',label='Original')
         mean = plt.plot(rolmean, color='red', label='Rolling Mean')
+        median = plt.plot(rolmed, color='blue', label='Rolling Median')
         std = plt.plot(rolstd, color='black', label = 'Rolling Std')
         plt.legend(loc='best')
-        plt.title('Rolling Mean & Standard Deviation')
+        plt.title('Rolling Mean, Median, & Standard Deviation')
         plt.show()
-
-        #Perform Dickey-Fuller test:
-        print('Results of Dickey-Fuller Test:')
-        dftest = adfuller(differemces, autolag='AIC', maxlag = 20 )
-        dfoutput = pd.Series(dftest[0:4], index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
-        for key,value in dftest[4].items():
-            dfoutput['Critical Value (%s)'%key] = value
-        pvalue = dftest[1]
-        if pvalue < cutoff:
-            print('p-value = %.4f. The series is likely stationary.' % pvalue)
-        else:
-            print('p-value = %.4f. The series is likely non-stationary.' % pvalue)
-        return(dfoutput)
     
-
     def compile(self):
-        tcnt=0
-        #for tcnt in tqdm(range(12)):
         df = self.stationarity()
-        timeseries = self.test_stationarity(df)
-        print(timeseries)
         return pd.DataFrame(df)
     
 file_path_1 = '/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p1.csv'
