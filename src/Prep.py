@@ -149,26 +149,25 @@ class Prep():
     def stationarity(self):
         y = self.resampler()
         print(' 9 of 11 |    Testing for stationarity')
-        self.differ_plots(y)
         if round(adfuller(y)[1],4) < 0.51:
             print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF H0".format(round(adfuller(y)[1],4)))
             print('prep complete'.upper().center(76,'-'))
-            return y
+            return y, self.differ_plots(y), self.rolling_plots(y)
         else:
             print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
             print('10 of 11 |    Creating differenced data to achieve stationarity')
             differences = y.diff(periods=1).dropna()
             print('11 of 11 |    Testing for stationarity on differenced data')
-            self.rolling_plots(differences)
             if round(adfuller(differences)[1],4) < 0.51:
                 print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(differences)[1],4)))
                 print('prep complete'.upper().center(76,'-'))
-                return differences
+                return differences, self.differ_plots(y), self.rolling_plots(differences)
             else:
                 print('After differencing, data is still not stationary. \
                 Consider applying other methods.')
                 print('prep complete'.upper().center(76,'-'))
-                return differences
+                return differences,self.differ_plots(y), self.rolling_plots(differences)
+            
         
     def differ_plots(self, y):
         # Original Series
@@ -202,7 +201,7 @@ class Prep():
         plt.show()
     
     def compile(self):
-        df = self.stationarity()
+        df = self.stationarity()[0]
         return pd.DataFrame(df)
     
 file_path_1 = '/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p1.csv'
