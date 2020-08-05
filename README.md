@@ -83,6 +83,8 @@ Moving forward, it could be argued to only use data after the solar panel prices
 For the purposes of this model, I have not added any limits on cost_per_watt. 
 
 
+
+
 ### Null Handling
 - Nulls were replaced with median values from same year
 ---
@@ -102,7 +104,9 @@ However, data was not initially stationary.
 Within this data, stationarity had to be achieved by taking the change in cost_per_watt from one week to the next, aka differencing the data. 
 Differencing can help stabilize the mean of a time series by removing changes in the level of a time series, and therefore eliminating (or reducing) any trend and seasonality.
 
-A critical value of .05 or 5% was used to reject or fail to reject ADF's null hypothesis. After differencing, the P-value for the data reached less than 0.000000 and stationarity was decidedly achieved. 
+Initially, I simply used the `.diff()` method for a first order difference between consecutive observations. Next I tried second order differencing, which takes the difference of the difference via `.diff().diff()`. I also tried two period differencing `.diff(periods=2)` which takes the difference of a data point and the data point from two weeks prior. 
+
+A critical value of .05 was used to determine if I would reject or fail to reject the ADF null hypothesis. After differencing, the P-value for the data reached less than 0.000000 and stationarity was decidedly achieved. 
 
 ---
 # Models
@@ -141,9 +145,27 @@ As I trialed out different versions of the data on the regression models, the mo
 
 Initially, I limited the cost per watt to 25 dollars to remove outliers, however when further limiting the cost per watt down to 10, 15, and 20 dollars, the more I limited the variable, the worse all the models did. My final verison of the data does not limit cost per watt and the scores of the regression models improved. 
 
+Upon trialing out the second order differenced data set (`.diff().diff()`) and the two period differenced data set (`.diff(periods=2`), I came to find that the best 
+ARIMA order parameters on both sets were `p` = 3 and `q`=1, which seems to align with the ACF(`q`) and PACF(`p`) plots for the second order differenced data.
+
+![](imgs/two_differ_plots.png)
+
+The `d` parameter of 0 was used given that the data didn't need to be made further stationary within the ARIMA model (both sets acheived at least a 0.0e-10 p-value). Infact, using a 1 for `d` caused errors in the ARIMA model. 
+
+Using the ARIMA order of (3,0,1): <br>
+The two period differenced set produced an MSE score of 0.01187 <br>
+The second order differenced set produced an MSE score of 0.01173
+
+While using second order differencing for the ARIMA model resulted in improved MSE scores, using the second order differencing on the regression models resulted in worse scores. 
+
+While I would like to be able to use both for the model, it would not be accurate to compare two different data sets. 
+
 #### RESULTS
 
 ![](imgs/model_plots.png)
+
+
+
 
 ---
 #  Insights

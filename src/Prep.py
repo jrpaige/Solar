@@ -20,7 +20,7 @@ cpi.update()
 class Prep():
     '''
     ==Function==
-    Returns stationary dataframe
+    Prepare data for time series analysis 
     
     ==Columns==
     Installation Date, System Size, Total Installed Price, Customer Segment
@@ -57,16 +57,19 @@ class Prep():
     Completes ADF testing again
     
     compile
+    ==Returns==
+    Stationary dataframe 
+    
+    ==Prints==
+    3 sets of 3 plots
+    data, PACF, ACF
     '''
 
         
-    def __init__(self, files):
-        """
-        ==Parameters==
-        |files| : entered in as a list
-        """
+    def __init__(self):
         self.self = self
-        self.files = files
+        self.files = ['/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p1.csv','/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p2.csv']
+        
         cpi.update()
         
     def load(self):
@@ -123,17 +126,6 @@ class Prep():
         df['cost_per_watt'] = round(df['adj_installed_price']/ df['system_size']/1000,2)
         return df
 
-#     def outlier_removal(self):
-#         """
-#         ===Function===
-#         Removes outliers about $25 per watt
-#         """
-        
-#         df = self.target_variable()
-#         print(' 8 of 12 |    Removing outliers above $5 per watt') 
-#         df = df.loc[df.cost_per_watt < 5]
-#         return df
-
     def resampler(self):
         df = self.target_variable()
         print(' 8 of 11 |    Resampling data into weekly medians\n         |    Cropping dataframe to keep only continuous non-null data')
@@ -156,17 +148,18 @@ class Prep():
         else:
             print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
             print('10 of 11 |    Creating differenced data to achieve stationarity')
-            differences = y.diff(periods=1).dropna()
+            first_ord = y.diff().dropna()
+            sec_ord = y.diff().diff().dropna()
             print('11 of 11 |    Testing for stationarity on differenced data')
-            if round(adfuller(differences)[1],4) < 0.51:
-                print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(differences)[1],4)))
+            if round(adfuller(first_ord)[1],4) < 0.51:
+                print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(first_ord)[1],4)))
                 print('prep complete'.upper().center(76,'-'))
-                return differences, self.differ_plots(y), self.rolling_plots(differences)
+                return first_ord, sec_ord, self.differ_plots(y)#, self.rolling_plots(differences)
             else:
                 print('After differencing, data is still not stationary. \
                 Consider applying other methods.')
                 print('prep complete'.upper().center(76,'-'))
-                return differences,self.differ_plots(y), self.rolling_plots(differences)
+                return first_ord,self.differ_plots(y), #self.rolling_plots(differences)
             
         
     def differ_plots(self, y):
@@ -184,28 +177,11 @@ class Prep():
         plot_acf(y.diff().diff().dropna(), ax=axes[2, 1])
         plot_pacf(y.diff().diff().dropna(),ax=axes[2, 2])
         plt.show()
-        
-    def rolling_plots(self, differences, window=12):
-        #Determing rolling statistics
-        rolmean = differences.rolling(window).mean()
-        rolmed = differences.rolling(window).median()
-        rolstd = differences.rolling(window).std()
-        #Plot rolling statistics:
-        fig = plt.figure(figsize=(12, 8))
-        orig = plt.plot(differences, color='gray',label='Original')
-        mean = plt.plot(rolmean, color='red', label='Rolling Mean')
-        median = plt.plot(rolmed, color='blue', label='Rolling Median')
-        std = plt.plot(rolstd, color='black', label = 'Rolling Std')
-        plt.legend(loc='best')
-        plt.title('Rolling Mean, Median, & Standard Deviation')
-        plt.show()
     
     def compile(self):
-        df = self.stationarity()[0]
-        return pd.DataFrame(df)
-    
-file_path_1 = '/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p1.csv'
-file_path_2 = '/Users/jenniferpaige/code/DSI/getit/TTS_10-Dec-2019_p2.csv'
-files = [file_path_1, file_path_2]
+        first_ord,sec_ord = self.stationarity()[0:2]
+        return pd.DataFrame(first_ord), pd.DataFrame(sec_ord)
+
 if __name__ == "__main__":   
-    df = Prep(files).compile()
+    df1,df2 = Prep().compile()
+    

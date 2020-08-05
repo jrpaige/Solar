@@ -202,7 +202,7 @@ class Prep_and_Model():
         ==Returns==
         auto_arima variable to use in other functions
         '''
-        return auto_arima(df, seasonal=False,stationary=True,start_p=0, start_q=0, max_order=8, stepwise=False).order
+        return auto_arima(df, seasonal=False,stationary=True,d=1,start_p=0, start_q=0, max_order=8, stepwise=False).order
     
     def ARIMA_predict(self, df):
         '''

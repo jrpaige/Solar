@@ -75,11 +75,10 @@ class Models():
     
     def __init__(self):
         self.self = self
-        
+    
     def train_test(self, df):
-        idx = round(len(df)*.8)
-        train, test = df[:idx], df[idx:]
-        return train, test
+            idx = round(len(df)*.8)
+            
         
     def lag_train_test(self,df, Xy=True, lag_len=3):
         lag_df = (pd.concat([df.shift(i) for i in range(lag_len+1)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, lag_len+1)])).dropna() 
@@ -215,13 +214,14 @@ class Models():
             >>> Y
                 ENTER IN P,D,Q: 
                 >>> P,D,Q: model uses entered order
-            >>> N: model defaults to (4,1,1)
+            >>> N: model defaults to (3,0,1) per PACF and ACF plots
         
         ==Returns==
         res = .fit()
         atrain, atest = train and test set used for ARIMA
         arima_title = title to be used in a plot
         a_pred = predictions from ARIMA model
+        order = order used in ARIMA
         '''
         print('Would you like the model to look for an ARIMA order? (Y/N):')
         find_order = input()
@@ -248,14 +248,20 @@ class Models():
                 ord_q=int(input('q:'))
                 order = (ord_p,ord_d,ord_q)
             elif enter_order.lower()=='n':
-                order=(4,1,1)
+                order = input()
+#                 print('Is this 1st or 2nd order differenced? (1/2)')
+#                 diff_inp = int(input())
+#                 if diff_inp == 1:
+#                     order = (4,1,1)
+#                 elif diff_inp==2:
+#                     order = (3,0,1)       
         atrain, atest = self.train_test(df)
         atest_s, atest_e = atest.index.date[0], atest.index.date[-1]
         atrain_s, atrain_e = atrain.index.date[0], atrain.index.date[-1]
-        res = ARIMA(atrain, order=order).fit()
+        res = ARIMA(df, order=order).fit()
         a_pred = res.predict(atest_s, atest_e)
         arima_title = f'ARIMA {order}         MSE={round(mean_squared_error(atest,a_pred),5)}'
-        return res, atrain, atest, arima_title, a_pred    
+        return res, atrain, atest, arima_title, a_pred, order    
     
     def all_models(self,df):
         '''
@@ -266,7 +272,7 @@ class Models():
         '''
         y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type = self.regression(df)
         #ts_train, ts_test, ts_y_pred, skt_title = self.skt_ARIMA(df)
-        res, atrain, atest, arima_title, a_pred = self.ARIMA_predict(df)
+        res, atrain, atest, arima_title, a_pred, order = self.ARIMA_predict(df)
         idx = round(len(df)*.8)
         
         fig, axs = plt.subplots(4, figsize= (20,20))
@@ -288,16 +294,33 @@ class Models():
         axs[0].set_title(arima_title, fontsize=18)
         axs[0].legend(loc='best')
         axs[0].set_xlim(left=atrain.index.date[-31])
-    
+        
         fig.suptitle('Trained On Data From: \n[{}] to [{}]'.format(train_s, train_e), y=1.05 ,verticalalignment='top', fontsize=20)
         fig.suptitle('Forecast For Data from:     \n[{}] to [{}] \n'.format(pred_s, pred_e), y=1.05 ,verticalalignment='top', fontsize=20)
         
         plt.savefig('model_plots.png')
         plt.show()
+    
+    def residual_dist(self, df, order):
+        '''
+        ===Returns===
+        a 2-tuple of the chi-squared statistic, and the associated p-value. if the p-value is very small, it means the residual is not a normal distribution
+        '''
+        arima_mod = ARIMA(df, order).fit(disp=False)
+        resid = arima_mod.resid
+        #print(normaltest(resid))
+        fig = plt.figure()
+        ax0 = fig.add_subplot(111)
+        sns.distplot(resid ,fit = stats.norm, ax = ax0) 
+        # Get the fitted parameters used by the function
+        (mu, sigma) = stats.norm.fit(resid)
+        plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)], loc='best')
+        plt.ylabel('Frequency')
+        plt.title(f'Residual distribution \n {normaltest(resid)}')
+        plt.show()
         
-        
-    def show_models(self,df):
-        return self.all_models(df)
+    def show_models(self,df1,df2):
+        return self.all_models(df1,df2)
 
 if __name__ == "__main__":
-    Models().show_models(df)
+    Models().show_models(df1,df2)
