@@ -144,21 +144,21 @@ class Prep():
         if round(adfuller(y)[1],4) < 0.51:
             print("         |       ADF P-value: {} \n         |       Time Series achieved stationarity. \n         |       Reject ADF H0".format(round(adfuller(y)[1],4)))
             print('prep complete'.upper().center(76,'-'))
-            return y, self.differ_plots(y), self.rolling_plots(y)
+            return y, self.differ_plots(y)
         else:
             print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
             print('10 of 11 |    Creating differenced data to achieve stationarity')
-            first_ord = y.diff().dropna()
+            first_ord = y.diff(periods=1).dropna()
             print('11 of 11 |    Testing for stationarity on differenced data')
             if round(adfuller(first_ord)[1],4) < 0.51:
                 print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(first_ord)[1],4)))
                 print('prep complete'.upper().center(76,'-'))
-                return first_ord, self.differ_plots(y)#, self.rolling_plots(differences)
+                return first_ord, self.differ_plots(y)
             else:
                 print('After differencing, data is still not stationary. \
                 Consider applying other methods.')
                 print('prep complete'.upper().center(76,'-'))
-                return first_ord,self.differ_plots(y), #self.rolling_plots(differences)
+                return first_ord,self.differ_plots(y)
             
         
     def differ_plots(self, y):
