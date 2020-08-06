@@ -149,12 +149,11 @@ class Prep():
             print('         |       ADF P-value: {} \n         |       Time Series is not stationary.   \n         |       Fail to reject ADF H0'.format(round(adfuller(y)[1],4)))
             print('10 of 11 |    Creating differenced data to achieve stationarity')
             first_ord = y.diff().dropna()
-            sec_ord = y.diff().diff().dropna()
             print('11 of 11 |    Testing for stationarity on differenced data')
             if round(adfuller(first_ord)[1],4) < 0.51:
                 print('         |       ADF P-value: {} \n         |       Differenced data achieved stationarity. \n         |       Reject ADF H0'.format(round(adfuller(first_ord)[1],4)))
                 print('prep complete'.upper().center(76,'-'))
-                return first_ord, sec_ord, self.differ_plots(y)#, self.rolling_plots(differences)
+                return first_ord, self.differ_plots(y)#, self.rolling_plots(differences)
             else:
                 print('After differencing, data is still not stationary. \
                 Consider applying other methods.')
@@ -179,9 +178,9 @@ class Prep():
         plt.show()
     
     def compile(self):
-        first_ord,sec_ord = self.stationarity()[0:2]
-        return pd.DataFrame(first_ord), pd.DataFrame(sec_ord)
+        first_ord = self.stationarity()[0]
+        return pd.DataFrame(first_ord)
 
 if __name__ == "__main__":   
-    df1,df2 = Prep().compile()
+    df = Prep().compile()
     

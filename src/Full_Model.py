@@ -57,6 +57,17 @@ class Models():
         - OLS Linear Regression
         - OLS smf Regression 
         
+    ==Parameters==
+    |order_method| - selection of various methods of looking for/selecting an ARIMA order
+        options:
+            - 'predetermined': model uses predetermined orders 
+                (4,1,1) for first order differenced
+                (3,0,1) for second order differenced
+            - 'auto': uses auto_arima method to look for arima order
+            - 'manual': uses best_order function (COMPUTATIONALLY EXPENSIVE)
+            - 'select': allows for user input order
+            DEFAULT= 'predetermined'
+
     ==Included Functions==
     +train_test
     +lag_train_test
@@ -73,13 +84,14 @@ class Models():
     
    '''
     
-    def __init__(self):
+    def __init__(self,order_method='predetermined'):
         self.self = self
+        self.order_method=order_method
     
     def train_test(self, df):
-            idx = round(len(df)*.8)
-            
-        
+        idx = round(len(df)*.8)
+        return df[:idx],df[idx:]
+
     def lag_train_test(self,df, Xy=True, lag_len=3):
         lag_df = (pd.concat([df.shift(i) for i in range(lag_len+1)], axis=1, keys=['y'] + ['Lag%s' % i for i in range(1, lag_len+1)])).dropna() 
         idx = round(len(lag_df)*.8)
@@ -195,26 +207,14 @@ class Models():
         '''
         return auto_arima(df, seasonal=False,stationary=True,start_p=0, start_q=0, max_order=8, stepwise=False).order
     
-    def ARIMA_predict(self, df):
+    def ARIMA_predict(self, df, diff_type):
         '''
         ==Function== 
-        Attain user inputs to decide ARIMA order
+        Attain user inputs to decide ARIMA order 
         
-        ==User Inputs==   
-        LOOK FOR ARIMA ORDER? (Y/N)
-        >>> Y 
-            AUTO OR MANUAL?
-            >>> AUTO: auto_arima function is used
-            >>> MANUAL 
-                    CONFIRM COMPUTATION EXPENSE? 
-                    >>> CONFIRM: best_order function is used
-                    >>> ELSE: revert to AUTO            
-        >>> N 
-            USE SPECIFC P,D,Q? (Y/N)
-            >>> Y
-                ENTER IN P,D,Q: 
-                >>> P,D,Q: model uses entered order
-            >>> N: model defaults to (3,0,1) per PACF and ACF plots
+        ==Parameters==
+        |diff_type| : order of differencing applied to df
+            'first' or 'second'
         
         ==Returns==
         res = .fit()
@@ -223,38 +223,29 @@ class Models():
         a_pred = predictions from ARIMA model
         order = order used in ARIMA
         '''
-        print('Would you like the model to look for an ARIMA order? (Y/N):')
-        find_order = input()
-        if find_order.lower()=='y':
-            print('Auto or Manual?:')
-            pdq_type= input()
-            if pdq_type.lower()=='manual':
-                print('CAUTION: MANUAL IS VERY COMPUTATIONALLY EXPENSIVE (~20 minutes) \nPlease enter "confirm" to proceed')
-                confirmation = input()
-                if confirmation.lower() =='confirm': 
-                    print('Please hold')
-                    order = self.best_order(df)
-                else:
-                    print('Changing to Auto')
-                    order=self.auto_pdq(df)
-            elif pdq_type.lower()=='auto':
+        if self.order_method.lower() == 'predetermined':
+            if diff_type == 'first':
+                order=(4,1,1)
+            elif diff_type == 'second':
+                order=(3,0,1)
+        elif self.order_method.lower() == 'auto':
+            order=self.auto_pdq(df)
+        elif self.order_method.lower() == 'manual':
+            print('CAUTION: MANUAL IS VERY COMPUTATIONALLY EXPENSIVE (~20 minutes) \nPlease enter "confirm" to proceed')
+            confirmation = input()
+            if confirmation.lower() =='confirm': 
+                print('Please hold')
+                order = self.best_order(df)
+            else:
+                print('Changing to Auto')
                 order=self.auto_pdq(df)
-        elif find_order.lower()=='n':
-            print('Would you like to use a specific order? (Y/N)')
-            enter_order= input()
-            if enter_order.lower()=='y':
-                ord_p= int(input('p:'))
-                ord_d= int(input('d:')) 
-                ord_q=int(input('q:'))
-                order = (ord_p,ord_d,ord_q)
-            elif enter_order.lower()=='n':
-                order = input()
-#                 print('Is this 1st or 2nd order differenced? (1/2)')
-#                 diff_inp = int(input())
-#                 if diff_inp == 1:
-#                     order = (4,1,1)
-#                 elif diff_inp==2:
-#                     order = (3,0,1)       
+        elif self.order_method.lower() == 'select':
+            print('Please input each parameter')
+            ord_p= int(input('p:'))
+            ord_d= int(input('d:')) 
+            ord_q=int(input('q:'))
+            order = (ord_p,ord_d,ord_q)
+
         atrain, atest = self.train_test(df)
         atest_s, atest_e = atest.index.date[0], atest.index.date[-1]
         atrain_s, atrain_e = atrain.index.date[0], atrain.index.date[-1]
@@ -267,37 +258,54 @@ class Models():
         '''
         ==Function==
         Combines all regression models and ARIMA to create 4 subplots depicting actual and predicted data
-        == 
         
         '''
-        y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type = self.regression(df)
-        #ts_train, ts_test, ts_y_pred, skt_title = self.skt_ARIMA(df)
-        res, atrain, atest, arima_title, a_pred, order = self.ARIMA_predict(df)
-        idx = round(len(df)*.8)
+        first = df
+        sec = df.diff().dropna()
         
-        fig, axs = plt.subplots(4, figsize= (20,20))
-        fig.tight_layout(h_pad=5)
-        for i in range(1,4):
-            exec(f"axs[{i}].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
-            exec(f"axs[{i}].plot(y_preds.actual, label= 'Actual')")
-            exec(f"axs[{i}].plot(y_train[-30:], label='Train', color='gray')")
-            exec(f"axs[{i}].fill_between(y_preds.index, y_preds.{self.formastr(model_type[i])}, y_preds.actual, color='gray', alpha=.3)")
-            exec(f"axs[{i}].set_title('{model_type[i]}        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
-            exec(f"axs[{i}].legend(loc='best')")
-            exec(f"axs[{i}].set_xlim(left=y_train.index.date[-31])")
+        #first order
+        y_preds_f, y_train_f, [train_s_f, train_e_f, pred_s_f, pred_e_f], model_type_f = self.regression(first)
+        res_f, atrain_f, atest_f, arima_title_f, a_pred_f, order_f = self.ARIMA_predict(first,diff_type='first')
+        idx_f = round(len(first)*.8)
+        
+        #second order
+        y_preds_s, y_train_s, [train_s_s, train_e_s, pred_s_s, pred_e_s], model_type_s = self.regression(sec)
+        res_s, atrain_s, atest_s, arima_title_s, a_pred_s, order_s = self.ARIMA_predict(sec, diff_type='second')
+        idx_s = round(len(sec)*.8)
+        
+        fig, axs = plt.subplots(4,2, figsize= (30,20), constrained_layout=True)
+        
+        fig.suptitle('Trained on Data From {} - {} \n Forecast for {} - {}\n \n'.format(
+    ' '.join([train_s_f.strftime("%b"), str(train_s_f.year)]),
+    ' '.join([train_e_f.strftime("%b"), str(train_e_f.year)]),
+    ' '.join([pred_s_f.strftime("%b"), str(pred_s_f.year)]),
+    ' '.join([pred_e_f.strftime("%b"), str(pred_e_f.year)])),fontsize=30)
+        
+        fig.text(.18,.92, 'First Order Differencing',fontsize=25)
+        fig.text(.68,.92, 'Second Order Differencing',fontsize=25)
 
-        
-        axs[0].plot(a_pred, label='ARIMA Forecast')
-        axs[0].plot(atest.index, atest, label='Actual')
-        axs[0].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')
-        axs[0].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)
-        axs[0].set_title(arima_title, fontsize=18)
-        axs[0].legend(loc='best')
-        axs[0].set_xlim(left=atrain.index.date[-31])
-        
-        fig.suptitle('Trained On Data From: \n[{}] to [{}]'.format(train_s, train_e), y=1.05 ,verticalalignment='top', fontsize=20)
-        fig.suptitle('Forecast For Data from:     \n[{}] to [{}] \n'.format(pred_s, pred_e), y=1.05 ,verticalalignment='top', fontsize=20)
-        
+        let_sets= ['f','s']
+        for j in range(2):
+            for i in range(1,4):
+                #exec(f"axs[{i},{j}].plot(y_preds_{let_sets[j]}.{self.formastr('_'.join(('model_type',let_sets[j]))[i])}, label= '{'_'.join(('model_type',let_sets[j]))[i]}', linewidth=2)")
+                
+                
+                exec(f"axs[{i},{j}].plot(y_preds_{let_sets[j]}.{self.formastr('model_type_'let_sets[j])[i]}, label= '{'_'.join(('model_type',let_sets[j]))[i]}', linewidth=2)")
+                
+                exec(f"axs[{i},{j}].plot(y_preds_{let_sets[j]}.actual, label= 'Actual')")
+                exec(f"axs[{i},{j}].plot(y_train_{let_sets[j]}[-30:], label='Train', color='gray')")
+                exec(f"axs[{i},{j}].fill_between(y_preds_{let_sets[j]}.index, y_preds_{let_sets[j]}.{self.formastr('_'.join('model_type',let_sets[j])[i])}, y_preds_{let_sets[j]}.actual, color='gray', alpha=.3)")
+                exec(f"axs[{i},{j}].set_title('{'_'.join('model_type', let_sets[j])[i]}        MSE=%s' % round(mean_squared_error(y_preds_{let_sets[j]}.actual, y_preds_{let_sets[j]}.{self.formastr('_'.join('model_type',let_sets[j])[i])}),5), fontsize=18)")
+                exec(f"axs[{i},{j}].legend(loc='best')")
+                exec(f"axs[{i},{j}].set_xlim(left=y_train_{let_sets[j]}.index.date[-31])")
+            exec(f"axs[0,{j}].plot(a_pred_{let_sets[j]}, label='ARIMA Forecast')")
+            exec(f"axs[0,{j}].plot(atest_{let_sets[j]}.index, atest_{let_sets[j]}, label='Actual')")
+            exec(f"axs[0,{j}].plot(atrain_{let_sets[j]}.index[-30:], atrain_{let_sets[j]}[-30:], label='Train', color='gray')")
+            exec(f"axs[0,{j}].fill_between(a_pred_{let_sets[j]}.index, atest_{let_sets[j]}.cost_per_watt.values, 0, color='gray', alpha=.3)")
+            exec(f"axs[0,{j}].set_title(arima_title_{let_sets[j]}, fontsize=18)")
+            exec(f"axs[0,{j}].legend(loc='best')")
+            exec(f"axs[0,{j}].set_xlim(left=atrain_{let_sets[j]}.index.date[-31])")
+
         plt.savefig('model_plots.png')
         plt.show()
     
@@ -319,8 +327,8 @@ class Models():
         plt.title(f'Residual distribution \n {normaltest(resid)}')
         plt.show()
         
-    def show_models(self,df1,df2):
-        return self.all_models(df1,df2)
+    def show_models(self,df):
+        return self.all_models(df)
 
 if __name__ == "__main__":
-    Models().show_models(df1,df2)
+    Models().show_models(df)
