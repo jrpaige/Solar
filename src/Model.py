@@ -101,18 +101,36 @@ class Models():
             X_train, y_train, X_test, y_test = lag_X[:idx], lag_y[:idx], lag_X[idx:], lag_y[idx:]
             return X_train, y_train, X_test, y_test
         
-    def multiple_regressors(self,df, lag_len=3, print_mses=True):
-        X_train, y_train, X_test, y_test = self.lag_train_test(df, lag_len=lag_len)
-        rf= RandomForestRegressor(n_jobs=-1).fit(X_train,y_train).predict(X_test)
-        ols_lin = sm.OLS(y_train, X_train).fit().predict(X_test)  
+    
+    def regressor_fits(self,df, lag_len=3):
+        X_train, y_train, X_test, y_test = self.lag_train_test(df)
+        rf= RandomForestRegressor(n_jobs=-1).fit(X_train,y_train)
+        ols_lin = sm.OLS(y_train, X_train).fit()
         ols_train, ols_test= self.lag_train_test(df, lag_len=lag_len, Xy=False)
         ols_str = 'y ~ ' +" + ".join([f"Lag{i}" for i in range(1,lag_len+1)])
-        ols = smf.ols(ols_str, data=ols_train).fit().predict(ols_test)
+        ols = smf.ols(ols_str, data=ols_train).fit()
+        return rf, ols_lin, ols
+    
+    def regressor_predicts(self,df):
+        X_train, y_train, X_test, y_test = self.lag_train_test(df)
+        ols_train, ols_test= self.lag_train_test(df, Xy=False)
+        rff, ols_linf, olsf = self.regressor_fits(df)
+        rf= rff.predict(X_test)
+        ols_lin = ols_linf.predict(X_test)  
+        ols = olsf.predict(ols_test)
         return rf, ols_lin, ols 
+    
+    def regressor_resids(self,df):
+        X_train, y_train, X_test, y_test = self.lag_train_test(df)
+        rf, ols_lin, ols_smf = self.regressor_fits(df)
+        OLS_smf_resid = pd.DataFrame(ols_smf.resid)
+        OLS_lin_resid = pd.DataFrame(ols_lin.resid)
+        RandomForest_resid = y_test.cost_per_watt - rf.predict(X_test)
+        return RandomForest_resid, OLS_lin_resid, OLS_smf_resid
     
     def regres_dfs(self, df):
         y_preds = self.lag_train_test(df)[3]
-        rf, ols_lin, ols_smf = self.multiple_regressors(df, print_mses=False)
+        rf, ols_lin, ols_smf = self.regressor_predicts(df)
         y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
         y_preds['randomforest'], y_preds['olslinear'],y_preds['olssmf'] = rf, ols_lin, ols_smf
         return y_preds
@@ -263,50 +281,62 @@ class Models():
         
         '''
         y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type = self.regression(df)
-        res, atrain, atest, arima_title, a_pred, order = self.ARIMA_predict(df)
+        res, atrain, atest, arima_title, a_pred, order = self.ARIMA_predict(df)        
+        RandomForest_resid, OLS_lin_resid, OLS_smf_resid = self.regressor_resids(df)
+        resid_list = [res.resid,RandomForest_resid, OLS_lin_resid, OLS_smf_resid]
         idx = round(len(df)*.8)
-        fig, axs = plt.subplots(5, figsize= (30,20), constrained_layout=True)
+        fig, axs = plt.subplots(4,2, figsize= (30,20), constrained_layout=True)
         fig.suptitle('Trained on Data From {} - {} \n Forecast for {} - {}\n \n'.format(
     ' '.join([train_s.strftime("%b"), str(train_s.year)]),
     ' '.join([train_e.strftime("%b"), str(train_e.year)]),
     ' '.join([pred_s.strftime("%b"), str(pred_s.year)]),
     ' '.join([pred_e.strftime("%b"), str(pred_e.year)])),fontsize=30)
-        for i in range(1,4):    
-            exec(f"axs[{i}].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
-            exec(f"axs[{i}].plot(y_preds.actual, label= 'Actual')")
-            exec(f"axs[{i}].plot(y_train[-30:], label='Train', color='gray')")
-            exec(f"axs[{i}].fill_between(y_preds.index, y_preds.{self.formastr(model_type[i])}, y_preds.actual, color='gray', alpha=.3)")
-            exec(f"axs[{i}].set_title('{model_type[i]}        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
-            exec(f"axs[{i}].legend(loc='best')")
-            exec(f"axs[{i}].set_xlim(left=y_train.index.date[-31])")
-        exec(f"axs[0].plot(a_pred, label='ARIMA Forecast')")
-        exec(f"axs[0].plot(atest.index, atest, label='Actual')")
-        exec(f"axs[0].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')")
-        exec(f"axs[0].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)")
-        exec(f"axs[0].set_title(arima_title, fontsize=18)")
-        exec(f"axs[0].legend(loc='best')")
-        exec(f"axs[0].set_xlim(left=atrain.index.date[-31])")
-
+        for j in range(2):
+            for i in range(1,4):
+                exec(f"axs[{i},0].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
+                exec(f"axs[{i},0].plot(y_preds.actual, label= 'Actual')")
+                exec(f"axs[{i},0].plot(y_train[-30:], label='Train', color='gray')")
+                exec(f"axs[{i},0].fill_between(y_preds.index, y_preds.{self.formastr(model_type[i])}, y_preds.actual, color='gray', alpha=.3)")
+                exec(f"axs[{i},0].set_title('{model_type[i]}        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
+                exec(f"axs[{i},0].legend(loc='best')")
+                exec(f"axs[{i},0].set_xlim(left=y_train.index.date[-31])")
+                exec(f"axs[{i},1] = sns.distplot(resid_list[{i}], fit=stats.norm, ax=axs[{i},1])")
+                exec(f"(mu,sigma)= stats.norm.fit(resid_list[{i}])")
+                exec(f"axs[{i},1].legend(['Normal dist. ($\mu=$ round(mu,2) and $\sigma=$ round(sigma,2))'], loc='best')")
+                exec(f"axs[{i},1].set_ylabel('Frequency')")
+                exec(f"axs[{i},1].set_title('Residual Distribution for {model_type[i][:-11]}\n Normal Test Result | statistic={round(normaltest(resid_list[i])[0],4)} | pvalue={round(normaltest(resid_list[i])[1],5)}')")
+        axs[0,0].plot(a_pred, label='ARIMA Forecast')
+        axs[0,0].plot(atest.index, atest, label='Actual')
+        axs[0,0].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')
+        axs[0,0].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)
+        axs[0,0].set_title(arima_title, fontsize=18)
+        axs[0,0].legend(loc='best')
+        axs[0,0].set_xlim(left=atrain.index.date[-31])
+        axs[0,1] = sns.distplot(resid_list[0], fit=stats.norm, ax=axs[0,1])
+        (mu,sigma)= stats.norm.fit(resid_list[0])
+        axs[0,1].legend(['Normal dist. ($\mu=$ rounded(mu,2) and $\sigma=$ rounded(sigma,2))'], loc='best')
+        axs[0,1].set_ylabel('Frequency')
+        axs[0,1].set_title(f'Residual Distribution for ARIMA \nNormal Test Result | statistic={round(normaltest(resid_list[0])[0],4)} | pvalue={round(normaltest(resid_list[0])[1],5)}')
         #plt.savefig('model_plots.png')
         plt.show()
     
-    def residual_dist(self, df, order):
-        '''
-        ===Returns===
-        a 2-tuple of the chi-squared statistic, and the associated p-value. if the p-value is very small, it means the residual is not a normal distribution
-        '''
-        arima_mod = ARIMA(df, order).fit(disp=False)
-        resid = arima_mod.resid
-        #print(normaltest(resid))
-        fig = plt.figure()
-        ax0 = fig.add_subplot(111)
-        sns.distplot(resid ,fit = stats.norm, ax = ax0) 
-        # Get the fitted parameters used by the function
-        (mu, sigma) = stats.norm.fit(resid)
-        plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)], loc='best')
-        plt.ylabel('Frequency')
-        plt.title(f'Residual distribution \n {normaltest(resid)}')
-        plt.show()
+#     def residual_dist(self, df, order):
+#         '''
+#         ===Returns===
+#         a 2-tuple of the chi-squared statistic, and the associated p-value. if the p-value is very small, it means the residual is not a normal distribution
+#         '''
+#         arima_mod = ARIMA(df, (2,0,0)).fit()
+#         resid = arima_mod.resid
+#         fig = plt.figure(constrained_layout=True)
+#         ax0 = fig.add_subplot(111)
+#         sns.distplot(resid ,fit = stats.norm, ax = ax0) 
+#         # Get the fitted parameters used by the function
+#         (mu, sigma) = stats.norm.fit(resid)
+#         plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)], loc='best')
+#         plt.ylabel('Frequency')
+#         plt.suptitle('Residual Distribution', fontsize=(15))
+#         plt.title(f'Normal Test Result | statistic={round(normaltest(resid)[0],4)} | pvalue={round(normaltest(resid)[1],5)}')
+#         plt.show()
         
     def show_model(self,df):
         return self.all_models(df)
