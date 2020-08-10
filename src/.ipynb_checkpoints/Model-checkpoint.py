@@ -125,7 +125,7 @@ class Models():
         rf, ols_lin, ols_smf = self.regressor_fits(df)
         OLS_smf_resid = pd.DataFrame(ols_smf.resid)
         OLS_lin_resid = pd.DataFrame(ols_lin.resid)
-        RandomForest_resid = y_test.cost_per_watt - rf.predict(X_test)
+        RandomForest_resid = (y_test.cost_per_watt - rf.predict(X_test)).rename(columns={'cost_per_watt':''})
         return RandomForest_resid, OLS_lin_resid, OLS_smf_resid
     
     def regres_dfs(self, df):
