@@ -138,6 +138,9 @@ class Models():
     def formastr(self,str):
         return str.replace(" ","").replace("Regression","").lower()
     
+    def rem_reg(self,str):
+        return str.replace(' Regression','')
+    
     def regression(self, df):   
         y_preds = self.regres_dfs(df)
         y_train = self.lag_train_test(df, Xy=True)[1]
@@ -285,12 +288,51 @@ class Models():
         RandomForest_resid, OLS_lin_resid, OLS_smf_resid = self.regressor_resids(df)
         resid_list = [res.resid,RandomForest_resid, OLS_lin_resid, OLS_smf_resid]
         idx = round(len(df)*.8)
-        fig, axs = plt.subplots(4,2, figsize= (30,20), constrained_layout=True)
-        fig.suptitle('Trained on Data From {} - {} \n Forecast for {} - {}\n \n'.format(
-    ' '.join([train_s.strftime("%b"), str(train_s.year)]),
-    ' '.join([train_e.strftime("%b"), str(train_e.year)]),
-    ' '.join([pred_s.strftime("%b"), str(pred_s.year)]),
-    ' '.join([pred_e.strftime("%b"), str(pred_e.year)])),fontsize=30)
+        fig, axs = plt.subplots(4,2, figsize=(30,20), constrained_layout=True)
+        fig.suptitle('Trained on Data from {} - {} \n Data Forecasted for {} - {}\n \n'.format(
+        ' '.join([train_s.strftime("%b"), str(train_s.year)]),
+        ' '.join([train_e.strftime("%b"), str(train_e.year)]),
+        ' '.join([pred_s.strftime("%b"), str(pred_s.year)]),
+        ' '.join([pred_e.strftime("%b"), str(pred_e.year)])),fontsize=30)
+        fig.text(.075,.92, 'Forecast Models'.center(60,'_'),fontsize=25)
+        fig.text(.615,.92, 'Residual Distribution'.center(56,'_'),fontsize=25)
+        
+        axs[0,0].plot(a_pred, label='ARIMA Forecast')
+        axs[0,0].plot(atest.index, atest, label='Actual')
+        axs[0,0].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')
+        axs[0,0].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)
+        axs[0,0].set_title(arima_title, fontsize=18)
+        axs[0,0].legend(loc='best')
+        axs[0,0].set_xlim(left=atrain.index.date[-31])
+
+        for i in range(1,4):
+            exec(f"axs[{i},0].plot(y_preds.{self.formastr(model_type[i])}, label= '{self.rem_reg(model_type[i])}', linewidth=2)")
+            exec(f"axs[{i},0].plot(y_preds.actual, label= 'Actual')")
+            exec(f"axs[{i},0].plot(y_train[-30:], label='Train', color='gray')")
+            exec(f"axs[{i},0].fill_between(y_preds.index, y_preds.{self.formastr(model_type[i])}, y_preds.actual, color='gray', alpha=.3)")
+            exec(f"axs[{i},0].set_title('{model_type[i]}        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
+            exec(f"axs[{i},0].legend(loc='best')")
+            exec(f"axs[{i},0].set_xlim(left=y_train.index.date[-31])")
+        for i in range(2):
+            exec(f"axs[i,1] = sns.distplot(resid_list[i], fit=stats.norm, ax=axs[i,1])")
+            (mu,sigma)= stats.norm.fit(resid_list[1])
+            exec(f"axs[i,1].legend([f'Normal dist. ($\mu=$ {round(mu,2)} and $\sigma=$ {round(sigma,2)})'], loc='best')")
+            #exec(f"axs[i,1].set_ylabel('Frequency')")
+            exec(f"axs[i,1].set_title('{ rem_reg(model_type[i])} Model Normal Test        statistic={round(normaltest(resid_list[i])[0],4)} | pvalue={round(normaltest(resid_list[i])[1],5)}',fontsize=18)")    
+        for i in range(2,4):   
+            exec(f"axs[{i},1] = sns.distplot(resid_list[{i}], fit=stats.norm, ax=axs[{i},1])")
+            (mu,sigma)= stats.norm.fit(resid_list[i])
+            exec(f"axs[{i},1].legend([f'Normal dist. ($\mu=$ {round(mu,2)} and $\sigma=$ {round(sigma,2)})'], loc='best')")
+            #exec(f"axs[{i},1].set_ylabel('Frequency')")
+            exec(f"axs[{i},1].set_title('{self.rem_reg(model_type[i])} Model Normal Test        statistic={round(normaltest(resid_list[i])[0][0],4)} | pvalue={round(normaltest(resid_list[i])[1][0],5)}',fontsize=18)")           
+        #plt.savefig('model_plots.png')
+        plt.show()
+
+        
+        
+        
+        
+        
         for j in range(2):
             for i in range(1,4):
                 exec(f"axs[{i},0].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
