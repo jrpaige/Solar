@@ -251,9 +251,9 @@ class Models():
         elif self.order_method.lower() == 'auto':
             order=self.auto_pdq(df)
         elif self.order_method.lower() == 'manual':
-            print('CAUTION: MANUAL IS VERY COMPUTATIONALLY EXPENSIVE (~20 minutes) \nPlease enter "confirm" to proceed')
+            print('CAUTION: MANUAL IS VERY COMPUTATIONALLY EXPENSIVE (~20 minutes) \nPlease enter "ok" to proceed')
             confirmation = input()
-            if confirmation.lower() =='confirm': 
+            if confirmation.lower() =='ok': 
                 print('Please hold')
                 order = self.best_order(df)
             else:
