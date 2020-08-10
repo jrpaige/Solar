@@ -122,31 +122,28 @@ class Models():
     
     def regressor_resids(self,df):
         X_train, y_train, X_test, y_test = self.lag_train_test(df)
-        rf, ols_lin, ols_smf = self.regressor_fits(df)
-        OLS_smf_resid = pd.DataFrame(ols_smf.resid)
+        rf, ols_lin, ols = self.regressor_fits(df)
+        OLS_resid = pd.DataFrame(ols.resid)
         OLS_lin_resid = pd.DataFrame(ols_lin.resid)
         RandomForest_resid = (y_test.cost_per_watt - rf.predict(X_test)).rename(columns={'cost_per_watt':''})
-        return RandomForest_resid, OLS_lin_resid, OLS_smf_resid
+        return RandomForest_resid, OLS_lin_resid, OLS_resid
     
     def regres_dfs(self, df):
         y_preds = self.lag_train_test(df)[3]
-        rf, ols_lin, ols_smf = self.regressor_predicts(df)
+        rf, ols_lin, ols = self.regressor_predicts(df)
         y_preds.rename(columns={'cost_per_watt':'actual'}, inplace=True)
-        y_preds['randomforest'], y_preds['olslinear'],y_preds['olssmf'] = rf, ols_lin, ols_smf
+        y_preds['randomforest'], y_preds['olslinear'],y_preds['ols'] = rf, ols_lin, ols
         return y_preds
     
     def formastr(self,str):
-        return str.replace(" ","").replace("Regression","").lower()
-    
-    def rem_reg(self,str):
-        return str.replace(' Regression','')
+        return str.replace(" ","").lower()
     
     def regression(self, df):   
         y_preds = self.regres_dfs(df)
         y_train = self.lag_train_test(df, Xy=True)[1]
         pred_s, pred_e = y_preds.index.date[0], y_preds.index.date[-1]
         train_s, train_e = y_train.index.date[0], y_train.index.date[-1]
-        model_type = ['ARIMA','Random Forest Regression', 'OLS Linear Regression', 'OLS smf Regression']
+        model_type = ['ARIMA','Random Forest', 'OLS Linear', 'OLS']
         return  y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type
         
     def evaluate_arima_model(self,X, arima_order):
@@ -285,8 +282,8 @@ class Models():
         '''
         y_preds, y_train, [train_s, train_e, pred_s, pred_e], model_type = self.regression(df)
         res, atrain, atest, arima_title, a_pred, order = self.ARIMA_predict(df)        
-        RandomForest_resid, OLS_lin_resid, OLS_smf_resid = self.regressor_resids(df)
-        resid_list = [res.resid,RandomForest_resid, OLS_lin_resid, OLS_smf_resid]
+        RandomForest_resid, OLS_lin_resid, OLS_resid = self.regressor_resids(df)
+        resid_list = [res.resid,RandomForest_resid, OLS_lin_resid, OLS_resid]
         idx = round(len(df)*.8)
         fig, axs = plt.subplots(4,2, figsize=(30,20), constrained_layout=True)
         fig.suptitle('Trained on Data from {} - {} \n Data Forecasted for {} - {}\n \n'.format(
@@ -306,79 +303,27 @@ class Models():
         axs[0,0].set_xlim(left=atrain.index.date[-31])
 
         for i in range(1,4):
-            exec(f"axs[{i},0].plot(y_preds.{self.formastr(model_type[i])}, label= '{self.rem_reg(model_type[i])}', linewidth=2)")
+            exec(f"axs[{i},0].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
             exec(f"axs[{i},0].plot(y_preds.actual, label= 'Actual')")
             exec(f"axs[{i},0].plot(y_train[-30:], label='Train', color='gray')")
             exec(f"axs[{i},0].fill_between(y_preds.index, y_preds.{self.formastr(model_type[i])}, y_preds.actual, color='gray', alpha=.3)")
-            exec(f"axs[{i},0].set_title('{model_type[i]}        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
+            exec(f"axs[{i},0].set_title('{model_type[i]} Regression        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
             exec(f"axs[{i},0].legend(loc='best')")
             exec(f"axs[{i},0].set_xlim(left=y_train.index.date[-31])")
         for i in range(2):
-            exec(f"axs[i,1] = sns.distplot(resid_list[i], fit=stats.norm, ax=axs[i,1])")
+            exec(f"axs[{i},1] = sns.distplot(resid_list[i], fit=stats.norm, ax=axs[i,1])")
             (mu,sigma)= stats.norm.fit(resid_list[1])
-            exec(f"axs[i,1].legend([f'Normal dist. ($\mu=$ {round(mu,2)} and $\sigma=$ {round(sigma,2)})'], loc='best')")
+            exec(f"axs[{i},1].legend([f'Normal dist. ($\mu=$ {round(mu,2)} and $\sigma=$ {round(sigma,2)})'], loc='best')")
             #exec(f"axs[i,1].set_ylabel('Frequency')")
-            exec(f"axs[i,1].set_title('{ rem_reg(model_type[i])} Model Normal Test        statistic={round(normaltest(resid_list[i])[0],4)} | pvalue={round(normaltest(resid_list[i])[1],5)}',fontsize=18)")    
+            exec(f"axs[{i},1].set_title('Normal Test for {model_type[i]} Model        statistic={round(normaltest(resid_list[i])[0],4)} | pvalue={round(normaltest(resid_list[i])[1],5)}',fontsize=18)")    
         for i in range(2,4):   
             exec(f"axs[{i},1] = sns.distplot(resid_list[{i}], fit=stats.norm, ax=axs[{i},1])")
             (mu,sigma)= stats.norm.fit(resid_list[i])
             exec(f"axs[{i},1].legend([f'Normal dist. ($\mu=$ {round(mu,2)} and $\sigma=$ {round(sigma,2)})'], loc='best')")
             #exec(f"axs[{i},1].set_ylabel('Frequency')")
-            exec(f"axs[{i},1].set_title('{self.rem_reg(model_type[i])} Model Normal Test        statistic={round(normaltest(resid_list[i])[0][0],4)} | pvalue={round(normaltest(resid_list[i])[1][0],5)}',fontsize=18)")           
+            exec(f"axs[{i},1].set_title('Normal Test for {model_type[i]} Model        statistic={round(normaltest(resid_list[i])[0][0],4)} | pvalue={round(normaltest(resid_list[i])[1][0],5)}',fontsize=18)")           
         #plt.savefig('model_plots.png')
         plt.show()
-
-        
-        
-        
-        
-        
-        for j in range(2):
-            for i in range(1,4):
-                exec(f"axs[{i},0].plot(y_preds.{self.formastr(model_type[i])}, label= '{model_type[i]}', linewidth=2)")
-                exec(f"axs[{i},0].plot(y_preds.actual, label= 'Actual')")
-                exec(f"axs[{i},0].plot(y_train[-30:], label='Train', color='gray')")
-                exec(f"axs[{i},0].fill_between(y_preds.index, y_preds.{self.formastr(model_type[i])}, y_preds.actual, color='gray', alpha=.3)")
-                exec(f"axs[{i},0].set_title('{model_type[i]}        MSE=%s' % round(mean_squared_error(y_preds.actual, y_preds.{self.formastr(model_type[i])}),5), fontsize=18)")
-                exec(f"axs[{i},0].legend(loc='best')")
-                exec(f"axs[{i},0].set_xlim(left=y_train.index.date[-31])")
-                exec(f"axs[{i},1] = sns.distplot(resid_list[{i}], fit=stats.norm, ax=axs[{i},1])")
-                exec(f"(mu,sigma)= stats.norm.fit(resid_list[{i}])")
-                exec(f"axs[{i},1].legend(['Normal dist. ($\mu=$ round(mu,2) and $\sigma=$ round(sigma,2))'], loc='best')")
-                exec(f"axs[{i},1].set_ylabel('Frequency')")
-                exec(f"axs[{i},1].set_title('Residual Distribution for {model_type[i][:-11]}\n Normal Test Result | statistic={round(normaltest(resid_list[i])[0],4)} | pvalue={round(normaltest(resid_list[i])[1],5)}')")
-        axs[0,0].plot(a_pred, label='ARIMA Forecast')
-        axs[0,0].plot(atest.index, atest, label='Actual')
-        axs[0,0].plot(atrain.index[-30:], atrain[-30:], label='Train', color='gray')
-        axs[0,0].fill_between(a_pred.index, atest.cost_per_watt.values, 0, color='gray', alpha=.3)
-        axs[0,0].set_title(arima_title, fontsize=18)
-        axs[0,0].legend(loc='best')
-        axs[0,0].set_xlim(left=atrain.index.date[-31])
-        axs[0,1] = sns.distplot(resid_list[0], fit=stats.norm, ax=axs[0,1])
-        (mu,sigma)= stats.norm.fit(resid_list[0])
-        axs[0,1].legend(['Normal dist. ($\mu=$ rounded(mu,2) and $\sigma=$ rounded(sigma,2))'], loc='best')
-        axs[0,1].set_ylabel('Frequency')
-        axs[0,1].set_title(f'Residual Distribution for ARIMA \nNormal Test Result | statistic={round(normaltest(resid_list[0])[0],4)} | pvalue={round(normaltest(resid_list[0])[1],5)}')
-        #plt.savefig('model_plots.png')
-        plt.show()
-    
-#     def residual_dist(self, df, order):
-#         '''
-#         ===Returns===
-#         a 2-tuple of the chi-squared statistic, and the associated p-value. if the p-value is very small, it means the residual is not a normal distribution
-#         '''
-#         arima_mod = ARIMA(df, (2,0,0)).fit()
-#         resid = arima_mod.resid
-#         fig = plt.figure(constrained_layout=True)
-#         ax0 = fig.add_subplot(111)
-#         sns.distplot(resid ,fit = stats.norm, ax = ax0) 
-#         # Get the fitted parameters used by the function
-#         (mu, sigma) = stats.norm.fit(resid)
-#         plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)], loc='best')
-#         plt.ylabel('Frequency')
-#         plt.suptitle('Residual Distribution', fontsize=(15))
-#         plt.title(f'Normal Test Result | statistic={round(normaltest(resid)[0],4)} | pvalue={round(normaltest(resid)[1],5)}')
-#         plt.show()
         
     def show_model(self,df):
         return self.all_models(df)
