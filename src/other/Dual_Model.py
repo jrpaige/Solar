@@ -44,7 +44,7 @@ from matplotlib.pylab import rcParams
 rcParams['figure.figsize'] = 10, 6
 plt.style.use('ggplot')
 
-class Models():
+class Dual_Models():
     
     '''
     ==Function==
